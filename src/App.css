@@ -1,5 +1,4 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;500;600&family=Jost:wght@300;400;500;600&family=Cormorant+Garamond:wght@300;400;500;600&display=swap');
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --primary: #7B2E3E;
@@ -7,8 +6,9 @@
   --pink: #F9CDC2;
   --pink-dark: #f0a898;
   --dark: #e7d3d3;
-  --text: #d2cbcb;
-  --text-muted: #6a1717d7;
+  --gold:#D4AF37;
+--text: #333333;
+--text-muted: #666666;
   --bg: #ffffff;
   --bg2: #faf8f5;
   --bg3: #fdf5f3;
@@ -49,13 +49,18 @@ a { text-decoration: none; color: inherit; }
 }
 
 
-.navbar {
-  position: sticky; top: 0; z-index: 1000;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 40px; height: 80px;
-  background: var(--pink);
-  border-bottom: 1px solid var(--pink-dark);
-  box-shadow: 0 2px 12px rgba(123,46,62,0.1);
+.navbar{
+position: sticky;
+top:0;
+z-index:1000;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:0 40px;
+height:80px;
+background:#fff;
+border-bottom:1px solid #f3e5e0;
+box-shadow:0 2px 10px rgba(0,0,0,.05);
 }
 
 .navbar-logo {
@@ -63,18 +68,12 @@ a { text-decoration: none; color: inherit; }
   font-size: 24px; font-weight: 600;
   letter-spacing: 1px; white-space: nowrap;
   color: var(--primary);
-} */
-/* Navbar */
-.navbar{
-  background: #fff;
-  border-bottom: 1px solid #f3e5e0;
-  box-shadow: none;
 }
 
 
   
 
-Logo + links
+
 .nav-links a,
 .navbar-logo{
   color: #7B2E3E !important;
@@ -147,7 +146,7 @@ Logo + links
   letter-spacing: 2px; text-transform: uppercase;
   cursor: pointer; transition: all 0.3s;
 }
- .btn-primary:hover { background: var(--primary-light); transform: translateY(-2px); box-shadow: 0 8px 25px rgba(123,46,62,0.3); } */
+.btn-primary:hover { background: var(--primary-light); transform: translateY(-2px); box-shadow: 0 8px 25px rgba(123,46,62,0.3); }
 
 .btn-outline {
   display: inline-block;
@@ -182,25 +181,8 @@ Logo + links
 }
 .btn-checkout:hover { background: var(--primary-light); }
 
-/* ── SALE BANNER ──
-.sale-banner {
-  background: var(--primary);
-  color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  gap: 20px; padding: 16px 20px;
-  font-size: 14px; letter-spacing: 1px;
-} */
 
-/* .sale-banner-btn {
-  background: #fff; color: var(--primary);
-  padding: 6px 20px; border-radius: 30px;
-  font-size: 12px; font-weight: 700;
-  letter-spacing: 1px; text-transform: uppercase;
-  transition: all 0.3s;
-}
-.sale-banner-btn:hover { background: var(--pink); } */
-
-/* ── HERO ── */
+/* ── HERO ─ */
 .hero {
   height: 92vh; min-height: 600px;
   background-size: cover; background-position: center;
@@ -209,38 +191,39 @@ Logo + links
   animation: fadeIn 1s ease;
 }
 
-.hero-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.1) 100%);
-  display: flex; flex-direction: column;
-  align-items: flex-start; justify-content: center;
-  padding: 0 10%;
+.hero-overlay{
+position:absolute;
+inset:0;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:flex-start;
+padding:0 10%;
+
+background:
+linear-gradient(
+90deg,
+rgba(0,0,0,.72) 0%,
+rgba(0,0,0,.35) 45%,
+rgba(0,0,0,.15) 100%
+);
 }
 
-/* HERO */
-.hero-overlay{
-  background:
-  linear-gradient(
-      90deg,
-      rgba(0,0,0,.72) 0%,
-      rgba(0,0,0,.35) 45%,
-      rgba(0,0,0,.15) 100%
-  );
-}
+
 
 /* Hero text */
 .hero-overlay h1{
   font-size: clamp(65px,8vw,120px);
   line-height: .9;
   letter-spacing:-2px;
-  .hero-sub{
-  color: var(--gold);
-}}
-.hero-sub {
-  font-size: 11px; letter-spacing: 5px; text-transform: uppercase;
-  color: var(--pink); margin-bottom: 20px;
-  animation: fadeInUp 1s ease 0.1s both;
-} */
+}
+.hero-sub{
+  font-size:11px;
+  letter-spacing:5px;
+  text-transform:uppercase;
+  color:var(--gold);
+  margin-bottom:20px;
+}
 
 .hero-overlay h1 {
   font-size: clamp(56px, 8vw, 110px);
@@ -856,21 +839,10 @@ font-weight:600;
 }
 
 details p,
-details ul{
-margin-top:10px;
-}
-/* =========================
-  GLOBAL RESET
-========================= */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+details ul {
+  margin-top: 10px;
 }
 
-body {
-  font-family: Arial, sans-serif;
-}
 
 /* =========================
   WHATSAPP FLOAT BUTTON

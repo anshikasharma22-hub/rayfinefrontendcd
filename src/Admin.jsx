@@ -54,7 +54,7 @@
     const deleteProduct = (id) => {
         if (!window.confirm("wanna delete?")) return;
     
-fetch("https://rayfinesite-3.onrender.com/api/products/${id}", { method: "DELETE" })
+fetch(`https://rayfinesite-3.onrender.com/api/products/${id}`, { method: "DELETE" })
         .then(r => r.json())
         .then(d => { if (d.success) setProducts(prev => prev.filter(p => p._id !== id)); });
     };

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -14,7 +14,7 @@ const handleLogin = async () => {
 
         try {
             const res = await fetch(
-                "http://127.0.0.1:5000/api/auth/login",
+                "https://rayfinesite-3.onrender.com/api/auth/login",
                 {
                     method: "POST",
                     headers: {

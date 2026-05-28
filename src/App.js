@@ -582,7 +582,8 @@ if (!data || !data.data) return;
         .catch(err => console.log(err));
 
 }, []);
-    const allProducts = [...FEATURED, ...products];
+    // const allProducts = [...FEATURED, ...products];
+    const allProducts = products.length > 0 ? products : FEATURED;
     console.log("products:", products.length);
 console.log("allProducts:", allProducts.length);
 console.log("category:", category);
