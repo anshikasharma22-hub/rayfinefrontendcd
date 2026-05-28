@@ -4,143 +4,9 @@ import "./App.css";
 import Login from "./login";
 import Admin from "./Admin";
 import Chatbot from "./Chatbot";
-
-    const FEATURED = [
-    {
-        id: 1, name: "Silver Palm Beaded Anklets", price: 330, originalPrice: 450, category: "Anklet",
-        inStock: true,
-        image: "https://rayfineornates.com/wp-content/uploads/2021/07/1-scaled-e1625215263636-300x300.jpg",
-        description: "Elegant silver anklets featuring delicate bead detailing. Handcrafted by skilled artisans in Jaipur, these anklets add a touch of sophistication to any outfit. Perfect for both casual and festive occasions.",
-        variants: ["Silver", "Oxidised Silver", "Gold Plated"],
-        material: "925 Sterling Silver", careInstructions: "Keep away from water and perfumes. Store in a dry airtight pouch."
-    },
-    {
-        id: 2, name: "Aalya Ring", price: 1326, originalPrice: 1600, category: "Ring",
-        inStock: true,
-        image: "https://rayfineornates.com/wp-content/uploads/2021/07/10a-300x300.jpg",
-        description: "The Aalya Ring is a stunning piece featuring intricate goldwork and semi-precious stone settings. A timeless design that transitions beautifully from day to evening wear.",
-        variants: ["Rose Gold", "Yellow Gold", "Silver"],
-        material: "Gold Plated Brass with Semi-Precious Stones", careInstructions: "Avoid contact with chemicals. Clean gently with a soft cloth."
-    },
-    {
-        id: 3, name: "Baguette Bracelet", price: 1570, originalPrice: null, category: "Bracelet",
-        inStock: true,
-        image: "https://rayfineornates.com/wp-content/uploads/2021/08/2-1-300x300.jpg",
-        description: "A sleek and modern bracelet featuring baguette-cut stones set in a polished band. This contemporary piece makes a bold statement while remaining elegantly understated.",
-        variants: ["Gold", "Rose Gold", "Silver"],
-        material: "Gold Plated with Crystal Baguettes", careInstructions: "Store separately to avoid scratching. Keep away from moisture."
-    },
-    {
-        id: 4, name: "Isla Mini Hoop", price: 1025, originalPrice: 1200, category: "Earring",
-        inStock: true,
-        image: "https://rayfineornates.com/wp-content/uploads/2021/06/3A-1-scaled-1-300x300.jpg",
-        description: "Delicate mini hoop earrings with a subtle twist design. The Isla Mini Hoops are perfect everyday earrings that add a touch of effortless style to any look.",
-        variants: ["Gold", "Rose Gold", "Silver"],
-        material: "18K Gold Plated Sterling Silver", careInstructions: "Remove before sleeping or bathing. Store in provided pouch."
-    },
-    {
-        id: 5, name: "Torso Oval Earring", price: 1550, originalPrice: null, category: "Earring",
-        inStock: true,
-        image: "https://rayfineornates.com/wp-content/uploads/2021/06/2c-scaled-e1619944411396-300x300.jpg",
-        description: "Statement oval drop earrings with an architectural silhouette. The Torso Oval Earrings combine bold form with elegant finish, making them perfect for special occasions.",
-        variants: ["Gold", "Oxidised Gold", "Silver"],
-        material: "Brass with Gold Polish", careInstructions: "Handle with care. Avoid perfume contact. Store in box."
-    },
-    {
-        id: 6, name: "Mia Stud", price: 2750, originalPrice: 3200, category: "Earring",
-        inStock: true,
-        image: "https://rayfineornates.com/wp-content/uploads/2021/07/spot-shop-1-300x285.jpg",
-        description: "The Mia Stud features a stunning floral motif encrusted with sparkling stones. These sophisticated studs are ideal for weddings, parties, and festive celebrations.",
-        variants: ["Gold with White Stones", "Rose Gold with Pink Stones", "Silver with Clear Stones"],
-        material: "Gold Plated with Cubic Zirconia", careInstructions: "Clean with soft dry cloth. Store in jewelry box away from sunlight."
-    },
-    {
-        id: 7, name: "Madonna in Green", price: 1777, originalPrice: null, category: "Earring",
-        inStock: false,
-        image: "https://rayfineornates.com/wp-content/uploads/2021/08/3a-1-300x300.jpg",
-        description: "Inspired by the lush greens of nature, these earrings feature vibrant green stones in an ornate gold setting. A truly unique piece that celebrates the beauty of natural gemstones.",
-        variants: ["Green Onyx", "Emerald Stone", "Turquoise"],
-        material: "Gold Plated with Natural Green Stones", careInstructions: "Natural stones are delicate. Keep away from water and harsh chemicals."
-    },
-    {
-        id: 8, name: "Cleo", price: 1350, originalPrice: 1600, category: "Earring",
-        inStock: true,
-        image: "https://rayfineornates.com/wp-content/uploads/2021/06/2-copy-4-scaled-e1620057018882-295x300.jpg",
-        description: "Inspired by ancient Egyptian elegance, the Cleo earrings feature geometric patterns and intricate detailing. A bold yet refined choice for the modern woman.",
-        variants: ["Gold", "Antique Gold", "Rose Gold"],
-        material: "Gold Plated Brass with Enamel", careInstructions: "Enamel is delicate. Avoid scratching. Store carefully."
-    },
-    {
-        id: 9, name: "Sage Polki Stud", price: 1513, originalPrice: null, category: "Earring",
-        inStock: true,
-        image: "https://rayfineornates.com/wp-content/uploads/2021/08/3-300x300.jpg",
-        description: "Traditional Polki work meets contemporary design in the Sage Stud. These earrings feature uncut diamond-style stones set in a gold frame, perfect for ethnic and fusion outfits.",
-        variants: ["Gold Polki", "Silver Polki", "Rose Gold Polki"],
-        material: "Gold Plated with Polki Stones", careInstructions: "Polki stones require gentle care. Avoid water and chemicals."
-    },
-    {
-        id: 10, name: "Aventurine Bracelet", price: 1025, originalPrice: 1300, category: "Bracelet",
-        inStock: true,
-        image: "https://rayfineornates.com/wp-content/uploads/2021/07/15a-300x300.jpg",
-        description: "The Aventurine Bracelet features genuine aventurine stones known for their shimmering green hue. Aventurine is believed to bring luck and prosperity, making this a meaningful gift.",
-        variants: ["Green Aventurine", "Blue Aventurine", "Peach Aventurine"],
-        material: "Natural Aventurine with Gold Plated Clasp", careInstructions: "Natural gemstones require gentle care. Avoid prolonged water exposure."
-    },
-    {
-        id: 11, name: "Fitore Stud", price: 2100, originalPrice: null, category: "Earring",
-        inStock: true,
-        image: "https://rayfineornates.com/wp-content/uploads/2022/05/DSC00406-300x300.jpg",
-        description: "The Fitore Stud is a celebration of fine craftsmanship. Featuring layered petals of metal with stone accents, these studs are versatile enough for both office wear and evening events.",
-        variants: ["Gold", "Rose Gold", "Silver"],
-        material: "Gold Plated Sterling Silver with Semi-Precious Stones", careInstructions: "Remove before exercising. Store in soft pouch."
-    },
-    {
-        id: 12, name: "Hermosa Earring", price: 1770, originalPrice: 2000, category: "Earring",
-        inStock: false,
-        image: "https://rayfineornates.com/wp-content/uploads/2022/05/16-263x300.jpg",
-        description: "Hermosa, meaning beautiful in Spanish, perfectly describes these elegant drop earrings. Featuring cascading stone embellishments, they add instant glamour to any ensemble.",
-        variants: ["Gold with Crystal", "Rose Gold with Pearl", "Silver with Moonstone"],
-        material: "Gold Plated with Crystal and Pearl Accents", careInstructions: "Pearls are delicate. Avoid perfume and water contact."
-    },
-    {
-        id: 13, name: "Sukayanah Dangler", price: 2500, originalPrice: null, category: "Earring",
-        inStock: true,
-        image: "https://rayfineornates.com/wp-content/uploads/2022/05/1a-300x300.jpg",
-        description: "The Sukayanah Dangler draws inspiration from royal Rajasthani jewelry traditions. These long danglers feature intricate filigree work and colorful stone accents that sway gracefully.",
-        variants: ["Gold Multicolor", "Gold Red & Green", "Antique Silver"],
-        material: "Gold Plated Brass with Meenakari Work", careInstructions: "Meenakari enamel is delicate. Handle carefully. Avoid drops."
-    },
-    {
-        id: 14, name: "Marceline Earring", price: 1670, originalPrice: 1900, category: "Earring",
-        inStock: true,
-        image: "https://rayfineornates.com/wp-content/uploads/2022/05/13-300x300.jpg",
-        description: "Modern and minimalist, the Marceline Earring features clean geometric lines with subtle stone detailing. Perfect for the contemporary woman who appreciates understated elegance.",
-        variants: ["Gold", "Rose Gold", "Silver"],
-        material: "18K Gold Plated with Crystal Accents", careInstructions: "Clean with dry cloth. Store in jewelry pouch."
-    },
-    {
-        id: 15, name: "Eloise Necklace Set", price: 2780, originalPrice: null, category: "Necklace",
-        inStock: true,
-        image: "https://rayfineornates.com/wp-content/uploads/2022/04/DSC08595-1-300x300.jpg",
-        description: "The Eloise Necklace Set is a complete jewelry ensemble featuring a statement necklace with matching earrings. Adorned with layered stone settings, this set is ideal for bridal and festive occasions.",
-        variants: ["Gold with White Stones", "Rose Gold with Pink Stones", "Antique Gold with Pearls"],
-        material: "Gold Plated Brass with CZ and Pearl", careInstructions: "Store set together in provided box. Avoid moisture and perfume."
-    },
-    {
-        id: 16, name: "Arbre Silver Stud", price: 1290, originalPrice: 1500, category: "Earring",
-        inStock: true,
-        image: "https://rayfineornates.com/wp-content/uploads/2022/04/DSC00383-copy-300x300.jpg",
-        description: "Inspired by the graceful branches of a tree, the Arbre Silver Stud features a delicate tree-of-life motif in pure silver. A meaningful piece that symbolizes growth, strength, and connection.",
-        variants: ["Pure Silver", "Oxidised Silver", "Gold Plated Silver"],
-        material: "925 Sterling Silver", careInstructions: "Silver may tarnish. Polish with silver cloth. Store in airtight pouch."
-    },
-    ];
-
-    const CATEGORIES = ["All", "Earring", "Necklace", "Bracelet", "Ring", "Anklet"];
-
+const FEATURED = [];
+    const CATEGORIES = ["All", "Earrings", "Necklace", "Bracelet", "Ring", "Anklet"];
     const WALLPAPERS = [
-
-        
 "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1600&q=80",
 "https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&w=1600&q=80",
 "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=1600&q=80"
@@ -557,32 +423,22 @@ import Chatbot from "./Chatbot";
     const [products, setProducts] = useState([]);
     const [showInStock, setShowInStock] = useState(false);
 
-        useEffect(() => {
-    fetch("https://rayfinesite-3.onrender.com/api/products")
-        .then(res => res.json())
-        .then(data => {
 
-            console.log("Total from API:", data.data.length);
-if (!data || !data.data) return;
-            const cleanedProducts = data.data.map((item, i) => ({
-                id: item._id || i,
-                name: item.name || "Unnamed Product",
-                price: Number(item.price) || 0,
-                image: item.image || "https://placehold.co/300x300?text=Jewellery",
-                description: item.description || "",
-                inStock: item.inStock !== false,
-                category: item.category || "Other",
-                variants: item.variants || []
-            }));
+useEffect(() => {
+        fetch("https://rayfinesite-3.onrender.com/api/products")
+    .then(res => res.json())
+    .then(data => {
+        console.log("API RESPONSE:", data);
 
-            console.log("After cleaning:", cleanedProducts.length);
+        const list = Array.isArray(data?.data) ? data.data : [];
 
-            setProducts(cleanedProducts);
-        })
-        .catch(err => console.log(err));
+        console.log("LIST:", list);
 
-}, []);
-    // const allProducts = [...FEATURED, ...products];
+        setProducts(list);
+    })
+    .catch(console.error);
+    }, []);
+
     const allProducts = products.length > 0 ? products : FEATURED;
     console.log("products:", products.length);
 console.log("allProducts:", allProducts.length);
