@@ -362,25 +362,36 @@ const FEATURED = [];
     const [featured, setFeatured] = useState([]);
 
     useEffect(() => {
-        const t = setInterval(() => setBgIndex(p => (p + 1) % WALLPAPERS.length), 5000);
-        return () => clearInterval(t);
-    }, []);
-
-    useEffect(() => {
     fetch("https://rayfinesite-3.onrender.com/api/products")
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            const fixed = data.data.slice(0, 8).map(p => ({
-                ...p,
-                image: p.image?.split(",")[0].trim()
+        .then(res => res.json())
+        .then(data => {
+            console.log("API RESPONSE:", data);
+
+            const list = Array.isArray(data?.data)
+                ? data.data
+                : [];
+
+            const fixedProducts = list.map(product => ({
+                ...product,
+                image: product.image
+                    ?.replace(/^http:\/\//i, "https://")
+                    ?.split(",")[0]
+                    ?.trim()
             }));
-            setFeatured(fixed);
-        }
-    })
-    .catch(console.error);
+
+            console.log("FIXED PRODUCTS:", fixedProducts);
+
+            setProducts(fixedProducts);
+            setLoading(false);
+        })
+        .catch(err => {
+            console.error("FETCH ERROR:", err);
+            setLoading(false);
+        });
 }, []);
 
+setProducts(fixedProducts);
+setLoading(false);
     return (
         <>
         <section className="hero" style={{ backgroundImage: `url(${WALLPAPERS[bgIndex]})` }}>
@@ -478,11 +489,12 @@ const FEATURED = [];
 
                 // FIX IMAGE URLS
                 const fixedProducts = list.map(product => ({
-                    ...product,
-                    image: product.image?.startsWith("http")
-                        ? product.image
-                        : `https://rayfinesite-3.onrender.com${product.image}`
-                }));
+    ...product,
+    image: product.image
+        ?.replace(/^http:\/\//i, "https://")
+        ?.split(",")[0]
+        ?.trim()
+}));
 
                 console.log("FIXED PRODUCTS:", fixedProducts);
 
