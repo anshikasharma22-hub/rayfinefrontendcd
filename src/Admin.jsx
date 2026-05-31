@@ -4,7 +4,8 @@
 
     function Admin() {
     const [tab, setTab] = useState("products");
-    const [form, setForm] = useState({ name: "", price: "", image: "", description: "" });
+
+    const [form, setForm] = useState({ name: "", price: "", image: "", description: "", category: "Earrings" });
     const [products, setProducts] = useState([]);
     const [orders, setOrders] = useState([]);
     const [search, setSearch] = useState("");
@@ -40,17 +41,20 @@
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
     const addProduct = () => {
-        if (!form.name || !form.price || !form.image) { alert("Name, price aur image dalo."); return; }
-        fetch("https://rayfinesite-3.onrender.com/api/products", {
+    if (!form.name || !form.price || !form.image) { alert("Name, price and image are required."); return; }
+    const token = localStorage.getItem("admin_token"); // ADD THIS
+    fetch("https://rayfinesite-3.onrender.com/api/products", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` // ADD THIS
+        },
         body: JSON.stringify({ ...form, price: Number(form.price) })
-        }).then(r => r.json()).then(d => {
+    }).then(r => r.json()).then(d => {
         if (d.success) { alert("✅ Product Added!"); setForm({ name: "", price: "", image: "", description: "" }); fetchProducts(); }
         else alert("❌ " + (d.error || "Error"));
-        }).catch(() => alert("not connected yet"));
-    };
-
+    }).catch(() => alert("not connected yet"));
+};
     const deleteProduct = (id) => {
         if (!window.confirm("wanna delete?")) return;
     

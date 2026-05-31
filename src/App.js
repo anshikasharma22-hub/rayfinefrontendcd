@@ -5,7 +5,7 @@ import Login from "./login";
 import Admin from "./Admin";
 import Chatbot from "./Chatbot";
 const FEATURED = [];
-    const CATEGORIES = ["All", "Earrings", "Necklace", "Bracelet", "Ring", "Anklet"];
+    const CATEGORIES = ["All", "Earring", "Necklace", "Bracelet", "Ring", "Anklet"];
     const WALLPAPERS = [
 "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1600&q=80",
 "https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&w=1600&q=80",
@@ -21,15 +21,38 @@ const FEATURED = [];
     function ProductModal({ product, onClose, cart, setCart, wishlist, setWishlist }) {
     const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0] || "");
     const inWishlist = wishlist.find(w => w.id === product.id);
-    const inCart = cart.find(c => c.id === product.id);
+    const inCart = cart.find(
+    c =>
+        c.id === product.id &&
+        c.selectedVariant === selectedVariant
+);
     const discount = product.originalPrice ? Math.round((1 - product.price / product.originalPrice) * 100) : null;
 
     const addToCart = () => {
-        if (!product.inStock) return;
-        if (inCart) setCart(cart.map(c => c.id === product.id ? { ...c, quantity: c.quantity + 1 } : c));
-        else setCart([...cart, { ...product, quantity: 1, selectedVariant }]);
-        onClose();
-    };
+    if (!product.inStock) return;
+
+    if (inCart) {
+        setCart(
+            cart.map(c =>
+                c.id === product.id &&
+                c.selectedVariant === selectedVariant
+                    ? { ...c, quantity: c.quantity + 1 }
+                    : c
+            )
+        );
+    } else {
+        setCart([
+            ...cart,
+            {
+                ...product,
+                quantity: 1,
+                selectedVariant
+            }
+        ]);
+    }
+
+    onClose();
+};
 
     const toggleWishlist = () => {
         if (inWishlist) setWishlist(wishlist.filter(w => w.id !== product.id));
@@ -330,21 +353,40 @@ const FEATURED = [];
     );
     }
 
-    // ── Home Page ──
+        // ── Home Page ──
+        
+
+
     function Home({ cart, setCart, wishlist, setWishlist }) {
     const [bgIndex, setBgIndex] = useState(0);
+    const [featured, setFeatured] = useState([]);
+
     useEffect(() => {
         const t = setInterval(() => setBgIndex(p => (p + 1) % WALLPAPERS.length), 5000);
         return () => clearInterval(t);
     }, []);
 
+    useEffect(() => {
+    fetch("https://rayfinesite-3.onrender.com/api/products")
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const fixed = data.data.slice(0, 8).map(p => ({
+                ...p,
+                image: p.image?.split(",")[0].trim()
+            }));
+            setFeatured(fixed);
+        }
+    })
+    .catch(console.error);
+}, []);
+
     return (
         <>
-        { <section className="hero" style={{ backgroundImage: `url(${WALLPAPERS[bgIndex]})` }}>
+        <section className="hero" style={{ backgroundImage: `url(${WALLPAPERS[bgIndex]})` }}>
             <div className="hero-overlay">
             <p className="hero-sub">New Collection</p>
             <h1>Elegance<br />Redefined</h1>
-            {/* <p className="hero-desc">Luxury fashion jewellery crafted for the modern woman</p> */}
             <div className="hero-btns">
                 <Link to="/shop" className="btn-primary">Shop Now</Link>
                 <Link to="/about" className="btn-outline">Our Story</Link>
@@ -356,7 +398,6 @@ const FEATURED = [];
             ))}
             </div>
         </section>
-            }
 
         <div className="sale-banner">
             <span>🔥 SALE IS LIVE — Use Code <strong>GIFT15</strong> for Extra 15% Off!</span>
@@ -373,8 +414,7 @@ const FEATURED = [];
                 { name: "Rings", img: "https://rayfineornates.com/wp-content/uploads/2021/07/10a-300x300.jpg", path: "/shop?cat=Ring" },
             ].map(cat => (
                 <Link to={cat.path} key={cat.name} className="category-card">
-                <></>
-            <img src={cat.img} alt={cat.name} />
+                <img src={cat.img} alt={cat.name} />
                 <div className="category-overlay"><span>{cat.name}</span></div>
                 </Link>
             ))}
@@ -384,7 +424,7 @@ const FEATURED = [];
         <section className="featured-section">
             <h2 className="section-title">Trending Now</h2>
             <div className="products-grid">
-            {FEATURED.slice(0, 8).map(p => (
+            {featured.map(p => (
                 <ProductCard key={p.id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
             ))}
             </div>
@@ -413,89 +453,244 @@ const FEATURED = [];
         </>
     );
     }
-
-    // ── Shop Page ──
     function Shop({ cart, setCart, wishlist, setWishlist }) {
-    const [searchParams] = useSearchParams();
-    const [category, setCategory] = useState(searchParams.get("cat") || "All");
-    const [search, setSearch] = useState("");
-    const [sort, setSort] = useState("default");
-    const [products, setProducts] = useState([]);
-    const [showInStock, setShowInStock] = useState(false);
+        const [searchParams] = useSearchParams();
 
+        const [category, setCategory] = useState(
+            searchParams.get("cat") || "All"
+        );
 
-useEffect(() => {
-        fetch("https://rayfinesite-3.onrender.com/api/products")
-    .then(res => res.json())
-    .then(data => {
-        console.log("API RESPONSE:", data);
+        const [search, setSearch] = useState("");
+        const [sort, setSort] = useState("default");
+        const [products, setProducts] = useState([]);
+        const [showInStock, setShowInStock] = useState(false);
+        const [loading, setLoading] = useState(true);
 
-        const list = Array.isArray(data?.data) ? data.data : [];
+        useEffect(() => {
+            fetch("https://rayfinesite-3.onrender.com/api/products")
+                .then(res => res.json())
+                .then(data => {
+                    console.log("API RESPONSE:", data);
 
-        console.log("LIST:", list);
+                const list = Array.isArray(data?.data)
+                    ? data.data
+                    : [];
 
-        setProducts(list);
-    })
-    .catch(console.error);
+                // FIX IMAGE URLS
+                const fixedProducts = list.map(product => ({
+                    ...product,
+                    image: product.image?.startsWith("http")
+                        ? product.image
+                        : `https://rayfinesite-3.onrender.com${product.image}`
+                }));
+
+                console.log("FIXED PRODUCTS:", fixedProducts);
+
+                setProducts(fixedProducts);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error("FETCH ERROR:", err);
+                setLoading(false);
+            });
     }, []);
 
-    const allProducts = products.length > 0 ? products : FEATURED;
-    console.log("products:", products.length);
-console.log("allProducts:", allProducts.length);
-console.log("category:", category);
+    const allProducts = products;
 
     let filtered = allProducts.filter(p => {
-        const matchCat = category === "All" || category === "sale"
-        ? (category === "sale" ? p.originalPrice : true)
-        : p.category === category;
-            const matchSearch = (p.name || "")
-    .toLowerCase()
-    .includes(search.toLowerCase());
-        const matchStock = showInStock ? p.inStock : true;
+
+        // CATEGORY MATCH
+        const matchCat =
+            category === "All"
+                ? true
+                : category === "sale"
+                ? p.originalPrice
+                : (p.category || "")
+                        .toLowerCase()
+                        .trim() ===
+                    category.toLowerCase().trim();
+
+        // SEARCH MATCH
+        const matchSearch = (p.name || "")
+            .toLowerCase()
+            .includes(search.toLowerCase());
+
+        // STOCK MATCH
+        const matchStock = showInStock
+            ? p.inStock
+            : true;
+
         return matchCat && matchSearch && matchStock;
     });
 
-    if (sort === "low") filtered = [...filtered].sort((a, b) => a.price - b.price);
-    if (sort === "high") filtered = [...filtered].sort((a, b) => b.price - a.price);
+    // SORTING
+    if (sort === "low") {
+        filtered = [...filtered].sort(
+            (a, b) => a.price - b.price
+        );
+    }
+
+    if (sort === "high") {
+        filtered = [...filtered].sort(
+            (a, b) => b.price - a.price
+        );
+    }
 
     return (
         <div className="shop-page">
-        <div className="shop-hero">
-            <h1>Our Collection</h1>
-            <p>Discover timeless pieces crafted with love</p>
-        </div>
-        <div className="shop-controls">
-            <input className="shop-search" placeholder="🔍 Search jewellery..." value={search} onChange={e => setSearch(e.target.value)} />
-            <select className="shop-sort" value={sort} onChange={e => setSort(e.target.value)}>
-            <option value="default">Sort: Featured</option>
-            <option value="low">Price: Low to High</option>
-            <option value="high">Price: High to Low</option>
-            </select>
-            <button onClick={() => setShowInStock(!showInStock)} style={{
-            padding: "10px 16px", borderRadius: "8px", border: "none", cursor: "pointer",
-            background: showInStock ? "#7B2E3E" : "#f0ebe6", color: showInStock ? "#fff" : "#333", fontWeight: 600, fontSize: "13px"
-            }}>
-            {showInStock ? "✓ In Stock Only" : "All Products"}
-            </button>
-        </div>
-        <div className="category-tabs">
-            {[...CATEGORIES, "Sale 🔥"].map(cat => (
-            <button key={cat}
-                className={`cat-tab ${(cat === "Sale 🔥" ? category === "sale" : category === cat) ? "active sale-tab" : ""}`}
-                onClick={() => setCategory(cat === "Sale 🔥" ? "sale" : cat)}>
-                {cat}
-            </button>
-            ))}
-        </div>
-        <div className="products-grid" style={{ padding: "0 40px 80px" }}>
-            {filtered.map(p => (
-            <ProductCard key={p.id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
-            ))}
-        </div>
-        {filtered.length === 0 && <p style={{ textAlign: "center", color: "#999", padding: "60px" }}>No products found.</p>}
+
+            {/* HERO */}
+            <div className="shop-hero">
+                <h1>Our Collection</h1>
+                <p>
+                    Discover timeless pieces crafted
+                    with love
+                </p>
+            </div>
+
+            {/* CONTROLS */}
+            <div className="shop-controls">
+
+                <input
+                    className="shop-search"
+                    placeholder="🔍 Search jewellery..."
+                    value={search}
+                    onChange={e =>
+                        setSearch(e.target.value)
+                    }
+                />
+
+                <select
+                    className="shop-sort"
+                    value={sort}
+                    onChange={e =>
+                        setSort(e.target.value)
+                    }
+                >
+                    <option value="default">
+                        Sort: Featured
+                    </option>
+
+                    <option value="low">
+                        Price: Low to High
+                    </option>
+
+                    <option value="high">
+                        Price: High to Low
+                    </option>
+                </select>
+
+                <button
+                    onClick={() =>
+                        setShowInStock(!showInStock)
+                    }
+                    style={{
+                        padding: "10px 16px",
+                        borderRadius: "8px",
+                        border: "none",
+                        cursor: "pointer",
+                        background: showInStock
+                            ? "#7B2E3E"
+                            : "#f0ebe6",
+                        color: showInStock
+                            ? "#fff"
+                            : "#333",
+                        fontWeight: 600,
+                        fontSize: "13px"
+                    }}
+                >
+                    {showInStock
+                        ? "✓ In Stock Only"
+                        : "All Products"}
+                </button>
+            </div>
+
+            {/* CATEGORY TABS */}
+            <div className="category-tabs">
+
+                {[
+                    "All",
+                    "Earring",
+                    "Necklace",
+                    "Bracelet",
+                    "Ring",
+                    "Anklet",
+                    "Sale 🔥"
+                ].map(cat => (
+
+                    <button
+                        key={cat}
+                        className={`cat-tab ${
+                            (
+                                cat === "Sale 🔥"
+                                    ? category === "sale"
+                                    : category === cat
+                            )
+                                ? "active sale-tab"
+                                : ""
+                        }`}
+                        onClick={() =>
+                            setCategory(
+                                cat === "Sale 🔥"
+                                    ? "sale"
+                                    : cat
+                            )
+                        }
+                    >
+                        {cat}
+                    </button>
+                ))}
+            </div>
+
+            {/* LOADING */}
+            {loading && (
+                <p
+                    style={{
+                        textAlign: "center",
+                        padding: "60px",
+                        color: "#777"
+                    }}
+                >
+                    Loading products...
+                </p>
+            )}
+
+            {/* PRODUCTS */}
+            {!loading && (
+                <div
+                    className="products-grid"
+                    style={{
+                        padding: "0 40px 80px"
+                    }}
+                >
+                    {filtered.map(p => (
+                        <ProductCard
+                            key={p._id || p.id}
+                            product={p}
+                            cart={cart}
+                            setCart={setCart}
+                            wishlist={wishlist}
+                            setWishlist={setWishlist}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {/* EMPTY */}
+            {!loading && filtered.length === 0 && (
+                <p
+                    style={{
+                        textAlign: "center",
+                        color: "#999",
+                        padding: "60px"
+                    }}
+                >
+                    No products found.
+                </p>
+            )}
         </div>
     );
-    }
+}
 
     // ── Wishlist Page ──
     function Wishlist({ wishlist, setWishlist, cart, setCart }) {
