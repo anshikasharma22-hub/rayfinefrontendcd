@@ -357,41 +357,73 @@ const FEATURED = [];
         
 
 
-    function Home({ cart, setCart, wishlist, setWishlist }) {
+//     function Home({ cart, setCart, wishlist, setWishlist }) {
+//     const [bgIndex, setBgIndex] = useState(0);
+//     const [featured, setFeatured] = useState([]);
+
+//     useEffect(() => {
+//     fetch("https://rayfinesite-3.onrender.com/api/products")
+//         .then(res => res.json())
+//         .then(data => {
+//             console.log("API RESPONSE:", data);
+
+//             const list = Array.isArray(data?.data)
+//                 ? data.data
+//                 : [];
+
+//             const fixedProducts = list.map(product => ({
+//                 ...product,
+//                 image: product.image
+//                     ?.replace(/^http:\/\//i, "https://")
+//                     ?.split(",")[0]
+//                     ?.trim()
+//             }));
+
+//             console.log("FIXED PRODUCTS:", fixedProducts);
+
+//             setProducts(fixedProducts);
+//             setLoading(false);
+//         })
+//         .catch(err => {
+//             console.error("FETCH ERROR:", err);
+//             setLoading(false);
+//         });
+// }, []);
+function Home({ cart, setCart, wishlist, setWishlist }) {
     const [bgIndex, setBgIndex] = useState(0);
     const [featured, setFeatured] = useState([]);
 
     useEffect(() => {
-    fetch("https://rayfinesite-3.onrender.com/api/products")
-        .then(res => res.json())
-        .then(data => {
-            console.log("API RESPONSE:", data);
+        const t = setInterval(
+            () => setBgIndex(p => (p + 1) % WALLPAPERS.length),
+            5000
+        );
+        return () => clearInterval(t);
+    }, []);
 
-            const list = Array.isArray(data?.data)
-                ? data.data
-                : [];
+    useEffect(() => {
+        fetch("https://rayfinesite-3.onrender.com/api/products")
+            .then(res => res.json())
+            .then(data => {
+                const list = Array.isArray(data?.data)
+                    ? data.data
+                    : [];
 
-            const fixedProducts = list.map(product => ({
-                ...product,
-                image: product.image
-                    ?.replace(/^http:\/\//i, "https://")
-                    ?.split(",")[0]
-                    ?.trim()
-            }));
+                const fixedProducts = list.map(product => ({
+                    ...product,
+                    image: product.image
+                        ?.replace(/^http:\/\//i, "https://")
+                        ?.split(",")[0]
+                        ?.trim()
+                }));
 
-            console.log("FIXED PRODUCTS:", fixedProducts);
+                setFeatured(fixedProducts.slice(0, 8));
+            })
+            .catch(err => {
+                console.error(err);
+            });
+    }, []);
 
-            setProducts(fixedProducts);
-            setLoading(false);
-        })
-        .catch(err => {
-            console.error("FETCH ERROR:", err);
-            setLoading(false);
-        });
-}, []);
-
-setProducts(fixedProducts);
-setLoading(false);
     return (
         <>
         <section className="hero" style={{ backgroundImage: `url(${WALLPAPERS[bgIndex]})` }}>
