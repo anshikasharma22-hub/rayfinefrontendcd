@@ -1006,3 +1006,150 @@ CHATBOT WINDOW
   font-style: italic;
   opacity: 0.6;
 }
+/* =============================================
+   MOBILE FIXES — Add karo App.css ke end mein
+   ============================================= */
+
+/* ── Category Images Fix (hotlink issue) ──
+   App.js mein images replace karo Unsplash se:
+   Earrings: https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=300&q=80
+   Necklaces: https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&q=80
+   Bracelets: https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=300&q=80
+   Rings:     https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=300&q=80
+   About img: https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=800&q=80
+*/
+
+/* ── Small phones (max 480px) ── */
+@media (max-width: 480px) {
+
+  /* Navbar */
+  .navbar { padding: 0 16px; height: 60px; }
+  .navbar-logo img { height: 38px !important; }
+
+  /* Hero */
+  .hero { height: 80vh; min-height: 480px; }
+  .hero-overlay { padding: 0 6%; }
+  .hero-overlay h1 { font-size: clamp(42px, 12vw, 72px); }
+  .hero-btns { flex-direction: column; gap: 10px; }
+  .hero-btns .btn-primary,
+  .hero-btns .btn-outline { width: 100%; text-align: center; padding: 13px 20px; }
+
+  /* Sale banner */
+  .sale-banner { padding: 12px 16px; font-size: 13px; }
+
+  /* Categories */
+  .categories-section { padding: 40px 16px; }
+  .categories-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .category-overlay span { font-size: 16px; }
+
+  /* Products */
+  .featured-section { padding: 40px 16px; }
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+    padding: 0 16px 40px !important;
+  }
+
+  /* Product card — compact on small screen */
+  .product-info { padding: 10px; }
+  .product-info h4 { font-size: 14px; }
+  .product-desc { display: none; } /* description hide karo — cluttered lagta hai */
+  .price-current { font-size: 13px; }
+  .btn-add-cart { font-size: 10px; padding: 8px; letter-spacing: 1px; }
+  .wishlist-btn { width: 30px; height: 30px; font-size: 13px; top: 8px; right: 8px; }
+  .sale-badge { font-size: 10px; padding: 3px 8px; top: 8px; left: 8px; }
+  .product-category-tag { display: none; }
+
+  /* Product Modal — full screen on mobile */
+  .product-modal-inner {
+    flex-direction: column !important;
+    border-radius: 16px !important;
+    max-height: 95vh !important;
+  }
+
+  /* Section titles */
+  .section-title { font-size: clamp(24px, 7vw, 36px); margin-bottom: 28px; }
+
+  /* Testimonials */
+  .testimonials-section { padding: 40px 16px; }
+  .testimonials-grid { grid-template-columns: 1fr; }
+  .testimonial-card { padding: 20px; }
+  .testimonial-text { font-size: 15px; }
+
+  /* Shop page */
+  .shop-hero { padding: 50px 20px 36px; }
+  .shop-controls { padding: 16px 16px 0; gap: 10px; }
+  .shop-search { font-size: 13px; padding: 10px 14px; }
+  .shop-sort { font-size: 13px; padding: 10px 14px; }
+  .category-tabs { padding: 12px 16px; gap: 6px; }
+  .cat-tab { padding: 6px 14px; font-size: 11px; }
+
+  /* Cart drawer */
+  .cart-drawer { width: 100% !important; right: -100%; }
+
+  /* About & Contact */
+  .about-grid { gap: 32px; padding: 32px 16px; }
+  .about-stats { grid-template-columns: repeat(2, 1fr); padding: 32px 16px; gap: 12px; }
+  .stat-box { padding: 20px 12px; }
+  .stat-box h3 { font-size: 28px; }
+  .contact-grid { padding: 32px 16px; gap: 32px; }
+
+  /* Footer */
+  .footer-grid { grid-template-columns: 1fr; padding: 32px 16px; gap: 24px; }
+  .footer-bottom { padding: 16px; font-size: 11px; }
+
+  /* Floating buttons */
+  .whatsapp-float { bottom: 16px; right: 16px; width: 50px; height: 50px; font-size: 22px; }
+  .chat-float-btn { bottom: 76px; right: 16px; width: 50px; height: 50px; font-size: 20px; }
+
+  /* Chatbot */
+  .chatbot-container { width: calc(100vw - 24px); right: 12px; bottom: 76px; }
+}
+
+/* ── Medium phones (481px – 768px) ── */
+@media (min-width: 481px) and (max-width: 768px) {
+
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
+
+  .hero-overlay h1 { font-size: clamp(48px, 10vw, 80px); }
+  .categories-grid { grid-template-columns: repeat(2, 1fr); }
+  .about-stats { grid-template-columns: repeat(2, 1fr); }
+  .chatbot-container { width: 320px; }
+}
+
+/* ── Product Modal mobile fix ── */
+@media (max-width: 600px) {
+
+  /* Modal image top-rounded, details bottom-rounded */
+  div[style*="border-radius: \"20px 0 0 20px\""],
+  .product-modal-img {
+    border-radius: 16px 16px 0 0 !important;
+    min-height: 240px !important;
+  }
+
+  /* Modal details padding */
+  div[style*="flex: \"1 1 300px\""] {
+    padding: 20px !important;
+  }
+
+  /* Modal close button easier to tap */
+  button[style*="float: \"right\""] {
+    font-size: 20px;
+    padding: 8px;
+  }
+}
+
+/* ── Touch targets — minimum 44px for all buttons ── */
+@media (max-width: 768px) {
+  button, .btn-primary, .btn-outline, .cat-tab, .nav-icon {
+    min-height: 44px;
+  }
+
+  /* Prevent text zoom on input focus (iOS) */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
