@@ -7,11 +7,10 @@ import Chatbot from "./Chatbot";
 const FEATURED = [];
     const CATEGORIES = ["All", "Earring", "Necklace", "Bracelet", "Ring", "Anklet"];
    const WALLPAPERS = [
- https://unsplash.com/s/photos/diamond-bracelet?utm_source=chatgpt.com,
-  https://unsplash.com/s/photos/gold-bracelet?utm_source=chatgpt.com,
-   https://unsplash.com/s/photos/indian-bangles?utm_source=chatgpt.com
+  "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1600&q=80",
+  "https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=1600&q=80",
+  "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=1600&q=80"
 ];
-
     const ANNOUNCEMENT_MESSAGES = [
     "🎁 Get Additional 15% Discount — Use Code GIFT15",
     "🚚 Free Express Delivery on All Orders",
