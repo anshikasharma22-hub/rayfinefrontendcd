@@ -6,12 +6,12 @@ import Admin from "./Admin";
 import Chatbot from "./Chatbot";
 const FEATURED = [];
     const CATEGORIES = ["All", "Earring", "Necklace", "Bracelet", "Ring", "Anklet"];
-    const WALLPAPERS = [
-"https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1600&q=80",
-"https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&w=1600&q=80",
-"https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=1600&q=80"
-    
-    ];
+   const WALLPAPERS = [
+  "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1600&q=80",
+  "/images/bracelet1.jpg",   // Image 1 (rose gold chain)
+  "/images/bracelet2.jpg",   // Image 2 (diamond bangle)
+];
+
     const ANNOUNCEMENT_MESSAGES = [
     "🎁 Get Additional 15% Discount — Use Code GIFT15",
     "🚚 Free Express Delivery on All Orders",
@@ -73,7 +73,7 @@ const FEATURED = [];
             {/* Image */}
             <div style={{ flex: "1 1 350px", position: "relative" }}>
             <img src={product.image} alt={product.name}
-                style={{ width: "100%", height: "100%", minHeight: "350px", objectFit: "cover", borderRadius: "20px 0 0 20px" }}
+                style={{ width: "100%", height: "100%", minHeight: "350px", objectFit: "cover", borderRadius: "20px 20px 0 0" }}
                 onError={e => { e.target.src = "https://placehold.co/400x400?text=Jewellery"; }} />
             {!product.inStock && (
                 <div style={{ position: "absolute", top: "16px", left: "16px", background: "#333", color: "#fff", padding: "6px 14px", borderRadius: "20px", fontSize: "13px", fontWeight: 700 }}>
@@ -451,10 +451,10 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
             <h2 className="section-title">Shop by Category</h2>
             <div className="categories-grid">
             {[
-                { name: "Earrings", img: "https://rayfineornates.com/wp-content/uploads/2021/06/3A-1-scaled-1-300x300.jpg", path: "/shop?cat=Earring" },
-                { name: "Necklaces", img: "https://rayfineornates.com/wp-content/uploads/2022/04/DSC08595-1-300x300.jpg", path: "/shop?cat=Necklace" },
-                { name: "Bracelets", img: "https://rayfineornates.com/wp-content/uploads/2021/08/2-1-300x300.jpg", path: "/shop?cat=Bracelet" },
-                { name: "Rings", img: "https://rayfineornates.com/wp-content/uploads/2021/07/10a-300x300.jpg", path: "/shop?cat=Ring" },
+                 { name: "Earrings", img: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=300&q=80", path: "/shop?cat=Earring" },
+{ name: "Necklaces", img: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&q=80", path: "/shop?cat=Necklace" },
+{ name: "Bracelets", img: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=300&q=80", path: "/shop?cat=Bracelet" },
+{ name: "Rings", img: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=300&q=80", path: "/shop?cat=Ring" },
             ].map(cat => (
                 <Link to={cat.path} key={cat.name} className="category-card">
                 <img src={cat.img} alt={cat.name} />
@@ -774,7 +774,7 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
             <p>Quality you can feel. Beauty you can see. Service you can trust. We stand behind every piece we create with our dedication to craftsmanship and customer satisfaction.</p>
             </div>
             <div className="about-image">
-            <img src="https://rayfineornates.com/wp-content/uploads/2021/10/shotshop_ray02.webp" alt="Ray Fine Ornates" />
+            <img src="https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=800&q=80" alt="Ray Fine Ornates" />
             </div>
         </div>
         <div className="about-stats">
