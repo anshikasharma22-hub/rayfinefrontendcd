@@ -120,7 +120,7 @@ img { display: block; }
   font-weight: 600;
   letter-spacing: 2.5px;
   text-transform: uppercase;
-  color: var(--primary) !important;
+  color: #F9CDC2 !important;
   transition: all 0.3s;
   position: relative;
   text-decoration: none;
