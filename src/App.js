@@ -416,69 +416,7 @@
 //                         ?.trim()
 //                 }));
 
-//                 setFeatured(fixedProducts.slice(0, 8));
-//             })
-//             .catch(err => {
-//                 console.error(err);
-//             });
-//     }, []);
-
-//     return (
-//         <>
-//         <section className="hero" style={{ backgroundImage: `url(${WALLPAPERS[bgIndex]})` }}>
-//             <div className="hero-overlay">
-//             <p className="hero-sub">New Collection</p>
-//             <h1>Elegance<br />Redefined</h1>
-//             <div className="hero-btns">
-//                 <Link to="/shop" className="btn-primary">Shop Now</Link>
-//                 <Link to="/about" className="btn-outline">Our Story</Link>
-//             </div>
-//             </div>
-//             <div className="hero-dots">
-//             {WALLPAPERS.map((_, i) => (
-//                 <span key={i} className={`dot ${i === bgIndex ? "active" : ""}`} onClick={() => setBgIndex(i)} />
-//             ))}
-//             </div>
-//         </section>
-
-//         <div className="sale-banner">
-//             <span>🔥 SALE IS LIVE — Use Code <strong>GIFT15</strong> for Extra 15% Off!</span>
-//             <Link to="/shop?cat=sale" className="sale-banner-btn">Shop Sale</Link>
-//         </div>
-
-//         <section className="categories-section">
-//             <h2 className="section-title">Shop by Category</h2>
-//             <div className="categories-grid">
-//             {[
-//                  { name: "Earrings", img: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=300&q=80", path: "/shop?cat=Earring" },
-// { name: "Necklaces", img: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&q=80", path: "/shop?cat=Necklace" },
-// { name: "Bracelets", img: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=300&q=80", path: "/shop?cat=Bracelet" },
-// { name: "Rings", img: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=300&q=80", path: "/shop?cat=Ring" },
-//             ].map(cat => (
-//                 <Link to={cat.path} key={cat.name} className="category-card">
-//                 <img src={cat.img} alt={cat.name} />
-//                 <div className="category-overlay"><span>{cat.name}</span></div>
-//                 </Link>
-//             ))}
-//             </div>
-//         </section>
-
-//         <section className="featured-section">
-//             <h2 className="section-title">Trending Now</h2>
-//             <div className="products-grid">
-//             {featured.map(p => (
-//                 <ProductCard key={p.id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
-//             ))}
-//             </div>
-//             <div style={{ textAlign: "center", marginTop: "40px" }}>
-//             <Link to="/shop" className="btn-primary">View All Products</Link>
-//             </div>
-//         </section>
-
-//         <section className="testimonials-section">
-//             <h2 className="section-title">What Our Customers Say</h2>
-//             <div className="testimonials-grid">
-//             {[
+//
 //                 { name: "Ms. Heena Gupta", text: "When it arrived, it was exactly as shown. So pretty. Very happy with my purchase!", product: "Katherine Bracelet" },
 //                 { name: "Ms. Bhavika Kakurlawala", text: "The earrings are awesome & the bracelet is so elegant and easy to wear! Both pieces are just lovely.", product: "Swarovski Pearl Bracelet" },
 //                 { name: "Ms. Tanya", text: "Found the most perfect gift! The moonstone was her sunshine stone. She was so happy.", product: "Multi Moonlight Bracelet" },
@@ -1061,10 +999,15 @@ import Chatbot from "./Chatbot";
 
 const CATEGORIES = ["All", "Earring", "Necklace", "Bracelet", "Ring", "Anklet"];
 
+// const WALLPAPERS = [
+//   "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1920&q=90",
+//   "https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=1920&q=90",
+//   "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=1920&q=90"
+// ];
 const WALLPAPERS = [
-  "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1920&q=90",
-  "https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=1920&q=90",
-  "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=1920&q=90"
+  "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1920&q=90",
+  "https://images.unsplash.com/photo-1573408301185-9519f94816cf?auto=format&fit=crop&w=1920&q=90",
+  "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?auto=format&fit=crop&w=1920&q=90"
 ];
 
 const ANNOUNCEMENT_MESSAGES = [
@@ -1253,16 +1196,14 @@ function Navbar({ cart, wishlist, onCartOpen }) {
       {/* LOGO — clean, no box */}
       <Link to="/" className="navbar-logo" onClick={() => setMenuOpen(false)}>
         <img
-          src="https://rayfineornates.com/wp-content/uploads/2021/06/logo.png"
-          alt="Ray Fine Ornates"
-          style={{
-            height: "46px",
-            width: "auto",
-            objectFit: "contain",
-            display: "block",
-            mixBlendMode: "multiply",
-            background: "transparent"
-          }}
+  src="https://rayfineornates.com/wp-content/uploads/2021/06/logo.png"
+  alt="Ray Fine Ornates"
+  style={{
+    height: "50px",
+    width: "auto",
+    display: "block",
+  }}
+/>
           onError={e => {
             e.target.style.display = "none";
             e.target.nextSibling.style.display = "block";
@@ -1579,13 +1520,133 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
       .catch(console.error);
   }, []);
 
-  return (
+return (
     <>
-      {/* HERO */}
-      <section
-        className="hero"
-        style={{ backgroundImage: `url(${WALLPAPERS[bgIndex]})` }}
-      >
+      {/* HERO SLIDER */}
+      <section className="hero" style={{ position: "relative", overflow: "hidden", height: "100vh" }}>
+
+        {/* Slides */}
+        {WALLPAPERS.map((wp, i) => (
+          <div key={i} style={{
+            position: "absolute", inset: 0,
+            backgroundImage: `url(${wp})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            opacity: i === bgIndex ? 1 : 0,
+            transition: "opacity 1.2s ease-in-out",
+            zIndex: i === bgIndex ? 1 : 0,
+          }} />
+        ))}
+
+        {/* Dark overlay */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(to right, rgba(20,5,10,0.65) 0%, rgba(20,5,10,0.2) 100%)",
+          zIndex: 2
+        }} />
+
+        {/* Content */}
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 3,
+          display: "flex", flexDirection: "column",
+          justifyContent: "center", padding: "0 8%",
+          maxWidth: "650px"
+        }}>
+          <p style={{
+            color: "#D4AA80", fontSize: "11px",
+            letterSpacing: "4px", textTransform: "uppercase",
+            marginBottom: "20px", fontWeight: 300,
+            display: "flex", alignItems: "center", gap: "12px"
+          }}>
+            <span style={{ width: "30px", height: "1px", background: "#D4AA80", display: "inline-block" }}></span>
+            New Collection 2025
+          </p>
+
+          <h1 style={{
+            fontFamily: "Cormorant Garamond, Georgia, serif",
+            fontSize: "clamp(48px, 8vw, 90px)",
+            fontWeight: 300, color: "#fff",
+            lineHeight: 1, marginBottom: "24px",
+            fontStyle: "italic"
+          }}>
+            Elegance<br />
+            <span style={{ color: "#D4AA80" }}>Redefined</span>
+          </h1>
+
+          <p style={{
+            color: "rgba(255,255,255,0.75)", fontSize: "15px",
+            lineHeight: 1.7, marginBottom: "40px",
+            fontWeight: 300, maxWidth: "400px"
+          }}>
+            Handcrafted jewellery from Jaipur —<br />
+            where tradition meets modern luxury.
+          </p>
+
+          <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+            <Link to="/shop" style={{
+              background: "#7B2E3E", color: "#fff",
+              padding: "14px 32px", textDecoration: "none",
+              fontSize: "11px", letterSpacing: "2.5px",
+              textTransform: "uppercase", fontWeight: 600,
+              transition: "background 0.3s"
+            }}>Explore Collection</Link>
+            <Link to="/about" style={{
+              border: "1px solid rgba(255,255,255,0.6)", color: "#fff",
+              padding: "14px 32px", textDecoration: "none",
+              fontSize: "11px", letterSpacing: "2.5px",
+              textTransform: "uppercase", fontWeight: 300,
+              transition: "all 0.3s"
+            }}>Our Story</Link>
+          </div>
+        </div>
+
+        {/* Arrow buttons */}
+        <button onClick={() => setBgIndex(p => (p - 1 + WALLPAPERS.length) % WALLPAPERS.length)}
+          style={{
+            position: "absolute", left: "24px", top: "50%",
+            transform: "translateY(-50%)", zIndex: 4,
+            background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)",
+            color: "#fff", width: "44px", height: "44px",
+            fontSize: "18px", cursor: "pointer", backdropFilter: "blur(4px)"
+          }}>‹</button>
+        <button onClick={() => setBgIndex(p => (p + 1) % WALLPAPERS.length)}
+          style={{
+            position: "absolute", right: "24px", top: "50%",
+            transform: "translateY(-50%)", zIndex: 4,
+            background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)",
+            color: "#fff", width: "44px", height: "44px",
+            fontSize: "18px", cursor: "pointer", backdropFilter: "blur(4px)"
+          }}>›</button>
+
+        {/* Dots */}
+        <div style={{
+          position: "absolute", bottom: "32px", left: "50%",
+          transform: "translateX(-50%)", zIndex: 4,
+          display: "flex", gap: "10px"
+        }}>
+          {WALLPAPERS.map((_, i) => (
+            <span key={i} onClick={() => setBgIndex(i)} style={{
+              width: i === bgIndex ? "28px" : "8px",
+              height: "8px", borderRadius: "4px",
+              background: i === bgIndex ? "#D4AA80" : "rgba(255,255,255,0.4)",
+              cursor: "pointer", transition: "all 0.4s"
+            }} />
+          ))}
+        </div>
+
+        {/* 500+ badge */}
+        <div style={{
+          position: "absolute", bottom: "40px", right: "40px", zIndex: 4,
+          width: "80px", height: "80px",
+          border: "1px solid rgba(212,170,128,0.6)",
+          borderRadius: "50%", display: "flex",
+          flexDirection: "column", alignItems: "center",
+          justifyContent: "center", color: "#D4AA80"
+        }}>
+          <span style={{ fontSize: "20px", fontFamily: "Cormorant Garamond, serif", fontWeight: 300 }}>500+</span>
+          <span style={{ fontSize: "8px", letterSpacing: "2px", textTransform: "uppercase" }}>Designs</span>
+        </div>
+      </section>
         {/* Extra vignette layer */}
         <div className="hero-vignette" />
 
@@ -1641,11 +1702,15 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
         <SectionDivider subtitle="Browse by Style" title="Shop by Category" />
         <div className="categories-grid">
           {[
-            { name: "Earrings", img: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&q=85", path: "/shop?cat=Earring" },
-            { name: "Necklaces", img: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=85", path: "/shop?cat=Necklace" },
-            { name: "Bracelets", img: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&q=85", path: "/shop?cat=Bracelet" },
-            { name: "Rings", img: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&q=85", path: "/shop?cat=Ring" },
-          ].map(cat => (
+          //   { name: "Earrings", img: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&q=85", path: "/shop?cat=Earring" },
+          //   { name: "Necklaces", img: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=85", path: "/shop?cat=Necklace" },
+          //   { name: "Bracelets", img: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&q=85", path: "/shop?cat=Bracelet" },
+          //   { name: "Rings", img: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&q=85", path: "/shop?cat=Ring" },
+                  { name: "Earrings", img: "https://images.unsplash.com/photo-1588444837495-c6cfeb53f32d?w=600&q=85", path: "/shop?cat=Earring" },
+{ name: "Necklaces", img: "https://images.unsplash.com/photo-1630019852942-f89202989a59?w=600&q=85", path: "/shop?cat=Necklace" },
+{ name: "Bracelets", img: "https://images.unsplash.com/photo-1561828995-aa79a2db86dd?w=600&q=85", path: "/shop?cat=Bracelet" },
+{ name: "Rings", img: "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?w=600&q=85", path: "/shop?cat=Ring" },
+           ].map(cat => (
             <Link to={cat.path} key={cat.name} className="category-card">
               <img src={cat.img} alt={cat.name} />
               <div className="category-overlay">
