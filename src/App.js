@@ -369,14 +369,14 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
 
         <div style={{ position: "absolute", inset: 0, zIndex: 3, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 8%", maxWidth: "650px" }}>
           <p style={{ color: "#D4AA80", fontSize: "11px", letterSpacing: "4px", textTransform: "uppercase", marginBottom: "20px", fontWeight: 300, display: "flex", alignItems: "center", gap: "12px" }}>
-            <span style={{ width: "30px", height: "1px", background: "#D4AA80", display: "inline-block" }}></span>
-            New Collection 2025
+            // <span style={{ width: "30px", height: "1px", background: "#D4AA80", display: "inline-block" }}></span>
+            // New Collection 2025
           </p>
           <h1 style={{ fontFamily: "Cormorant Garamond, Georgia, serif", fontSize: "clamp(48px, 8vw, 90px)", fontWeight: 300, color: "#fff", lineHeight: 1, marginBottom: "24px", fontStyle: "italic" }}>
             Elegance<br /><span style={{ color: "#D4AA80" }}>Redefined</span>
-          </h1>
-          <p style={{ color: "rgba(255,255,255,0.75)", fontSize: "15px", lineHeight: 1.7, marginBottom: "40px", fontWeight: 300, maxWidth: "400px" }}>
-            Handcrafted jewellery from Jaipur —<br />where tradition meets modern luxury.
+           </h1>
+          // <p style={{ color: "rgba(255,255,255,0.75)", fontSize: "15px", lineHeight: 1.7, marginBottom: "40px", fontWeight: 300, maxWidth: "400px" }}>
+          //   Handcrafted jewellery from Jaipur —<br />where tradition meets modern luxury.
           </p>
           <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
             <Link to="/shop" style={{ background: "#7B2E3E", color: "#fff", padding: "14px 32px", textDecoration: "none", fontSize: "11px", letterSpacing: "2.5px", textTransform: "uppercase", fontWeight: 600 }}>Explore Collection</Link>
@@ -858,5 +858,3 @@ function AppInner() {
 export default function App() {
   return <BrowserRouter><AppInner /></BrowserRouter>;
 }
-//   return <BrowserRouter><AppInner /></BrowserRouter>;
-// }
