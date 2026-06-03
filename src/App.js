@@ -152,7 +152,9 @@ function CartDrawer({ cart, setCart, open, onClose }) {
   const [step, setStep] = useState("cart");
   const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
   const savings = cart.reduce((s, i) => s + ((i.originalPrice || i.price) - i.price) * i.quantity, 0);
-
+const placeOrder = () => {
+  alert("Payment integration pending");
+};
   // FIX: use _id || id for matching
 const updateQty = (id, delta) => {
     setCart(prev => prev.map(p => (p._id || p.id) === id ? { ...p, quantity: p.quantity + delta } : p).filter(p => p.quantity > 0));
@@ -320,9 +322,8 @@ function TrustStrip() {
 }
 
 // ── Home Page ──
-function Home({ cart, setCart, wishlist, setWishconst [bgIndex, setBgIndex] = useState(0);
+function Home({ cart, setCart, wishlist, setWishlist }) {
   const [featured, setFeatured] = useState([]);
-
  
   useEffect(() => {
     fetch("https://rayfinesite-3.onrender.com/api/products")
