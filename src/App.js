@@ -2033,7 +2033,147 @@ function Terms() {
     </div>
   );
 }
+function Terms() {
+    return (
+        <div className="page-content">
+        <div className="shop-hero">
+            <h1>Terms &amp; Conditions</h1>
+            <p>Ray Fine Ornates Policies &amp; Information</p>
+        </div>
+        <div style={{ maxWidth: "1000px", margin: "40px auto", padding: "20px", lineHeight: "1.8" }}>
 
+            <h2>Terms &amp; Conditions</h2>
+
+            <h3>1. General Information</h3>
+            <p>Ray Fine Ornates is a Jaipur-based jewelry brand specializing in handcrafted jewelry made with precious, semi-precious, natural, and lab-created stones. All products are handcrafted and may have slight variations, making each piece unique.</p>
+
+            <h3>2. Product Information</h3>
+            <p>We make every effort to display product images, colors, materials, and descriptions accurately. However, slight differences may occur due to lighting, screen settings, photography, and the handmade nature of our jewelry.</p>
+
+            <h3>3. Pricing</h3>
+            <p>All prices displayed on the website are subject to change without prior notice. Prices may vary during promotions, sales, or special offers. Taxes, shipping charges, and customs duties (if applicable) may be charged separately.</p>
+
+            <h3>4. Orders &amp; Payments</h3>
+            <p>Orders are confirmed only after successful payment verification. Ray Fine Ornates reserves the right to cancel or refuse any order due to payment issues, product unavailability, or suspicious activity. Custom-made and personalized orders cannot be canceled once production has started.</p>
+
+            <h3>5. Shipping &amp; Delivery</h3>
+            <p>We aim to dispatch orders within the mentioned processing time. Delivery timelines may vary depending on the shipping destination, customs clearance, or courier delays. Customers are responsible for providing accurate shipping information.</p>
+
+            <h3>6. Returns &amp; Exchanges</h3>
+            <p>We accept returns or exchanges only according to our Return Policy. Customized, personalized, made-to-order, and worn items are generally non-returnable unless damaged or incorrect. Customers must contact us within the specified period after delivery.</p>
+
+            <h3>7. Handmade Jewelry Disclaimer</h3>
+            <p>As our jewelry is handcrafted, slight irregularities, minor imperfections, and variations in stone shape, color, or finish are natural characteristics and should not be considered defects.</p>
+
+            <h3>8. Intellectual Property</h3>
+            <p>All website content, including images, logos, product designs, text, and graphics, belongs to Ray Fine Ornates and may not be copied or reproduced without written permission.</p>
+
+            <h3>9. Privacy</h3>
+            <p>Customer information is kept secure and used only for order processing, communication, and service-related purposes. We do not sell or share customer information with unauthorized third parties.</p>
+
+            <h3>10. Limitation of Liability</h3>
+            <p>Ray Fine Ornates shall not be held liable for any indirect, incidental, or consequential damages arising from the use of our products or website.</p>
+
+            <h3>11. Governing Law</h3>
+            <p>These Terms &amp; Conditions are governed by the laws of India. Any disputes shall be subject to the jurisdiction of Jaipur, Rajasthan.</p>
+
+            <h3>12. Contact Information</h3>
+            <p>For any questions regarding these Terms &amp; Conditions, please contact us through the contact information available on our website.</p>
+
+            <hr style={{ margin: "40px 0" }} />
+
+            <h2>Refund &amp; Cancellation Policy</h2>
+            <p>Thank you for shopping with Ray Fine Ornates. Please read our Refund &amp; Cancellation Policy carefully before placing an order.</p>
+
+            <h3>Order Cancellation</h3>
+            <p>Customers may request order cancellation within 24 hours of placing the order by contacting us directly at +91 8690666771. Cancellation requests made after 24 hours may not be accepted if the order has already been processed or dispatched.</p>
+
+            <h3>Refund Policy</h3>
+            <p>Refunds are accepted only in genuine cases and will be reviewed after verification. Customers must contact us immediately if:</p>
+            <ul>
+            <li>The package is received in damaged condition</li>
+            <li>The product received is different from the item ordered</li>
+            <li>There is a genuine issue with the order</li>
+            </ul>
+
+            <h3>Non-Refundable Items</h3>
+            <ul>
+            <li>Customized or made-to-order jewelry</li>
+            <li>Personalized products</li>
+            <li>Used or worn jewelry</li>
+            <li>Orders damaged due to customer mishandling</li>
+            </ul>
+
+            <h3>Refund Processing</h3>
+            <p>If approved, refunds will be processed through the original payment method.</p>
+
+            <h3>Contact Us</h3>
+            <p><strong>Phone:</strong> +91 8690666771</p>
+            <p>Ray Fine Ornates – Jaipur, Rajasthan, India</p>
+
+            <hr style={{ margin: "40px 0" }} />
+
+            <h2>Frequently Asked Questions (FAQs)</h2>
+
+            <details><summary>1. What type of jewelry does Ray Fine Ornates offer?</summary><p>We specialize in handcrafted gold-plated jewelry featuring precious, semi-precious, natural, and lab-created stones. Our collection includes necklaces, bracelets, earrings, rings, bridal jewelry, spiritual jewelry, and custom-made designs.</p></details>
+            <details><summary>2. Are your jewelry pieces handmade?</summary><p>Yes, all our jewelry pieces are handcrafted by skilled artisans in Jaipur, India. Slight variations are natural characteristics of handmade jewelry.</p></details>
+            <details><summary>3. Do you use real gemstones?</summary><p>We work with a variety of natural, semi-precious, precious, and lab-created stones. Product descriptions clearly mention the type of stones used.</p></details>
+            <details><summary>4. Do you accept custom or personalized orders?</summary><p>Yes, we offer made-to-order and customized jewelry services. Customers can request changes in stone colors, sizes, finishes, and designs.</p></details>
+            <details><summary>5. How can I place a custom order?</summary><p>You can contact us directly through WhatsApp or phone at +91 8690666771.</p></details>
+            <details><summary>6. Do you ship internationally?</summary><p>Yes, we ship worldwide. Shipping timelines may vary depending on the destination country and customs clearance process.</p></details>
+            <details><summary>7. How long does shipping take?</summary><p>Processing and delivery times depend on the product and shipping location. Customized orders may require additional production time.</p></details>
+            <details><summary>8. Can I cancel my order?</summary><p>Yes, orders can be canceled within 24 hours of placing the order by contacting us at +91 8690666771.</p></details>
+            <details><summary>9. Do you accept returns or refunds?</summary><p>Refunds and returns are accepted only in genuine cases such as receiving a damaged package or an incorrect product.</p></details>
+            <details><summary>10. What should I do if my package arrives damaged?</summary><p>Please contact us immediately with clear photos or videos of the damaged package and product.</p></details>
+            <details><summary>11. How should I care for my jewelry?</summary><p>To maintain the shine and quality: keep away from water and perfumes, store in a dry airtight pouch, avoid moisture and rough surfaces.</p></details>
+            <details><summary>12. Where is your store located?</summary><p>223, 1st Floor, Memiyon Ka Darwaja, Haldiyon Ka Rasta, Johari Bazar, Jaipur – 302003, Rajasthan, India</p></details>
+
+            <hr style={{ margin: "40px 0" }} />
+
+            <h2>Bulk Order Services</h2>
+            <ul>
+            <li>Corporate gifting</li>
+            <li>Wedding gifting</li>
+            <li>Boutique orders</li>
+            <li>Event giveaways</li>
+            <li>Retail partnerships</li>
+            <li>Customized employee gifts</li>
+            <li>Fashion and retail partnerships</li>
+            </ul>
+
+            <h3>Customization Available</h3>
+            <ul>
+            <li>Stone selection and color customization</li>
+            <li>Gold-plated finishes</li>
+            <li>Personalized designs</li>
+            <li>Custom packaging</li>
+            <li>Bulk quantity production</li>
+            <li>Branding support for businesses and events</li>
+            </ul>
+
+            <h2>Why Choose Ray Fine Ornates?</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))", gap: "20px", marginTop: "20px" }}>
+            <div className="feature-box"><h4>✨ Handmade Craftsmanship</h4><p>Handcrafted with care in Jaipur, India.</p></div>
+            <div className="feature-box"><h4>💎 Premium Quality</h4><p>High-quality materials with fine finishing.</p></div>
+            <div className="feature-box"><h4>💍 Wide Collection</h4><p>Extensive range of gemstone and fashion jewelry.</p></div>
+            <div className="feature-box"><h4>💰 Competitive Pricing</h4><p>Affordable bulk and wholesale pricing options.</p></div>
+            <div className="feature-box"><h4>🌍 Worldwide Shipping</h4><p>Reliable shipping available across the globe.</p></div>
+            <div className="feature-box"><h4>❤️ Personalized Support</h4><p>Dedicated customer assistance and customization support.</p></div>
+            </div>
+
+            <p style={{ marginTop: "30px", lineHeight: "1.8" }}>
+            Whether you are looking for elegant gifting options or sourcing handcrafted jewelry in bulk, our team is dedicated to providing unique designs and reliable service tailored to your needs.
+            </p>
+
+            <h2>Contact Information</h2>
+            <p><strong>Phone:</strong> +91 8690666771</p>
+            <p><strong>Address:</strong><br />223, 1st Floor, Memiyon Ka Darwaja,<br />Haldiyon Ka Rasta, Johari Bazar,<br />Jaipur – 302003, Rajasthan, India</p>
+            <p><strong>Business Hours:</strong> Monday–Saturday, 10:00 AM–7:00 PM</p>
+            <a href="https://wa.me/918690666771" target="_blank" rel="noreferrer" className="btn-primary">WhatsApp Us</a>
+        </div>
+        </div>
+    );
+    }
 // ── Footer ──
 function Footer() {
   return (
