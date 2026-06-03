@@ -346,7 +346,7 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
           backgroundImage: `url(${WALLPAPERS[0]})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
-          opacity: 0.45,
+         
         }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(20,5,10,0.65) 0%, rgba(20,5,10,0.2) 100%)" }} />
         <div style={{ position: "absolute", inset: 0, zIndex: 2, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 8%", maxWidth: "650px" }}>
