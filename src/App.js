@@ -154,7 +154,7 @@ function CartDrawer({ cart, setCart, open, onClose }) {
   const savings = cart.reduce((s, i) => s + ((i.originalPrice || i.price) - i.price) * i.quantity, 0);
 
   const updateQty = (id, delta) => {
-    setCart(prev => prev.map(p => p.id === id ? { ...p, quantity: p.quantity + delta } : p).filter(p => p.quantity > 0));
+    setCart(prev => prev.map(p => p._id === id ? { ...p, quantity: p.quantity + delta } : p).filter(p => p.quantity > 0));
   };
 
   const placeOrder = async () => {
@@ -353,13 +353,7 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
       {/* HERO SLIDER */}
       
 <section className="hero" style={{ position: "relative", overflow: "hidden", height: "100vh", background: "#1a0a0f" }}>
-  <div style={{
-    position: "absolute", inset: 0,
-    backgroundImage: `url(${WALLPAPERS[0]})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    opacity: 0.45,
-  }} />
+  <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${WALLPAPERS[0]})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.45 }} />
   <div style={{ position: "absolute", inset: 0, zIndex: 2, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 8%" }}>
     <h1 style={{ fontFamily: "Cormorant Garamond, Georgia, serif", fontSize: "clamp(48px, 8vw, 90px)", fontWeight: 300, color: "#fff", lineHeight: 1, marginBottom: "24px", fontStyle: "italic" }}>
       Elegance<br /><span style={{ color: "#D4AA80" }}>Redefined</span>
@@ -427,7 +421,7 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
         <SectionDivider subtitle="Curated For You" title="Trending Now" />
         <div className="products-grid">
           {featured.map(p => (
-            <ProductCard key={p.id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
+            <ProductCard key={p._id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
           ))}
         </div>
         <div style={{ textAlign: "center", marginTop: "52px" }}>
