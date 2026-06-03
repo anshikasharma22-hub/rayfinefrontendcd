@@ -623,45 +623,7 @@ function Contact() {
 }
 
 // ── Terms ──
-function Terms() {
-  return (
-    <div className="page-content">
-      <div className="shop-hero">
-        <h1>Terms &amp; Conditions</h1>
-        <p>Ray Fine Ornates Policies &amp; Information</p>
-      </div>
-      <div style={{ maxWidth: "1000px", margin: "40px auto", padding: "20px", lineHeight: "1.8" }}>
-        <h2>Terms &amp; Conditions</h2>
-        <h3>1. General Information</h3>
-        <p>Ray Fine Ornates is a Jaipur-based jewelry brand specializing in handcrafted jewelry made with precious, semi-precious, natural, and lab-created stones.</p>
-        <h3>2. Orders &amp; Payments</h3>
-        <p>Orders are confirmed only after successful payment verification. Custom-made orders cannot be canceled once production has started.</p>
-        <h3>3. Returns &amp; Refunds</h3>
-        <p>Refunds accepted only for damaged or incorrect items. Contact us within 48 hours of delivery with photos.</p>
-        <h3>4. Non-Refundable Items</h3>
-        <ul>
-          <li>Customized or made-to-order jewelry</li>
-          <li>Used or worn jewelry</li>
-        </ul>
-        <h3>5. Contact</h3>
-        <p><strong>Phone:</strong> +91 8690666771</p>
-        <p>Ray Fine Ornates – Jaipur, Rajasthan, India</p>
-        <h2 style={{ marginTop: "40px" }}>FAQs</h2>
-        <details><summary>Are your jewelry pieces handmade?</summary><p>Yes, all pieces are handcrafted by skilled artisans in Jaipur, India.</p></details>
-        <details><summary>Do you ship internationally?</summary><p>Yes, we ship worldwide.</p></details>
-        <details><summary>Can I cancel my order?</summary><p>Yes, within 24 hours by calling +91 8690666771.</p></details>
-        <details><summary>How should I care for my jewelry?</summary><p>Keep away from water and perfumes. Store in a dry airtight pouch.</p></details>
-        <details><summary>Where is your store?</summary><p>223, 1st Floor, Haldiyon Ka Rasta, Johari Bazar, Jaipur – 302003</p></details>
-        <hr style={{ margin: "40px 0" }} />
-        <h2>Contact Us</h2>
-        <p><strong>Phone:</strong> +91 8690666771</p>
-        <p><strong>Address:</strong> 223, 1st Floor, Haldiyon Ka Rasta, Johari Bazar, Jaipur – 302003</p>
-        <p><strong>Hours:</strong> Monday–Saturday, 10:00 AM–7:00 PM</p>
-        <a href="https://wa.me/918690666771" target="_blank" rel="noreferrer" className="btn-primary">WhatsApp Us</a>
-      </div>
-    </div>
-  );
-}
+
 function Terms() {
     return (
         <div className="page-content">
