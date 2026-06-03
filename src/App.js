@@ -1675,13 +1675,13 @@ function Navbar({ cart, wishlist, onCartOpen }) {
 
   return (
     <nav className="navbar" style={scrolled ? { boxShadow: "0 2px 20px rgba(123,46,62,0.10)" } : {}}>
-      <Link to="/" className="navbar-logo" onClick={() => setMenuOpen(false)}>
-        <img
-          src="https://rayfineornates.com/wp-content/uploads/2021/06/logo.png"
-          alt="Ray Fine Ornates"
-          style={{ height: "50px", width: "auto", display: "block" }}
-        />
-      </Link>
+     <Link to="/" className="navbar-logo" onClick={() => setMenuOpen(false)}>
+  <img
+    src="https://rayfineornates.com/wp-content/uploads/2021/06/logo.png"
+    alt="Ray Fine Ornates"
+    style={{ height: "50px", width: "auto", display: "block" }}
+  />
+</Link>
 
       <div className={`nav-links ${menuOpen ? "open" : ""}`}>
         <Link to="/" className={loc.pathname === "/" ? "active" : ""}>Home</Link>
