@@ -153,19 +153,12 @@ function CartDrawer({ cart, setCart, open, onClose }) {
   const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
   const savings = cart.reduce((s, i) => s + ((i.originalPrice || i.price) - i.price) * i.quantity, 0);
 
+  // FIX: use _id || id for matching
   const updateQty = (id, delta) => {
-    setCart(prev => prev.map(p => p._id === id ? { ...p, quantity: p.quantity + delta } : p).filter(p => p.quantity > 0));
-  };
-
-  const placeOrder = async () => {
-    if (!customer.name || !customer.phone) { alert("Please fill name and phone"); return; }
-    try {
-      const response = await fetch("https://rayfinesite-3.onrender.com/api/create-order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount: total }) });
-      const order = await response.json();
-      const options = { key: "YOUR_KEY_ID", amount: order.amount, currency: "INR", name: "Ray Fine Ornates", description: "Jewellery Purchase", order_id: order.id, handler: function () { alert("Payment Successful ✅"); setCart([]); setStep("cart"); onClose(); }, prefill: { name: customer.name, contact: customer.phone }, theme: { color: "#7B2E3E" } };
-      const razor = new window.Razorpay(options);
-      razor.open();
-    } catch { alert("Could not connect to server"); }
+    setCart(prev =>
+      prev.map(p => (p._id || p.id) === id ? { ...p, quantity: p.quantity + delta } : p)
+          .filter(p => p.quantity > 0)
+    );
   };
 
   return (
@@ -353,31 +346,24 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
       {/* HERO SLIDER */}
       
 <section className="hero" style={{ position: "relative", overflow: "hidden", height: "100vh", background: "#1a0a0f" }}>
-  <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${WALLPAPERS[0]})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.45 }} />
-  <div style={{ position: "absolute", inset: 0, zIndex: 2, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 8%" }}>
-    <h1 style={{ fontFamily: "Cormorant Garamond, Georgia, serif", fontSize: "clamp(48px, 8vw, 90px)", fontWeight: 300, color: "#fff", lineHeight: 1, marginBottom: "24px", fontStyle: "italic" }}>
-      Elegance<br /><span style={{ color: "#D4AA80" }}>Redefined</span>
-    </h1>
-    <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-      <Link to="/shop" style={{ background: "#7B2E3E", color: "#fff", padding: "14px 32px", textDecoration: "none", fontSize: "11px", letterSpacing: "2.5px", textTransform: "uppercase", fontWeight: 600 }}>Explore Collection</Link>
-      <Link to="/about" style={{ border: "1px solid rgba(255,255,255,0.6)", color: "#fff", padding: "14px 32px", textDecoration: "none", fontSize: "11px", letterSpacing: "2.5px", textTransform: "uppercase", fontWeight: 300 }}>Our Story</Link>
-    </div>
-  </div>
-</section>
-        {/* Prev Arrow */}
-        <button onClick={() => setBgIndex(p => (p - 1 + WALLPAPERS.length) % WALLPAPERS.length)}
-          style={{ position: "absolute", left: "24px", top: "50%", transform: "translateY(-50%)", zIndex: 4, background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", color: "#fff", width: "44px", height: "44px", fontSize: "20px", cursor: "pointer", backdropFilter: "blur(4px)" }}>‹</button>
-
-        {/* Next Arrow */}
-        <button onClick={() => setBgIndex(p => (p + 1) % WALLPAPERS.length)}
-          style={{ position: "absolute", right: "24px", top: "50%", transform: "translateY(-50%)", zIndex: 4, background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", color: "#fff", width: "44px", height: "44px", fontSize: "20px", cursor: "pointer", backdropFilter: "blur(4px)" }}>›</button>
-
-        {/* Dots */}
-        <div style={{ position: "absolute", bottom: "32px", left: "50%", transform: "translateX(-50%)", zIndex: 4, display: "flex", gap: "10px" }}>
-          {WALLPAPERS.map((_, i) => (
-            <span key={i} onClick={() => setBgIndex(i)} style={{ width: i === bgIndex ? "28px" : "8px", height: "8px", borderRadius: "4px", background: i === bgIndex ? "#D4AA80" : "rgba(255,255,255,0.4)", cursor: "pointer", transition: "all 0.4s" }} />
-          ))}
+        <div style={{
+          position: "absolute", inset: 0,
+          backgroundImage: `url(${WALLPAPERS[0]})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.45,
+        }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(20,5,10,0.65) 0%, rgba(20,5,10,0.2) 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, zIndex: 2, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 8%", maxWidth: "650px" }}>
+          <h1 style={{ fontFamily: "Cormorant Garamond, Georgia, serif", fontSize: "clamp(48px, 8vw, 90px)", fontWeight: 300, color: "#fff", lineHeight: 1, marginBottom: "24px", fontStyle: "italic" }}>
+            Elegance<br /><span style={{ color: "#D4AA80" }}>Redefined</span>
+          </h1>
+          <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+            <Link to="/shop" style={{ background: "#7B2E3E", color: "#fff", padding: "14px 32px", textDecoration: "none", fontSize: "11px", letterSpacing: "2.5px", textTransform: "uppercase", fontWeight: 600 }}>Explore Collection</Link>
+            <Link to="/about" style={{ border: "1px solid rgba(255,255,255,0.6)", color: "#fff", padding: "14px 32px", textDecoration: "none", fontSize: "11px", letterSpacing: "2.5px", textTransform: "uppercase", fontWeight: 300 }}>Our Story</Link>
+          </div>
         </div>
+      </section>
 
         {/* 500+ Badge */}
         <div style={{ position: "absolute", bottom: "40px", right: "40px", zIndex: 4, width: "80px", height: "80px", border: "1px solid rgba(212,170,128,0.6)", borderRadius: "50%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#D4AA80" }}>
@@ -388,7 +374,7 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
 
       {/* SALE BANNER */}
       <div className="sale-banner">
-        <span>🔥 SALE IS LIVE — Use Code <strong>GIFT15</strong> for Extra 15% Off!</span>
+        <span> SALE IS LIVE — Use Code <strong>GIFT15</strong> for Extra 15% Off!</span>
         <Link to="/shop?cat=sale" className="sale-banner-btn">Shop Sale</Link>
       </div>
 
