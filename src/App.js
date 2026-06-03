@@ -1563,9 +1563,10 @@ import Admin from "./Admin";
 import Chatbot from "./Chatbot";
 
 const WALLPAPERS = [
-  "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1920&q=90",
-  "https://images.unsplash.com/photo-1573408301185-9519f94816cf?auto=format&fit=crop&w=1920&q=90",
-  "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?auto=format&fit=crop&w=1920&q=90"
+  "https://images.unsplash.com/photo-1617038260897-41a1f14a0d7b?auto=format&fit=crop&w=1600&q=80",
+  "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=1600&q=80",
+  "https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&w=1600&q=80",
+  "https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?auto=format&fit=crop&w=1600&q=80",
 ];
 
 const ANNOUNCEMENT_MESSAGES = [
