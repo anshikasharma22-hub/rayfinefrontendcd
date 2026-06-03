@@ -154,12 +154,11 @@ function CartDrawer({ cart, setCart, open, onClose }) {
   const savings = cart.reduce((s, i) => s + ((i.originalPrice || i.price) - i.price) * i.quantity, 0);
 
   // FIX: use _id || id for matching
-  const updateQty = (id, delta) => {
-    setCart(prev =>
-      prev.map(p => (p._id || p.id) === id ? { ...p, quantity: p.quantity + delta } : p)
-          .filter(p => p.quantity > 0)
-    );
-  };
+const updateQty = (id, delta) => {
+    setCart(prev => prev.map(p => (p._id || p.id) === id ? { ...p, quantity: p.quantity + delta } : p).filter(p => p.quantity > 0));
+};
+
+ 
 
   return (
     <>
@@ -321,15 +320,10 @@ function TrustStrip() {
 }
 
 // ── Home Page ──
-function Home({ cart, setCart, wishlist, setWishlist }) {
-  const [bgIndex, setBgIndex] = useState(0);
+function Home({ cart, setCart, wishlist, setWishconst [bgIndex, setBgIndex] = useState(0);
   const [featured, setFeatured] = useState([]);
 
-  useEffect(() => {
-    const t = setInterval(() => setBgIndex(p => (p + 1) % WALLPAPERS.length), 5000);
-    return () => clearInterval(t);
-  }, []);
-
+ 
   useEffect(() => {
     fetch("https://rayfinesite-3.onrender.com/api/products")
       .then(res => res.json())
@@ -365,12 +359,7 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
         </div>
       </section>
 
-        {/* 500+ Badge */}
-        <div style={{ position: "absolute", bottom: "40px", right: "40px", zIndex: 4, width: "80px", height: "80px", border: "1px solid rgba(212,170,128,0.6)", borderRadius: "50%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#D4AA80" }}>
-          <span style={{ fontSize: "20px", fontFamily: "Cormorant Garamond, serif", fontWeight: 300 }}>500+</span>
-          <span style={{ fontSize: "8px", letterSpacing: "2px", textTransform: "uppercase" }}>Designs</span>
-        </div>
-      </section>
+       
 
       {/* SALE BANNER */}
       <div className="sale-banner">
