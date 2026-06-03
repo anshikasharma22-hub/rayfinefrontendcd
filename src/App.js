@@ -351,37 +351,25 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
   return (
     <>
       {/* HERO SLIDER */}
-      <section className="hero" style={{ position: "relative", overflow: "hidden", height: "100vh" }}>
-
-        {WALLPAPERS.map((wp, i) => (
-          <div key={i} style={{
-            position: "absolute", inset: 0,
-            backgroundImage: `url(${wp})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            opacity: i === bgIndex ? 1 : 0,
-            transition: "opacity 1.2s ease-in-out",
-            zIndex: i === bgIndex ? 1 : 0,
-          }} />
-        ))}
-
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(20,5,10,0.65) 0%, rgba(20,5,10,0.2) 100%)", zIndex: 2 }} />
-
-        <div style={{ position: "absolute", inset: 0, zIndex: 3, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 8%", maxWidth: "650px" }}>
-          <p style={{ color: "#D4AA80", fontSize: "11px", letterSpacing: "4px", textTransform: "uppercase", marginBottom: "20px", fontWeight: 300, display: "flex", alignItems: "center", gap: "12px" }}>
-          
-          </p>
-          <h1 style={{ fontFamily: "Cormorant Garamond, Georgia, serif", fontSize: "clamp(48px, 8vw, 90px)", fontWeight: 300, color: "#fff", lineHeight: 1, marginBottom: "24px", fontStyle: "italic" }}>
-            Elegance<br /><span style={{ color: "#D4AA80" }}>Redefined</span>
-           </h1>
-        
-          </p>
-          <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-            <Link to="/shop" style={{ background: "#7B2E3E", color: "#fff", padding: "14px 32px", textDecoration: "none", fontSize: "11px", letterSpacing: "2.5px", textTransform: "uppercase", fontWeight: 600 }}>Explore Collection</Link>
-            <Link to="/about" style={{ border: "1px solid rgba(255,255,255,0.6)", color: "#fff", padding: "14px 32px", textDecoration: "none", fontSize: "11px", letterSpacing: "2.5px", textTransform: "uppercase", fontWeight: 300 }}>Our Story</Link>
-          </div>
-        </div>
-
+      
+<section className="hero" style={{ position: "relative", overflow: "hidden", height: "100vh", background: "#1a0a0f" }}>
+  <div style={{
+    position: "absolute", inset: 0,
+    backgroundImage: `url(${WALLPAPERS[0]})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    opacity: 0.45,
+  }} />
+  <div style={{ position: "absolute", inset: 0, zIndex: 2, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 8%" }}>
+    <h1 style={{ fontFamily: "Cormorant Garamond, Georgia, serif", fontSize: "clamp(48px, 8vw, 90px)", fontWeight: 300, color: "#fff", lineHeight: 1, marginBottom: "24px", fontStyle: "italic" }}>
+      Elegance<br /><span style={{ color: "#D4AA80" }}>Redefined</span>
+    </h1>
+    <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+      <Link to="/shop" style={{ background: "#7B2E3E", color: "#fff", padding: "14px 32px", textDecoration: "none", fontSize: "11px", letterSpacing: "2.5px", textTransform: "uppercase", fontWeight: 600 }}>Explore Collection</Link>
+      <Link to="/about" style={{ border: "1px solid rgba(255,255,255,0.6)", color: "#fff", padding: "14px 32px", textDecoration: "none", fontSize: "11px", letterSpacing: "2.5px", textTransform: "uppercase", fontWeight: 300 }}>Our Story</Link>
+    </div>
+  </div>
+</section>
         {/* Prev Arrow */}
         <button onClick={() => setBgIndex(p => (p - 1 + WALLPAPERS.length) % WALLPAPERS.length)}
           style={{ position: "absolute", left: "24px", top: "50%", transform: "translateY(-50%)", zIndex: 4, background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", color: "#fff", width: "44px", height: "44px", fontSize: "20px", cursor: "pointer", backdropFilter: "blur(4px)" }}>‹</button>
