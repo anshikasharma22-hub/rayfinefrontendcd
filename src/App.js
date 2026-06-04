@@ -18,13 +18,7 @@ const ANNOUNCEMENT_MESSAGES = [
   "💎 Handcrafted in Jaipur — Shipped Worldwide",
 ];
 
-const PLATFORMS = [
- 
-  { icon: "📸", name: "Instagram Shop", color: "#E1306C" },
-  { icon: "📌", name: "Pinterest", color: "#E60023" },
-  { icon: "🌐", name: "Our Website", color: "#C85B82" },
-  { icon: "💬", name: "WhatsApp", color: "#25D366" },
-];
+
 
 const API_BASE = "https://rayfinesite-3.onrender.com";
 const NOTIFY_EMAIL = "bhaveshgemsonline@gmail.com";
@@ -216,12 +210,12 @@ function AnnouncementBar() {
 // ── Worldwide Marquee Strip ──
 function WorldwideStrip() {
   const items = [
-    "🌍 Worldwide Shipping", "🇮🇳 Made in India", "🇺🇸 USA", "🇬🇧 UK", "🇦🇪 UAE",
-    "🇦🇺 Australia", "🇨🇦 Canada", "🇩🇪 Germany", "🇸🇬 Singapore", "🇳🇿 New Zealand",
+    "🌍 Worldwide Shipping",
+    
     "✈️ Express Delivery", "📦 Tracked Shipping", "💎 Handcrafted in Jaipur",
-    "🌍 Worldwide Shipping", "🇮🇳 Made in India", "🇺🇸 USA", "🇬🇧 UK", "🇦🇪 UAE",
-    "🇦🇺 Australia", "🇨🇦 Canada", "🇩🇪 Germany", "🇸🇬 Singapore", "🇳🇿 New Zealand",
-    "✈️ Express Delivery", "📦 Tracked Shipping", "💎 Handcrafted in Jaipur",
+   
+   
+   
   ];
   return (
     <div className="worldwide-strip">
@@ -234,27 +228,7 @@ function WorldwideStrip() {
   );
 }
 
-// ── Platforms Section ──
-function PlatformsSection() {
-  return (
-    <section className="platforms-section">
-      <div style={{ textAlign: "center", marginBottom: "32px" }}>
-        <p className="section-subtitle">Find Us On</p>
-        <h2 className="section-title" style={{ fontSize: "clamp(22px, 3vw, 36px)" }}>Shop Everywhere You Are</h2>
-      </div>
-      <div className="platforms-grid">
-        {PLATFORMS.map(p => (
-          <div key={p.name} className="platform-item">
-            <div className="platform-icon" style={{ borderColor: p.color + "33" }}>
-              <span style={{ fontSize: "28px" }}>{p.icon}</span>
-            </div>
-            <span style={{ color: p.color, fontWeight: 700 }}>{p.name}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
+
 
 // ── Navbar ──
 function Navbar({ cart, wishlist, onCartOpen }) {
@@ -752,7 +726,7 @@ function Shop({ cart, setCart, wishlist, setWishlist }) {
       </div>
 
       <div className="category-tabs">
-        {["All", "Earring", "Necklace", "Bracelet", "Ring", "Anklet", "Sale 🔥"].map(cat => (
+        {["All", "Earring", "Necklace", "Bracelet", "Ring", "Anklet", "Sale "].map(cat => (
           <button key={cat} className={`cat-tab ${(cat === "Sale 🔥" ? category === "sale" : category === cat) ? "active" : ""}`} onClick={() => setCategory(cat === "Sale 🔥" ? "sale" : cat)}>{cat}</button>
         ))}
       </div>
@@ -806,7 +780,7 @@ function About() {
       </div>
       <div className="about-grid">
         <div className="about-text">
-          <h2>Who We Are</h2>
+          <h2>Who We Are?</h2>
           <p>Ray Fine Ornates is a luxury fashion jewellery brand based in the heart of Johari Bazar, Jaipur — India's jewellery capital. We believe every woman deserves to feel like royalty.</p>
           <p>Our pieces are crafted with precision, using the finest materials to create jewellery that is both timeless and contemporary. From delicate studs to statement necklaces, each piece tells a story.</p>
           <h2>Worldwide Reach</h2>
@@ -840,9 +814,9 @@ function Contact() {
         <div className="contact-info">
           <h2>Contact Information</h2>
           <div className="contact-item">📧 <a href="mailto:info@rayfineornates.com">info@rayfineornates.com</a></div>
-          <div className="contact-item">📞 <a href="tel:+918112240112">+91 8112240112</a></div>
+         
           <div className="contact-item">📍 Johari Bazar, Jaipur 302003<br />(10:30 AM – 8:30 PM)</div>
-          <div className="contact-item">🌍 We ship to 150+ countries worldwide</div>
+          <div className="contact-item">🌍 We ship to the countries worldwide</div>
           <div className="social-links">
             <a href="https://www.instagram.com/rayfineornates/" target="_blank" rel="noreferrer">Instagram</a>
             <a href="https://www.facebook.com/rayfineornatesjewellery" target="_blank" rel="noreferrer">Facebook</a>
@@ -954,7 +928,7 @@ function Footer() {
         <div>
           <h4>Contact Us</h4>
           <div className="footer-contact-item"><span className="footer-contact-icon">✉</span><span style={{ color: "var(--footer-text)", fontSize: "13px" }}>info@rayfineornates.com</span></div>
-          <div className="footer-contact-item"><span className="footer-contact-icon">☎</span><span style={{ color: "var(--footer-text)", fontSize: "13px" }}>+91 8112240112</span></div>
+          
           <div className="footer-contact-item"><span className="footer-contact-icon">📍</span><span style={{ color: "var(--footer-text)", fontSize: "13px" }}>Johari Bazar, Jaipur 302003</span></div>
           <div className="footer-contact-item"><span className="footer-contact-icon">🌍</span><span style={{ color: "var(--footer-text)", fontSize: "13px" }}>Ships to 150+ Countries</span></div>
           <div style={{ marginTop: "8px", color: "var(--footer-text)", fontSize: "12px" }}>Mon–Sat · 10:30 AM – 8:30 PM</div>
