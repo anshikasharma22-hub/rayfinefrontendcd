@@ -727,7 +727,7 @@ function Shop({ cart, setCart, wishlist, setWishlist }) {
 
       <div className="category-tabs">
         {["All", "Earring", "Necklace", "Bracelet", "Ring", "Anklet", "Sale "].map(cat => (
-          <button key={cat} className={`cat-tab ${(cat === "Sale 🔥" ? category === "sale" : category === cat) ? "active" : ""}`} onClick={() => setCategory(cat === "Sale 🔥" ? "sale" : cat)}>{cat}</button>
+          <button key={cat} className={`cat-tab ${(cat === "Sale " ? category === "sale" : category === cat) ? "active" : ""}`} onClick={() => setCategory(cat === "Sale " ? "sale" : cat)}>{cat}</button>
         ))}
       </div>
 
