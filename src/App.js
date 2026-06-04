@@ -1232,10 +1232,10 @@ function HeroSlider() {
       <div className="hero-overlay">
         <div className="hero-eyebrow">
           <div className="hero-eyebrow-line" />
-          <span className="hero-sub">New Collection 2025</span>
+         
         </div>
         <h1>Elegance<br /><span>Redefined</span></h1>
-        <p className="hero-desc">Handcrafted in Jaipur — jewellery that tells your story.</p>
+        
         <div className="hero-btns">
           <Link to="/shop" className="btn-primary">Explore Collection</Link>
           <Link to="/about" className="btn-outline">Our Story</Link>
