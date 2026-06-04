@@ -4,8 +4,8 @@
 
 :root {
   --primary: #7B2E3E;
-  --primary-light: #A2485D;
-  --gold: #C9963C;
+  --primary-light: #a2485d;
+  --gold: #2a1a1f;
   --gold-light: #E8C47A;
   --pink: #F9CDC2;
   --pink-dark: #F0A898;
@@ -20,13 +20,13 @@
   --shadow: 0 4px 24px rgba(123,46,62,0.10);
   --shadow-lg: 0 12px 48px rgba(123,46,62,0.16);
   /* Footer specific */
-  --footer-bg: #1C0A12;
+  --footer-bg: #fdf2ee;
   --footer-mid: #150810;
-  --footer-dark: #0D040A;
-  --footer-border: #2E1520;
-  --footer-text: #9A7080;
-  --footer-link: #C4939E;
-  --footer-accent: #C9963C;
+  --footer-dark: #f9cdc2;
+  --footer-border: #fdf2ee;
+  --footer-text: #2e1520;
+  --footer-link: #C4939e;
+  --footer-accent: #2a1a1f;
 }
 
 html { scroll-behavior: smooth; }
