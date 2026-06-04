@@ -566,14 +566,11 @@ function HeroSlider() {
       <div className="hero-overlay">
         <div className="hero-eyebrow">
           <div className="hero-eyebrow-line" />
-          <span className="hero-sub">Handcrafted in Jaipur · Ships Worldwide</span>
+        
         </div>
         <h1>Elegance<br /><span>Redefined</span></h1>
-        <p className="hero-desc">Luxury fashion jewellery crafted by skilled artisans, delivered to your doorstep — anywhere in the world.</p>
-        <div className="hero-btns">
-          <Link to="/shop" className="btn-primary">Explore Collection</Link>
-          <Link to="/about" className="btn-outline">Our Story</Link>
-        </div>
+       
+        
       </div>
       <div className="hero-dots">
         {WALLPAPERS.map((_, i) => (
