@@ -1147,7 +1147,10 @@ function ProductCard({ product, cart, setCart, wishlist, setWishlist }) {
           <p className="product-desc">{product.description?.substring(0, 80)}...</p>
           {product.variants && (
             <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "10px" }}>
-              {product.variants.slice(0, 3).map(v => (
+           console.log(n.variants);
+console.log(typeof n.variants);
+console.log(Array.isArray(n.variants));
+{product.variants.slice(0, 3).map(v => (
                 <span key={v} style={{ fontSize: "10px", background: "#f5f0eb", padding: "2px 8px", borderRadius: "10px", color: "#9a7a80" }}>{v}</span>
               ))}
             </div>
