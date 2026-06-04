@@ -22,8 +22,7 @@ const ANNOUNCEMENT_MESSAGES = [
 ];
 
 const PLATFORMS = [
-  { icon: "🛍️", name: "Amazon", color: "#FF9900" },
-  { icon: "🟠", name: "Flipkart", color: "#2874F0" },
+ 
   { icon: "📸", name: "Instagram Shop", color: "#E1306C" },
   { icon: "📌", name: "Pinterest", color: "#E60023" },
   { icon: "🌐", name: "Our Website", color: "#C85B82" },
