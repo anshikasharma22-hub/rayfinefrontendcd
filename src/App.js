@@ -1145,10 +1145,158 @@ function ProductCard({ product: productProp, cart, setCart, wishlist, setWishlis
   };
 
   // Safe variants handling
-  const variants = Array.isArray(product?.variants)
+//   const variants = Array.isArray(product?.variants)
+//     ? product.variants
+//     : [];
+
+//   return (
+//     <>
+//       {showModal && (
+//         <ProductModal
+//           product={product}
+//           onClose={() => setShowModal(false)}
+//           cart={cart}
+//           setCart={setCart}
+//           wishlist={wishlist}
+//           setWishlist={setWishlist}
+//         />
+//       )}
+
+//       <div
+//         className="product-card"
+//         onClick={() => setShowModal(true)}
+//         style={{
+//           cursor: "pointer",
+//           opacity: product.inStock ? 1 : 0.7
+//         }}
+//       >
+//         <div className="product-img-wrap">
+//           <img
+//             src={product.image}
+//             alt={product.name}
+//             onError={(e) => {
+//               e.target.src =
+//                 "https://placehold.co/300x300?text=Jewellery";
+//             }}
+//           />
+
+//           <button
+//             className={`wishlist-btn ${
+//               inWishlist ? "active" : ""
+//             }`}
+//             onClick={toggleWishlist}
+//           >
+//             {inWishlist ? "❤️" : "🤍"}
+//           </button>
+
+//           {!product.inStock && (
+//             <div
+//               className="sale-badge"
+//               style={{ background: "#555" }}
+//             >
+//               Out of Stock
+//             </div>
+//           )}
+
+//           {discount && product.inStock && (
+//             <div className="sale-badge">
+//               -{discount}%
+//             </div>
+//           )}
+
+//           <div className="product-category-tag">
+//             {product.category}
+//           </div>
+
+//          <div
+//   onClick={(e) => { e.stopPropagation(); setShowModal(true); }}
+//   style={{
+//     position: "absolute",
+//     bottom: "10px",
+//     right: "10px",
+//     background: "rgba(0,0,0,0.45)",
+//     color: "#fff",
+//     fontSize: "10px",
+//     padding: "4px 9px",
+//     borderRadius: "10px",
+//     cursor: "pointer",
+//     zIndex: 2,
+//   }}
+// >
+//   👁 View
+// </div>
+//         <div className="product-info">
+//           <h4>{product.name}</h4>
+
+//           <p className="product-desc">
+//             {product.description?.substring(0, 80)}...
+//           </p>
+
+//           {/* Safe Variants */}
+//           {variants.length > 0 && (
+//             <div
+//               style={{
+//                 display: "flex",
+//                 gap: "4px",
+//                 flexWrap: "wrap",
+//                 marginBottom: "10px"
+//               }}
+//             >
+//               {variants.slice(0, 3).map((v, i) => (
+//                 <span
+//                   key={v.id || i}
+//                   style={{
+//                     fontSize: "11px",
+//                     padding: "4px 8px",
+//                     background: "#f5f5f5",
+//                     borderRadius: "12px"
+//                   }}
+//                 >
+//                   {typeof v === "object"
+//                     ? v.name || "Variant"
+//                     : v}
+//                 </span>
+//               ))}
+//             </div>
+//           )}
+
+//           <div className="price-wrap">
+//             <span className="price-current">
+//               ₹{product.price.toLocaleString()}
+//             </span>
+
+//             {product.originalPrice && (
+//               <span className="price-original">
+//                 ₹{product.originalPrice.toLocaleString()}
+//               </span>
+//             )}
+
+//             <span className="price-usd">
+//               {formatUSD(product.price)}
+//             </span>
+//           </div>
+
+//           <button
+//             className={`btn-add-cart ${
+//               inCart ? "added" : ""
+//             }`}
+//             onClick={addToCart}
+//             disabled={!product.inStock}
+//           >
+//             {!product.inStock
+//               ? "Out of Stock"
+//               : inCart
+//               ? "✓ Added to Cart"
+//               : "Add to Cart"}
+//           </button>
+//         </div>
+//       </div>
+//     </>
+//   );
+// }
+ const variants = Array.isArray(product?.variants)
     ? product.variants
     : [];
-
   return (
     <>
       {showModal && (
@@ -1161,7 +1309,6 @@ function ProductCard({ product: productProp, cart, setCart, wishlist, setWishlis
           setWishlist={setWishlist}
         />
       )}
-
       <div
         className="product-card"
         onClick={() => setShowModal(true)}
@@ -1179,7 +1326,6 @@ function ProductCard({ product: productProp, cart, setCart, wishlist, setWishlis
                 "https://placehold.co/300x300?text=Jewellery";
             }}
           />
-
           <button
             className={`wishlist-btn ${
               inWishlist ? "active" : ""
@@ -1188,7 +1334,6 @@ function ProductCard({ product: productProp, cart, setCart, wishlist, setWishlis
           >
             {inWishlist ? "❤️" : "🤍"}
           </button>
-
           {!product.inStock && (
             <div
               className="sale-badge"
@@ -1197,42 +1342,37 @@ function ProductCard({ product: productProp, cart, setCart, wishlist, setWishlis
               Out of Stock
             </div>
           )}
-
           {discount && product.inStock && (
             <div className="sale-badge">
               -{discount}%
             </div>
           )}
-
           <div className="product-category-tag">
             {product.category}
           </div>
-
-         <div
-  onClick={(e) => { e.stopPropagation(); setShowModal(true); }}
-  style={{
-    position: "absolute",
-    bottom: "10px",
-    right: "10px",
-    background: "rgba(0,0,0,0.45)",
-    color: "#fff",
-    fontSize: "10px",
-    padding: "4px 9px",
-    borderRadius: "10px",
-    cursor: "pointer",
-    zIndex: 2,
-  }}
->
-  👁 View
-</div>
+          <div
+            onClick={(e) => { e.stopPropagation(); setShowModal(true); }}
+            style={{
+              position: "absolute",
+              bottom: "10px",
+              right: "10px",
+              background: "rgba(0,0,0,0.45)",
+              color: "#fff",
+              fontSize: "10px",
+              padding: "4px 9px",
+              borderRadius: "10px",
+              cursor: "pointer",
+              zIndex: 2,
+            }}
+          >
+            👁 View
+          </div>
+        </div> {/* ← product-img-wrap CLOSE */}
         <div className="product-info">
           <h4>{product.name}</h4>
-
           <p className="product-desc">
             {product.description?.substring(0, 80)}...
           </p>
-
-          {/* Safe Variants */}
           {variants.length > 0 && (
             <div
               style={{
@@ -1259,23 +1399,19 @@ function ProductCard({ product: productProp, cart, setCart, wishlist, setWishlis
               ))}
             </div>
           )}
-
           <div className="price-wrap">
             <span className="price-current">
               ₹{product.price.toLocaleString()}
             </span>
-
             {product.originalPrice && (
               <span className="price-original">
                 ₹{product.originalPrice.toLocaleString()}
               </span>
             )}
-
             <span className="price-usd">
               {formatUSD(product.price)}
             </span>
           </div>
-
           <button
             className={`btn-add-cart ${
               inCart ? "added" : ""
