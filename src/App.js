@@ -814,7 +814,7 @@
 // export default function App() {
 //   return <BrowserRouter><AppInner /></BrowserRouter>;
 // }
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation, useSearchParams } from "react-router-dom";
 import "./App.css";
 import Login from "./login";
@@ -829,33 +829,6 @@ const WALLPAPERS = [
   "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=1600&q=80",
   "https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&w=1600&q=80",
   "https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=1920&q=90",
-];
-
-const HERO_SLIDES = [
-  {
-    bg: WALLPAPERS[0],
-    eyebrow: "New Collection 2025",
-    title: ["Elegance", "Redefined"],
-    desc: "Handcrafted in Jaipur — jewellery that tells your story.",
-  },
-  {
-    bg: WALLPAPERS[1],
-    eyebrow: "Artisan Craftsmanship",
-    title: ["Crafted with", "Love & Gold"],
-    desc: "Every piece is made by skilled artisans using the finest materials.",
-  },
-  {
-    bg: WALLPAPERS[2],
-    eyebrow: "Bridal Collection",
-    title: ["Your Special", "Moment"],
-    desc: "Timeless pieces for the most precious moments of your life.",
-  },
-  {
-    bg: WALLPAPERS[3],
-    eyebrow: "Gemstone Jewellery",
-    title: ["Stones that", "Shine"],
-    desc: "Natural, semi-precious and lab-created gems, set in gold.",
-  },
 ];
 
 const ANNOUNCEMENT_MESSAGES = [
@@ -994,6 +967,22 @@ function Navbar({ cart, wishlist, onCartOpen }) {
         <img
           src="https://rayfineornates.com/wp-content/uploads/2021/06/logo.png"
           alt="Ray Fine Ornates"
+          style={{
+            display: "block",
+            visibility: "visible",
+            opacity: 1,
+            height: "44px",
+            width: "auto",
+            maxWidth: "160px",
+            objectFit: "contain",
+            flexShrink: 0,
+          }}
+          onError={e => {
+            // Fallback: text logo if image fails
+            e.target.style.display = "none";
+            e.target.parentElement.innerHTML =
+              '<span style="font-family:Georgia,serif;font-size:16px;font-style:italic;color:#7B2E3E;letter-spacing:0.5px;">Ray Fine Ornates</span>';
+          }}
         />
       </Link>
 
@@ -1216,64 +1205,47 @@ function TrustStrip() {
   );
 }
 
-// ── Hero Slider ──
+// ── Hero — wallpapers cycle, text stays fixed ──
 function HeroSlider() {
   const [current, setCurrent] = useState(0);
 
-  const next = useCallback(() => setCurrent(p => (p + 1) % HERO_SLIDES.length), []);
-
   useEffect(() => {
-    const t = setInterval(next, 5000);
+    const t = setInterval(() => setCurrent(p => (p + 1) % WALLPAPERS.length), 5000);
     return () => clearInterval(t);
-  }, [next]);
-
-  const slide = HERO_SLIDES[current];
+  }, []);
 
   return (
     <section className="hero">
-      {/* Preload all wallpapers as background layers */}
-      {HERO_SLIDES.map((s, i) => (
+      {/* Wallpaper layers — active one fades in, rest hidden */}
+      {WALLPAPERS.map((url, i) => (
         <div
           key={i}
           className={`hero-bg ${i === current ? "active" : "inactive"}`}
-          style={{ backgroundImage: `url(${s.bg})` }}
+          style={{ backgroundImage: `url(${url})` }}
         />
       ))}
 
-      {/* Gradient overlay */}
       <div className="hero-gradient" />
       <div className="hero-vignette" />
 
-      {/* Content */}
+      {/* Fixed text — never changes */}
       <div className="hero-overlay">
-        <div className="hero-eyebrow" key={current + "eyebrow"} style={{ animation: "fadeInUp 0.7s ease both" }}>
+        <div className="hero-eyebrow">
           <div className="hero-eyebrow-line" />
-          <span className="hero-sub">{slide.eyebrow}</span>
+          <span className="hero-sub">New Collection 2025</span>
         </div>
-
-        <h1 key={current + "h1"} style={{ animation: "fadeInUp 0.8s ease 0.1s both" }}>
-          {slide.title[0]}<br />
-          <span>{slide.title[1]}</span>
-        </h1>
-
-        <p className="hero-desc" key={current + "desc"} style={{ animation: "fadeInUp 0.9s ease 0.2s both" }}>
-          {slide.desc}
-        </p>
-
-        <div className="hero-btns" key={current + "btns"} style={{ animation: "fadeInUp 1s ease 0.3s both" }}>
+        <h1>Elegance<br /><span>Redefined</span></h1>
+        <p className="hero-desc">Handcrafted in Jaipur — jewellery that tells your story.</p>
+        <div className="hero-btns">
           <Link to="/shop" className="btn-primary">Explore Collection</Link>
           <Link to="/about" className="btn-outline">Our Story</Link>
         </div>
       </div>
 
-      {/* Dots */}
+      {/* Wallpaper indicator dots */}
       <div className="hero-dots">
-        {HERO_SLIDES.map((_, i) => (
-          <div
-            key={i}
-            className={`dot ${i === current ? "active" : ""}`}
-            onClick={() => setCurrent(i)}
-          />
+        {WALLPAPERS.map((_, i) => (
+          <div key={i} className={`dot ${i === current ? "active" : ""}`} onClick={() => setCurrent(i)} />
         ))}
       </div>
     </section>
