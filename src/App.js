@@ -1104,7 +1104,9 @@ function CartDrawer({ cart, setCart, open, onClose }) {
 }
 
 // ── Product Card ──
-function ProductCard({ product, cart, setCart, wishlist, setWishlist }) {
+function ProductCard({ product: productProp, cart, setCart, wishlist, setWishlist }) {
+  const product = { ...productProp, id: productProp._id || productProp.id };
+ 
   const [showModal, setShowModal] = useState(false);
 
   const inWishlist = wishlist.find(w => w.id === product.id);
@@ -1206,22 +1208,23 @@ function ProductCard({ product, cart, setCart, wishlist, setWishlist }) {
             {product.category}
           </div>
 
-          <div
-            style={{
-              position: "absolute",
-              bottom: "10px",
-              right: "10px",
-              background: "rgba(0,0,0,0.45)",
-              color: "#fff",
-              fontSize: "10px",
-              padding: "4px 9px",
-              borderRadius: "10px"
-            }}
-          >
-            👁 View
-          </div>
-        </div>
-
+         <div
+  onClick={(e) => { e.stopPropagation(); setShowModal(true); }}
+  style={{
+    position: "absolute",
+    bottom: "10px",
+    right: "10px",
+    background: "rgba(0,0,0,0.45)",
+    color: "#fff",
+    fontSize: "10px",
+    padding: "4px 9px",
+    borderRadius: "10px",
+    cursor: "pointer",
+    zIndex: 2,
+  }}
+>
+  👁 View
+</div>
         <div className="product-info">
           <h4>{product.name}</h4>
 
@@ -1384,6 +1387,7 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
         const list = Array.isArray(data?.data) ? data.data : [];
         const fixed = list.map(p => ({
           ...p,
+         id: p._id || p.id, 
           image: p.image?.replace(/^http:\/\//i, "https://")?.split(",")[0]?.trim()
         }));
         setFeatured(fixed.slice(0, 8));
