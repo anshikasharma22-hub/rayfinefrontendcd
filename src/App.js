@@ -1106,22 +1106,46 @@ function CartDrawer({ cart, setCart, open, onClose }) {
 // ── Product Card ──
 function ProductCard({ product, cart, setCart, wishlist, setWishlist }) {
   const [showModal, setShowModal] = useState(false);
+
   const inWishlist = wishlist.find(w => w.id === product.id);
   const inCart = cart.find(c => c.id === product.id);
-  const discount = product.originalPrice ? Math.round((1 - product.price / product.originalPrice) * 100) : null;
+
+  const discount = product.originalPrice
+    ? Math.round((1 - product.price / product.originalPrice) * 100)
+    : null;
 
   const addToCart = (e) => {
     e.stopPropagation();
+
     if (!product.inStock) return;
-    if (inCart) setCart(cart.map(c => c.id === product.id ? { ...c, quantity: c.quantity + 1 } : c));
-    else setCart([...cart, { ...product, quantity: 1 }]);
+
+    if (inCart) {
+      setCart(
+        cart.map(c =>
+          c.id === product.id
+            ? { ...c, quantity: c.quantity + 1 }
+            : c
+        )
+      );
+    } else {
+      setCart([...cart, { ...product, quantity: 1 }]);
+    }
   };
 
   const toggleWishlist = (e) => {
     e.stopPropagation();
-    if (inWishlist) setWishlist(wishlist.filter(w => w.id !== product.id));
-    else setWishlist([...wishlist, product]);
+
+    if (inWishlist) {
+      setWishlist(wishlist.filter(w => w.id !== product.id));
+    } else {
+      setWishlist([...wishlist, product]);
+    }
   };
+
+  // Safe variants handling
+  const variants = Array.isArray(product?.variants)
+    ? product.variants
+    : [];
 
   return (
     <>
@@ -1129,50 +1153,144 @@ function ProductCard({ product, cart, setCart, wishlist, setWishlist }) {
         <ProductModal
           product={product}
           onClose={() => setShowModal(false)}
-          cart={cart} setCart={setCart}
-          wishlist={wishlist} setWishlist={setWishlist}
+          cart={cart}
+          setCart={setCart}
+          wishlist={wishlist}
+          setWishlist={setWishlist}
         />
       )}
-      <div className="product-card" onClick={() => setShowModal(true)} style={{ cursor: "pointer", opacity: product.inStock ? 1 : 0.7 }}>
+
+      <div
+        className="product-card"
+        onClick={() => setShowModal(true)}
+        style={{
+          cursor: "pointer",
+          opacity: product.inStock ? 1 : 0.7
+        }}
+      >
         <div className="product-img-wrap">
-          <img src={product.image} alt={product.name} onError={e => { e.target.src = "https://placehold.co/300x300?text=Jewellery"; }} />
-          <button className={`wishlist-btn ${inWishlist ? "active" : ""}`} onClick={toggleWishlist}>{inWishlist ? "❤️" : "🤍"}</button>
-          {!product.inStock && <div className="sale-badge" style={{ background: "#555" }}>Out of Stock</div>}
-          {discount && product.inStock && <div className="sale-badge">-{discount}%</div>}
-          <div className="product-category-tag">{product.category}</div>
-          <div style={{ position: "absolute", bottom: "10px", right: "10px", background: "rgba(0,0,0,0.45)", color: "#fff", fontSize: "10px", padding: "4px 9px", borderRadius: "10px" }}>👁 View</div>
+          <img
+            src={product.image}
+            alt={product.name}
+            onError={(e) => {
+              e.target.src =
+                "https://placehold.co/300x300?text=Jewellery";
+            }}
+          />
+
+          <button
+            className={`wishlist-btn ${
+              inWishlist ? "active" : ""
+            }`}
+            onClick={toggleWishlist}
+          >
+            {inWishlist ? "❤️" : "🤍"}
+          </button>
+
+          {!product.inStock && (
+            <div
+              className="sale-badge"
+              style={{ background: "#555" }}
+            >
+              Out of Stock
+            </div>
+          )}
+
+          {discount && product.inStock && (
+            <div className="sale-badge">
+              -{discount}%
+            </div>
+          )}
+
+          <div className="product-category-tag">
+            {product.category}
+          </div>
+
+          <div
+            style={{
+              position: "absolute",
+              bottom: "10px",
+              right: "10px",
+              background: "rgba(0,0,0,0.45)",
+              color: "#fff",
+              fontSize: "10px",
+              padding: "4px 9px",
+              borderRadius: "10px"
+            }}
+          >
+            👁 View
+          </div>
         </div>
+
         <div className="product-info">
           <h4>{product.name}</h4>
-          <p className="product-desc">{product.description?.substring(0, 80)}...</p>
-          {product.variants && (
-            <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "10px" }}>
-           console.log(n.variants);
-console.log(typeof n.variants);
-console.log(Array.isArray(n.variants));
-{product.variants.slice(0, 3).map(v => (
-                <span key={v} style={{ fontSize: "10px", background: "#f5f0eb", padding: "2px 8px", borderRadius: "10px", color: "#9a7a80" }}>{v}</span>
+
+          <p className="product-desc">
+            {product.description?.substring(0, 80)}...
+          </p>
+
+          {/* Safe Variants */}
+          {variants.length > 0 && (
+            <div
+              style={{
+                display: "flex",
+                gap: "4px",
+                flexWrap: "wrap",
+                marginBottom: "10px"
+              }}
+            >
+              {variants.slice(0, 3).map((v, i) => (
+                <span
+                  key={v.id || i}
+                  style={{
+                    fontSize: "11px",
+                    padding: "4px 8px",
+                    background: "#f5f5f5",
+                    borderRadius: "12px"
+                  }}
+                >
+                  {typeof v === "object"
+                    ? v.name || "Variant"
+                    : v}
+                </span>
               ))}
             </div>
           )}
+
           <div className="price-wrap">
-            <span className="price-current">₹{product.price.toLocaleString()}</span>
-            {product.originalPrice && <span className="price-original">₹{product.originalPrice.toLocaleString()}</span>}
-            <span className="price-usd">{formatUSD(product.price)}</span>
+            <span className="price-current">
+              ₹{product.price.toLocaleString()}
+            </span>
+
+            {product.originalPrice && (
+              <span className="price-original">
+                ₹{product.originalPrice.toLocaleString()}
+              </span>
+            )}
+
+            <span className="price-usd">
+              {formatUSD(product.price)}
+            </span>
           </div>
+
           <button
-            className={`btn-add-cart ${inCart ? "added" : ""}`}
+            className={`btn-add-cart ${
+              inCart ? "added" : ""
+            }`}
             onClick={addToCart}
             disabled={!product.inStock}
           >
-            {!product.inStock ? "Out of Stock" : inCart ? "✓ Added to Cart" : "Add to Cart"}
+            {!product.inStock
+              ? "Out of Stock"
+              : inCart
+              ? "✓ Added to Cart"
+              : "Add to Cart"}
           </button>
         </div>
       </div>
     </>
   );
 }
-
 // ── Section Divider ──
 function SectionDivider({ subtitle, title }) {
   return (
