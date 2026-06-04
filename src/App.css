@@ -3,32 +3,42 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* ── PASTEL PINK / WHITE THEME ── */
+  /* ── SOFT LIGHT PASTEL ROSE THEME ── */
+
   --primary: #C89595;
---primary-light: #D4AAAA;   
---primary-dark: #B07A7A;
-  --gold: #B07A8A;
-  --gold-light: #E8C0D0;
-  --pink: #FBEAF0;
-  --pink-mid: #F4C0D1;
-  --pink-dark: #ED93B1;
-  --text: #d4c1c9;
-  --text-muted: #8A6070;
+  --primary-light: #E7CFCF;
+  --primary-dark: #D9B2B2;
+
+  --gold: #E8D2C8;
+  --gold-light: #F7ECE7;
+
+  --pink: #FFF7F8;
+  --pink-mid: #F8E4E4;
+  --pink-dark: #EFD6D6;
+
+  --text: #A48787;
+  --text-muted: #C1AAAA;
+
   --bg: #FFFFFF;
-  --bg2: #FDF6F9;
-  --bg3: #FAEDF3;
+  --bg2: #FFFBFB;
+  --bg3: #FDF5F5;
+
   --card: #FFFFFF;
-  --border: #F2DCE6;
-  --dark: #93838a;
-  --shadow: 0 4px 24px rgba(125, 116, 119, 0.1);
-  --shadow-lg: 0 12px 48px rgba(205, 179, 188, 0.16);
-  --footer-bg: #FDF0F5;
-  --footer-mid: #d6c5cc;
-  --footer-dark: #FBEAF0;
-  --footer-border: #F2DCE6;
-  --footer-text: #f1bfd3;
-  --footer-link: #C85B82;
-  --footer-accent: #C89895;
+  --border: #F2E1E1;
+
+  --dark: #EADADA; /* still light */
+
+  --shadow: 0 4px 20px rgba(200, 149, 149, 0.12);
+  --shadow-lg: 0 10px 40px rgba(200, 149, 149, 0.16);
+
+  --footer-bg: #FFF8F8;
+  --footer-mid: #F7E6E6;
+  --footer-dark: #FDF2F2;
+  --footer-border: #F0DEDE;
+
+  --footer-text: #B79A9A;
+  --footer-link: #C89595;
+  --footer-accent: #E7CFCF;
 }
 html { scroll-behavior: smooth; }
 
