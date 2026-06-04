@@ -8,7 +8,7 @@ import Chatbot from "./Chatbot";
 const INR_TO_USD = 0.012;
 
 const WALLPAPERS = [
- "/images/bracelet.jpg",
+  "/images/bracelet.jpg",
 ];
 
 const ANNOUNCEMENT_MESSAGES = [
