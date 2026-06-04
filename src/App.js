@@ -15,12 +15,54 @@ const WALLPAPERS = [
 ];
 
 const ANNOUNCEMENT_MESSAGES = [
+  "🌍 Worldwide Shipping — We Deliver to 150+ Countries!",
   "🎁 Get Additional 15% Discount — Use Code GIFT15",
   "🚚 Free Express Delivery on All Orders",
   "💎 Handcrafted in Jaipur — Shipped Worldwide",
 ];
 
+const PLATFORMS = [
+  { icon: "🛍️", name: "Amazon", color: "#FF9900" },
+  { icon: "🟠", name: "Flipkart", color: "#2874F0" },
+  { icon: "📸", name: "Instagram Shop", color: "#E1306C" },
+  { icon: "📌", name: "Pinterest", color: "#E60023" },
+  { icon: "🌐", name: "Our Website", color: "#C85B82" },
+  { icon: "💬", name: "WhatsApp", color: "#25D366" },
+];
+
 const API_BASE = "https://rayfinesite-3.onrender.com";
+const NOTIFY_EMAIL = "bhaveshgemsonline@gmail.com";
+
+// ── Send order notification email via EmailJS / simple mailto fallback ──
+async function sendOrderNotification(order) {
+  try {
+    // Using EmailJS public API — replace SERVICE_ID, TEMPLATE_ID, PUBLIC_KEY with yours
+    // or swap for any transactional email provider
+    const payload = {
+      service_id: "YOUR_EMAILJS_SERVICE_ID",
+      template_id: "YOUR_EMAILJS_TEMPLATE_ID",
+      user_id: "YOUR_EMAILJS_PUBLIC_KEY",
+      template_params: {
+        to_email: NOTIFY_EMAIL,
+        customer_name: order.name,
+        customer_phone: order.phone,
+        customer_address: order.address,
+        order_items: order.items
+          .map(i => `${i.name} x${i.quantity} = ₹${(i.price * i.quantity).toLocaleString()}`)
+          .join("\n"),
+        order_total: `₹${order.total.toLocaleString()} (${formatUSD(order.total)})`,
+        order_time: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+      },
+    };
+    await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (e) {
+    console.warn("Email notification failed:", e);
+  }
+}
 
 // ── Normalize product from API ──
 function normalizeProduct(p) {
@@ -28,8 +70,10 @@ function normalizeProduct(p) {
     ...p,
     id: p.id,
     inStock: p.in_stock !== false && p.in_stock !== 0,
+    stockQty: p.stock_qty ?? p.stockQty ?? null,
     originalPrice: p.original_price ? Number(p.original_price) : null,
     careInstructions: p.care_instructions || "",
+    trackingInfo: p.tracking_info || "",
     image: p.image
       ? p.image.startsWith("http")
         ? p.image.split(",")[0].trim()
@@ -40,6 +84,14 @@ function normalizeProduct(p) {
 
 function formatUSD(inr) {
   return "$" + (inr * INR_TO_USD).toFixed(2);
+}
+
+// ── Stock indicator ──
+function StockIndicator({ qty }) {
+  if (qty === null || qty === undefined) return null;
+  if (qty === 0) return <span style={{ fontSize: "11px", color: "#e53935", fontWeight: 600 }}>Out of Stock</span>;
+  if (qty <= 5) return <span style={{ fontSize: "11px", color: "#F57C00", fontWeight: 600 }}>Only {qty} left!</span>;
+  return <span style={{ fontSize: "11px", color: "#388E3C", fontWeight: 600 }}>In Stock ({qty})</span>;
 }
 
 // ── Product Modal ──
@@ -75,29 +127,38 @@ function ProductModal({ product, onClose, cart, setCart, wishlist, setWishlist }
       onClick={onClose}
     >
       <div
-        style={{ background: "#fff", borderRadius: "8px", maxWidth: "900px", width: "100%", maxHeight: "90vh", overflow: "auto", display: "flex", flexWrap: "wrap", boxShadow: "0 32px 80px rgba(0,0,0,0.3)" }}
+        style={{ background: "#fff", borderRadius: "16px", maxWidth: "900px", width: "100%", maxHeight: "90vh", overflow: "auto", display: "flex", flexWrap: "wrap", boxShadow: "0 32px 80px rgba(0,0,0,0.3)" }}
         onClick={e => e.stopPropagation()}
       >
         <div style={{ flex: "1 1 350px", position: "relative", minHeight: "350px" }}>
           <img
             src={product.image} alt={product.name}
-            style={{ width: "100%", height: "100%", minHeight: "350px", objectFit: "cover", borderRadius: "8px 0 0 8px", display: "block" }}
+            style={{ width: "100%", height: "100%", minHeight: "350px", objectFit: "cover", borderRadius: "16px 0 0 16px", display: "block" }}
             onError={e => { e.target.src = "https://placehold.co/400x400?text=Jewellery"; }}
           />
-          {!product.inStock && <div style={{ position: "absolute", top: "16px", left: "16px", background: "#333", color: "#fff", padding: "6px 14px", borderRadius: "2px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px" }}>OUT OF STOCK</div>}
-          {discount && product.inStock && <div style={{ position: "absolute", top: "16px", left: "16px", background: "#7B2E3E", color: "#fff", padding: "6px 14px", borderRadius: "2px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px" }}>-{discount}% OFF</div>}
+          {!product.inStock && <div style={{ position: "absolute", top: "16px", left: "16px", background: "#333", color: "#fff", padding: "6px 14px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px" }}>OUT OF STOCK</div>}
+          {discount && product.inStock && <div style={{ position: "absolute", top: "16px", left: "16px", background: "var(--primary)", color: "#fff", padding: "6px 14px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px" }}>-{discount}% OFF</div>}
+          {/* Worldwide shipping badge */}
+          <div style={{ position: "absolute", bottom: "16px", left: "16px", background: "rgba(255,255,255,0.95)", border: "1px solid var(--border)", padding: "6px 12px", borderRadius: "20px", fontSize: "10px", fontWeight: 700, color: "var(--primary)", letterSpacing: "1px" }}>
+            🌍 Ships Worldwide
+          </div>
         </div>
 
         <div style={{ flex: "1 1 300px", padding: "40px 36px" }}>
           <button onClick={onClose} style={{ float: "right", background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#aaa" }}>✕</button>
-          <div style={{ fontSize: "10px", color: "#C9963C", fontWeight: 700, letterSpacing: "3px", textTransform: "uppercase", marginBottom: "10px" }}>{product.category}</div>
-          <h2 style={{ fontFamily: "Cormorant Garamond, serif", color: "#1a0a0f", fontSize: "28px", marginBottom: "16px", fontWeight: 400, lineHeight: 1.2 }}>{product.name}</h2>
+          <div style={{ fontSize: "10px", color: "var(--primary)", fontWeight: 700, letterSpacing: "3px", textTransform: "uppercase", marginBottom: "10px" }}>{product.category}</div>
+          <h2 style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--dark)", fontSize: "28px", marginBottom: "12px", fontWeight: 400, lineHeight: 1.2 }}>{product.name}</h2>
+
+          {/* Stock indicator */}
+          <div style={{ marginBottom: "12px" }}>
+            <StockIndicator qty={product.stockQty} />
+          </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "20px", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "26px", fontWeight: 700, color: "#7B2E3E" }}>₹{product.price.toLocaleString()}</span>
+            <span style={{ fontSize: "26px", fontWeight: 700, color: "var(--primary)" }}>₹{product.price.toLocaleString()}</span>
             {product.originalPrice && <span style={{ textDecoration: "line-through", color: "#c0a0a8", fontSize: "16px" }}>₹{product.originalPrice.toLocaleString()}</span>}
-            <span style={{ fontSize: "14px", color: "#8a7060", background: "#f5f0eb", padding: "3px 10px", borderRadius: "20px" }}>{formatUSD(product.price)}</span>
-            {discount && <span style={{ background: "#fff0f3", color: "#7B2E3E", fontSize: "12px", padding: "3px 10px", borderRadius: "20px", fontWeight: 700 }}>Save {discount}%</span>}
+            <span style={{ fontSize: "14px", color: "#8a7060", background: "var(--bg3)", padding: "3px 10px", borderRadius: "20px" }}>{formatUSD(product.price)}</span>
+            {discount && <span style={{ background: "#fff0f3", color: "var(--primary)", fontSize: "12px", padding: "3px 10px", borderRadius: "20px", fontWeight: 700 }}>Save {discount}%</span>}
           </div>
 
           <p style={{ color: "#6a4a50", lineHeight: "1.8", marginBottom: "24px", fontSize: "14px" }}>{product.description}</p>
@@ -107,20 +168,32 @@ function ProductModal({ product, onClose, cart, setCart, wishlist, setWishlist }
               <p style={{ fontWeight: 600, marginBottom: "10px", fontSize: "12px", letterSpacing: "1.5px", textTransform: "uppercase", color: "#9a7a80" }}>Select Finish</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 {(typeof product.variants === "string" ? product.variants.split(",") : product.variants).map(v => (
-                  <button key={v} onClick={() => setSelectedVariant(v.trim())} style={{ padding: "7px 16px", borderRadius: "2px", fontSize: "12px", cursor: "pointer", background: selectedVariant === v.trim() ? "#7B2E3E" : "#f5f0eb", color: selectedVariant === v.trim() ? "#fff" : "#5a3a42", border: selectedVariant === v.trim() ? "1.5px solid #7B2E3E" : "1.5px solid #e0d0d4", fontWeight: selectedVariant === v.trim() ? 700 : 400, transition: "all 0.2s" }}>{v.trim()}</button>
+                  <button key={v} onClick={() => setSelectedVariant(v.trim())} style={{ padding: "7px 16px", borderRadius: "20px", fontSize: "12px", cursor: "pointer", background: selectedVariant === v.trim() ? "var(--primary)" : "var(--bg3)", color: selectedVariant === v.trim() ? "#fff" : "var(--text)", border: selectedVariant === v.trim() ? "1.5px solid var(--primary)" : "1.5px solid var(--border)", fontWeight: selectedVariant === v.trim() ? 700 : 400, transition: "all 0.2s" }}>{v.trim()}</button>
                 ))}
               </div>
             </div>
           )}
 
-          {product.material && <div style={{ marginBottom: "12px", fontSize: "13px", color: "#7a5a60" }}><strong>Material:</strong> {product.material}</div>}
-          {product.careInstructions && <div style={{ marginBottom: "24px", fontSize: "13px", color: "#7a5a60", background: "#fdf8f5", padding: "14px", borderRadius: "6px", border: "1px solid #f0e4df" }}><strong>✨ Care:</strong> {product.careInstructions}</div>}
+          {product.material && <div style={{ marginBottom: "12px", fontSize: "13px", color: "var(--text-muted)" }}><strong>Material:</strong> {product.material}</div>}
+          {product.careInstructions && <div style={{ marginBottom: "16px", fontSize: "13px", color: "var(--text-muted)", background: "var(--bg3)", padding: "14px", borderRadius: "12px", border: "1px solid var(--border)" }}><strong>✨ Care:</strong> {product.careInstructions}</div>}
+
+          {/* Tracking info */}
+          {product.trackingInfo && (
+            <div style={{ marginBottom: "16px", fontSize: "13px", color: "#1565C0", background: "#E3F2FD", padding: "12px 14px", borderRadius: "10px", border: "1px solid #BBDEFB" }}>
+              📦 <strong>Tracking:</strong> {product.trackingInfo}
+            </div>
+          )}
+
+          {/* Worldwide shipping note */}
+          <div style={{ marginBottom: "20px", fontSize: "12px", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "8px", background: "var(--bg3)", padding: "10px 14px", borderRadius: "10px" }}>
+            🌍 <span>We ship to <strong>150+ countries</strong> worldwide · Express delivery available</span>
+          </div>
 
           <div style={{ display: "flex", gap: "12px" }}>
-            <button onClick={addToCart} disabled={!product.inStock} style={{ flex: 1, padding: "15px", borderRadius: "2px", border: "none", cursor: product.inStock ? "pointer" : "not-allowed", background: product.inStock ? "#7B2E3E" : "#ccc", color: "#fff", fontWeight: 700, fontSize: "11px", letterSpacing: "2.5px", textTransform: "uppercase", transition: "all 0.3s" }}>
+            <button onClick={addToCart} disabled={!product.inStock} style={{ flex: 1, padding: "15px", borderRadius: "40px", border: "none", cursor: product.inStock ? "pointer" : "not-allowed", background: product.inStock ? "var(--primary)" : "#ccc", color: "#fff", fontWeight: 700, fontSize: "11px", letterSpacing: "2.5px", textTransform: "uppercase", transition: "all 0.3s" }}>
               {!product.inStock ? "Out of Stock" : inCart ? "✓ Added" : "Add to Cart"}
             </button>
-            <button onClick={toggleWishlist} style={{ padding: "15px 20px", borderRadius: "2px", border: "1.5px solid #7B2E3E", background: inWishlist ? "#7B2E3E" : "transparent", color: inWishlist ? "#fff" : "#7B2E3E", cursor: "pointer", fontSize: "18px", transition: "all 0.3s" }}>
+            <button onClick={toggleWishlist} style={{ padding: "15px 20px", borderRadius: "40px", border: "1.5px solid var(--primary)", background: inWishlist ? "var(--primary)" : "transparent", color: inWishlist ? "#fff" : "var(--primary)", cursor: "pointer", fontSize: "18px", transition: "all 0.3s" }}>
               {inWishlist ? "❤️" : "🤍"}
             </button>
           </div>
@@ -144,6 +217,49 @@ function AnnouncementBar() {
   );
 }
 
+// ── Worldwide Marquee Strip ──
+function WorldwideStrip() {
+  const items = [
+    "🌍 Worldwide Shipping", "🇮🇳 Made in India", "🇺🇸 USA", "🇬🇧 UK", "🇦🇪 UAE",
+    "🇦🇺 Australia", "🇨🇦 Canada", "🇩🇪 Germany", "🇸🇬 Singapore", "🇳🇿 New Zealand",
+    "✈️ Express Delivery", "📦 Tracked Shipping", "💎 Handcrafted in Jaipur",
+    "🌍 Worldwide Shipping", "🇮🇳 Made in India", "🇺🇸 USA", "🇬🇧 UK", "🇦🇪 UAE",
+    "🇦🇺 Australia", "🇨🇦 Canada", "🇩🇪 Germany", "🇸🇬 Singapore", "🇳🇿 New Zealand",
+    "✈️ Express Delivery", "📦 Tracked Shipping", "💎 Handcrafted in Jaipur",
+  ];
+  return (
+    <div className="worldwide-strip">
+      <div className="worldwide-track">
+        {items.map((item, i) => (
+          <span key={i}>{item} <span style={{ color: "var(--pink-mid)", opacity: 0.5 }}>✦</span></span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Platforms Section ──
+function PlatformsSection() {
+  return (
+    <section className="platforms-section">
+      <div style={{ textAlign: "center", marginBottom: "32px" }}>
+        <p className="section-subtitle">Find Us On</p>
+        <h2 className="section-title" style={{ fontSize: "clamp(22px, 3vw, 36px)" }}>Shop Everywhere You Are</h2>
+      </div>
+      <div className="platforms-grid">
+        {PLATFORMS.map(p => (
+          <div key={p.name} className="platform-item">
+            <div className="platform-icon" style={{ borderColor: p.color + "33" }}>
+              <span style={{ fontSize: "28px" }}>{p.icon}</span>
+            </div>
+            <span style={{ color: p.color, fontWeight: 700 }}>{p.name}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // ── Navbar ──
 function Navbar({ cart, wishlist, onCartOpen }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -159,7 +275,7 @@ function Navbar({ cart, wishlist, onCartOpen }) {
   useEffect(() => { setMenuOpen(false); }, [loc]);
 
   return (
-    <nav className="navbar" style={scrolled ? { boxShadow: "0 2px 20px rgba(123,46,62,0.10)" } : {}}>
+    <nav className="navbar" style={scrolled ? { boxShadow: "0 2px 20px rgba(200,91,130,0.10)" } : {}}>
       <Link to="/" className="navbar-logo" onClick={() => setMenuOpen(false)}>
         <img
           src="https://rayfineornates.com/wp-content/uploads/2021/06/logo.png"
@@ -167,7 +283,7 @@ function Navbar({ cart, wishlist, onCartOpen }) {
           style={{ display: "block", height: "44px", width: "auto", maxWidth: "160px", objectFit: "contain" }}
           onError={e => {
             e.target.style.display = "none";
-            e.target.parentElement.innerHTML = '<span style="font-family:Georgia,serif;font-size:16px;font-style:italic;color:#7B2E3E;">Ray Fine Ornates</span>';
+            e.target.parentElement.innerHTML = '<span class="navbar-logo-text">Ray Fine Ornates</span>';
           }}
         />
       </Link>
@@ -194,10 +310,33 @@ function Navbar({ cart, wishlist, onCartOpen }) {
 function CartDrawer({ cart, setCart, open, onClose }) {
   const [customer, setCustomer] = useState({ name: "", address: "", phone: "" });
   const [step, setStep] = useState("cart");
+  const [ordering, setOrdering] = useState(false);
+  const [ordered, setOrdered] = useState(false);
   const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
   const savings = cart.reduce((s, i) => s + ((i.originalPrice || i.price) - i.price) * i.quantity, 0);
 
-  const placeOrder = () => { alert("Payment integration pending"); };
+  const placeOrder = async () => {
+    if (!customer.name || !customer.phone) {
+      alert("Please fill in Name and Phone");
+      return;
+    }
+    setOrdering(true);
+    await sendOrderNotification({
+      name: customer.name,
+      phone: customer.phone,
+      address: customer.address,
+      items: cart,
+      total,
+    });
+    setOrdering(false);
+    setOrdered(true);
+    setTimeout(() => {
+      setCart([]);
+      setStep("cart");
+      setOrdered(false);
+      onClose();
+    }, 2500);
+  };
 
   const updateQty = (id, delta) => {
     setCart(prev => prev.map(p => p.id === id ? { ...p, quantity: p.quantity + delta } : p).filter(p => p.quantity > 0));
@@ -217,8 +356,8 @@ function CartDrawer({ cart, setCart, open, onClose }) {
             {cart.length === 0 ? (
               <div className="cart-empty">
                 <div style={{ fontSize: "48px", marginBottom: "16px" }}>🛒</div>
-                <p style={{ marginBottom: "8px", fontFamily: "Cormorant Garamond, serif", fontSize: "20px", color: "#5a3a42" }}>Your cart is empty</p>
-                <p style={{ fontSize: "13px", color: "#9a7a80", marginBottom: "24px" }}>Discover our beautiful collection</p>
+                <p style={{ marginBottom: "8px", fontFamily: "Cormorant Garamond, serif", fontSize: "20px", color: "var(--dark)" }}>Your cart is empty</p>
+                <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "24px" }}>Discover our beautiful collection</p>
                 <Link to="/shop" className="btn-primary" style={{ display: "inline-block" }} onClick={onClose}>Shop Now</Link>
               </div>
             ) : cart.map(item => (
@@ -226,12 +365,16 @@ function CartDrawer({ cart, setCart, open, onClose }) {
                 <img src={item.image} alt={item.name} onError={e => e.target.src = "https://placehold.co/76x76?text=Item"} />
                 <div className="cart-item-info">
                   <p className="cart-item-name">{item.name}</p>
-                  {item.selectedVariant && <p style={{ fontSize: "11px", color: "#9a7a80", marginBottom: "4px" }}>{item.selectedVariant}</p>}
+                  {item.selectedVariant && <p style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: "4px" }}>{item.selectedVariant}</p>}
                   <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                     <p className="cart-item-price">₹{item.price.toLocaleString()}</p>
                     {item.originalPrice && <p className="cart-item-original">₹{item.originalPrice.toLocaleString()}</p>}
                     <span style={{ fontSize: "11px", color: "#9a8070" }}>{formatUSD(item.price)}</span>
                   </div>
+                  {/* Stock qty in cart */}
+                  {item.stockQty !== null && item.stockQty !== undefined && item.stockQty <= 5 && (
+                    <p style={{ fontSize: "10px", color: "#F57C00", marginTop: "2px" }}>Only {item.stockQty} in stock!</p>
+                  )}
                   <div className="qty-controls">
                     <button onClick={() => updateQty(item.id, -1)}>−</button>
                     <span>{item.quantity}</span>
@@ -242,12 +385,24 @@ function CartDrawer({ cart, setCart, open, onClose }) {
               </div>
             ))}
           </div>
+        ) : ordered ? (
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px", textAlign: "center" }}>
+            <div style={{ fontSize: "56px", marginBottom: "16px" }}>🎉</div>
+            <h3 style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--primary)", fontSize: "24px", marginBottom: "10px" }}>Order Placed!</h3>
+            <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>Thank you {customer.name}! We'll contact you shortly on {customer.phone}.</p>
+          </div>
         ) : (
           <div className="checkout-form">
-            <h4 style={{ color: "#7B2E3E", fontFamily: "Cormorant Garamond, serif", fontSize: "22px", fontWeight: 400 }}>Delivery Details</h4>
+            <h4 style={{ color: "var(--primary)", fontFamily: "Cormorant Garamond, serif", fontSize: "22px", fontWeight: 400 }}>Delivery Details</h4>
             <input placeholder="Full Name *" value={customer.name} onChange={e => setCustomer({ ...customer, name: e.target.value })} />
             <input placeholder="Phone Number *" value={customer.phone} onChange={e => setCustomer({ ...customer, phone: e.target.value })} />
             <input placeholder="Delivery Address" value={customer.address} onChange={e => setCustomer({ ...customer, address: e.target.value })} />
+
+            {/* Worldwide shipping note in checkout */}
+            <div style={{ background: "var(--bg3)", border: "1px solid var(--border)", borderRadius: "12px", padding: "12px 14px", fontSize: "12px", color: "var(--text-muted)" }}>
+              🌍 We ship worldwide · Tracking info will be shared after dispatch
+            </div>
+
             <div className="order-summary">
               <h5>Order Summary</h5>
               {cart.map(item => (
@@ -261,7 +416,9 @@ function CartDrawer({ cart, setCart, open, onClose }) {
                 <strong>₹{total.toLocaleString()} ({formatUSD(total)})</strong>
               </div>
             </div>
-            <button className="btn-checkout" onClick={placeOrder}>Pay ₹{total.toLocaleString()} →</button>
+            <button className="btn-checkout" onClick={placeOrder} disabled={ordering}>
+              {ordering ? "Placing Order..." : `Pay ₹${total.toLocaleString()} →`}
+            </button>
             <button className="btn-ghost" onClick={() => setStep("cart")}>← Back to Cart</button>
           </div>
         )}
@@ -273,7 +430,7 @@ function CartDrawer({ cart, setCart, open, onClose }) {
               <span>Total</span>
               <div style={{ textAlign: "right" }}>
                 <strong>₹{total.toLocaleString()}</strong>
-                <div style={{ fontSize: "12px", color: "#9a7060" }}>{formatUSD(total)}</div>
+                <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>{formatUSD(total)}</div>
               </div>
             </div>
             <button className="btn-checkout" onClick={() => setStep("checkout")}>Proceed to Checkout →</button>
@@ -333,10 +490,7 @@ function ProductCard({ product: productProp, cart, setCart, wishlist, setWishlis
             onError={e => { e.target.src = "https://placehold.co/300x300?text=Jewellery"; }}
           />
 
-          <button
-            className={`wishlist-btn ${inWishlist ? "active" : ""}`}
-            onClick={toggleWishlist}
-          >
+          <button className={`wishlist-btn ${inWishlist ? "active" : ""}`} onClick={toggleWishlist}>
             {inWishlist ? "❤️" : "🤍"}
           </button>
 
@@ -351,16 +505,21 @@ function ProductCard({ product: productProp, cart, setCart, wishlist, setWishlis
           >
             👁 View
           </div>
-        </div>{/* product-img-wrap END */}
+        </div>
 
         <div className="product-info">
           <h4>{product.name}</h4>
           <p className="product-desc">{product.description?.substring(0, 80)}...</p>
 
+          {/* Stock quantity indicator */}
+          <div style={{ marginBottom: "8px" }}>
+            <StockIndicator qty={product.stockQty} />
+          </div>
+
           {variants.length > 0 && (
             <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "10px" }}>
               {variants.slice(0, 3).map((v, i) => (
-                <span key={i} style={{ fontSize: "11px", padding: "4px 8px", background: "#f5f5f5", borderRadius: "12px" }}>{v}</span>
+                <span key={i} style={{ fontSize: "11px", padding: "4px 8px", background: "var(--bg3)", borderRadius: "12px" }}>{v}</span>
               ))}
             </div>
           )}
@@ -404,7 +563,7 @@ function TrustStrip() {
   return (
     <div className="trust-strip">
       {[
-        { icon: "🚚", title: "Free Delivery", sub: "On all orders" },
+        { icon: "🌍", title: "Ships Worldwide", sub: "150+ countries" },
         { icon: "💎", title: "Handcrafted", sub: "Jaipur artisans" },
         { icon: "🔄", title: "Easy Returns", sub: "Hassle-free" },
         { icon: "🔒", title: "Secure Payment", sub: "100% safe" },
@@ -432,8 +591,15 @@ function HeroSlider() {
       {WALLPAPERS.map((url, i) => (
         <div key={i} className={`hero-bg ${i === current ? "active" : "inactive"}`} style={{ backgroundImage: `url(${url})` }} />
       ))}
+      <div className="hero-gradient" />
+      <div className="hero-vignette" />
       <div className="hero-overlay">
+        <div className="hero-eyebrow">
+          <div className="hero-eyebrow-line" />
+          <span className="hero-sub">Handcrafted in Jaipur · Ships Worldwide</span>
+        </div>
         <h1>Elegance<br /><span>Redefined</span></h1>
+        <p className="hero-desc">Luxury fashion jewellery crafted by skilled artisans, delivered to your doorstep — anywhere in the world.</p>
         <div className="hero-btns">
           <Link to="/shop" className="btn-primary">Explore Collection</Link>
           <Link to="/about" className="btn-outline">Our Story</Link>
@@ -465,6 +631,8 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
   return (
     <>
       <HeroSlider />
+
+      <WorldwideStrip />
 
       <div className="sale-banner">
         <span>🔥 SALE IS LIVE — Use Code <strong>GIFT15</strong> for Extra 15% Off!</span>
@@ -504,6 +672,9 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
           <Link to="/shop" className="btn-primary">View All Products</Link>
         </div>
       </section>
+
+      {/* Platforms / Marketing Presence Section */}
+      <PlatformsSection />
 
       <section className="testimonials-section">
         <SectionDivider subtitle="Customer Love" title="What They Say" />
@@ -567,7 +738,7 @@ function Shop({ cart, setCart, wishlist, setWishlist }) {
   return (
     <div className="shop-page">
       <div className="shop-hero">
-        <p className="section-subtitle" style={{ marginBottom: "12px" }}>Handcrafted in Jaipur</p>
+        <p className="section-subtitle" style={{ marginBottom: "12px" }}>Handcrafted in Jaipur · Ships to 150+ Countries</p>
         <h1>Our Collection</h1>
         <p>Discover timeless pieces crafted with love</p>
       </div>
@@ -579,7 +750,7 @@ function Shop({ cart, setCart, wishlist, setWishlist }) {
           <option value="low">Price: Low to High</option>
           <option value="high">Price: High to Low</option>
         </select>
-        <button onClick={() => setShowInStock(!showInStock)} style={{ padding: "10px 18px", borderRadius: "2px", border: "none", cursor: "pointer", background: showInStock ? "#7B2E3E" : "#f0ebe6", color: showInStock ? "#fff" : "#5a3a42", fontWeight: 600, fontSize: "11px", letterSpacing: "1.5px", textTransform: "uppercase", minHeight: "44px" }}>
+        <button onClick={() => setShowInStock(!showInStock)} style={{ padding: "10px 18px", borderRadius: "40px", border: "none", cursor: "pointer", background: showInStock ? "var(--primary)" : "var(--bg3)", color: showInStock ? "#fff" : "var(--text)", fontWeight: 600, fontSize: "11px", letterSpacing: "1.5px", textTransform: "uppercase", minHeight: "44px" }}>
           {showInStock ? "✓ In Stock" : "All Products"}
         </button>
       </div>
@@ -590,7 +761,7 @@ function Shop({ cart, setCart, wishlist, setWishlist }) {
         ))}
       </div>
 
-      {loading && <p style={{ textAlign: "center", padding: "80px", color: "#9a7a80", fontFamily: "Cormorant Garamond, serif", fontSize: "20px", fontStyle: "italic" }}>Loading collection...</p>}
+      {loading && <p style={{ textAlign: "center", padding: "80px", color: "var(--text-muted)", fontFamily: "Cormorant Garamond, serif", fontSize: "20px", fontStyle: "italic" }}>Loading collection...</p>}
 
       {!loading && (
         <div className="products-grid" style={{ padding: "0 40px 80px" }}>
@@ -600,7 +771,7 @@ function Shop({ cart, setCart, wishlist, setWishlist }) {
         </div>
       )}
 
-      {!loading && filtered.length === 0 && <p style={{ textAlign: "center", color: "#9a7a80", padding: "80px", fontFamily: "Cormorant Garamond, serif", fontSize: "20px", fontStyle: "italic" }}>No pieces found.</p>}
+      {!loading && filtered.length === 0 && <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "80px", fontFamily: "Cormorant Garamond, serif", fontSize: "20px", fontStyle: "italic" }}>No pieces found.</p>}
     </div>
   );
 }
@@ -616,7 +787,7 @@ function Wishlist({ wishlist, setWishlist, cart, setCart }) {
       {wishlist.length === 0 ? (
         <div style={{ textAlign: "center", padding: "100px 20px" }}>
           <div style={{ fontSize: "56px", marginBottom: "20px" }}>🤍</div>
-          <p style={{ color: "#9a7a80", fontSize: "18px", marginBottom: "28px", fontFamily: "Cormorant Garamond, serif", fontStyle: "italic" }}>No items saved yet</p>
+          <p style={{ color: "var(--text-muted)", fontSize: "18px", marginBottom: "28px", fontFamily: "Cormorant Garamond, serif", fontStyle: "italic" }}>No items saved yet</p>
           <Link to="/shop" className="btn-primary">Explore Collection</Link>
         </div>
       ) : (
@@ -635,13 +806,15 @@ function About() {
       <div className="shop-hero">
         <p className="section-subtitle" style={{ marginBottom: "12px" }}>Est. 2021 · Jaipur, India</p>
         <h1>Our Story</h1>
-        <p>Crafting elegance since 2021</p>
+        <p>Crafting elegance since 2021 · Shipping worldwide</p>
       </div>
       <div className="about-grid">
         <div className="about-text">
           <h2>Who We Are</h2>
           <p>Ray Fine Ornates is a luxury fashion jewellery brand based in the heart of Johari Bazar, Jaipur — India's jewellery capital. We believe every woman deserves to feel like royalty.</p>
           <p>Our pieces are crafted with precision, using the finest materials to create jewellery that is both timeless and contemporary. From delicate studs to statement necklaces, each piece tells a story.</p>
+          <h2>Worldwide Reach</h2>
+          <p>We proudly ship to 150+ countries across the globe. Whether you're in the USA, UK, UAE, Australia, or anywhere else — your perfect jewellery is just an order away, with full tracking and express delivery options.</p>
           <h2>Our Promise</h2>
           <p>Quality you can feel. Beauty you can see. Service you can trust. We stand behind every piece we create with our dedication to craftsmanship and customer satisfaction.</p>
         </div>
@@ -650,7 +823,7 @@ function About() {
         </div>
       </div>
       <div className="about-stats">
-        {[["2021", "Founded"], ["500+", "Products"], ["10,000+", "Happy Customers"], ["Jaipur", "Headquarters"]].map(([n, l]) => (
+        {[["2021", "Founded"], ["500+", "Products"], ["10,000+", "Happy Customers"], ["150+", "Countries Served"]].map(([n, l]) => (
           <div className="stat-box" key={l}><h3>{n}</h3><p>{l}</p></div>
         ))}
       </div>
@@ -673,6 +846,7 @@ function Contact() {
           <div className="contact-item">📧 <a href="mailto:info@rayfineornates.com">info@rayfineornates.com</a></div>
           <div className="contact-item">📞 <a href="tel:+918112240112">+91 8112240112</a></div>
           <div className="contact-item">📍 Johari Bazar, Jaipur 302003<br />(10:30 AM – 8:30 PM)</div>
+          <div className="contact-item">🌍 We ship to 150+ countries worldwide</div>
           <div className="social-links">
             <a href="https://www.instagram.com/rayfineornates/" target="_blank" rel="noreferrer">Instagram</a>
             <a href="https://www.facebook.com/rayfineornatesjewellery" target="_blank" rel="noreferrer">Facebook</a>
@@ -699,13 +873,13 @@ function Terms() {
         <p>Ray Fine Ornates Policies &amp; Information</p>
       </div>
       <div style={{ maxWidth: "1000px", margin: "40px auto", padding: "20px 40px", lineHeight: "1.8" }}>
-        <h2 style={{ fontFamily: "Cormorant Garamond, serif", color: "#7B2E3E", fontSize: "32px", fontWeight: 300, marginBottom: "24px" }}>Terms &amp; Conditions</h2>
+        <h2 style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--primary)", fontSize: "32px", fontWeight: 300, marginBottom: "24px" }}>Terms &amp; Conditions</h2>
         {[
           ["1. General Information", "Ray Fine Ornates is a Jaipur-based jewelry brand specializing in handcrafted jewelry made with precious, semi-precious, natural, and lab-created stones."],
           ["2. Product Information", "We make every effort to display product images, colors, materials, and descriptions accurately. Slight differences may occur due to lighting and the handmade nature of our jewelry."],
           ["3. Pricing", "All prices are subject to change without prior notice. Taxes, shipping charges, and customs duties may be charged separately."],
           ["4. Orders & Payments", "Orders are confirmed only after successful payment verification. Ray Fine Ornates reserves the right to cancel or refuse any order."],
-          ["5. Shipping & Delivery", "We aim to dispatch orders within the mentioned processing time. Delivery timelines may vary depending on the shipping destination."],
+          ["5. Shipping & Delivery", "We ship to 150+ countries worldwide. We aim to dispatch orders within the mentioned processing time. Delivery timelines may vary depending on the shipping destination. Tracking information is shared after dispatch."],
           ["6. Returns & Exchanges", "We accept returns or exchanges only according to our Return Policy. Customized and worn items are generally non-returnable unless damaged or incorrect."],
           ["7. Handmade Disclaimer", "Slight irregularities and variations in stone shape, color, or finish are natural characteristics of handmade jewelry and should not be considered defects."],
           ["8. Intellectual Property", "All website content belongs to Ray Fine Ornates and may not be copied or reproduced without written permission."],
@@ -713,34 +887,34 @@ function Terms() {
           ["10. Governing Law", "These Terms are governed by the laws of India. Any disputes shall be subject to the jurisdiction of Jaipur, Rajasthan."],
         ].map(([title, text]) => (
           <div key={title} style={{ marginBottom: "24px" }}>
-            <h3 style={{ fontFamily: "Cormorant Garamond, serif", color: "#1a0a0f", fontSize: "20px", fontWeight: 500, marginBottom: "8px" }}>{title}</h3>
-            <p style={{ color: "#7a6060", lineHeight: "1.9" }}>{text}</p>
+            <h3 style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--dark)", fontSize: "20px", fontWeight: 500, marginBottom: "8px" }}>{title}</h3>
+            <p style={{ color: "var(--text-muted)", lineHeight: "1.9" }}>{text}</p>
           </div>
         ))}
-        <hr style={{ margin: "48px 0", borderColor: "#f0e4df" }} />
-        <h2 style={{ fontFamily: "Cormorant Garamond, serif", color: "#7B2E3E", fontSize: "32px", fontWeight: 300, marginBottom: "24px" }}>Refund &amp; Cancellation Policy</h2>
-        <p style={{ color: "#7a6060", marginBottom: "16px" }}>Customers may request order cancellation within 24 hours by contacting us at <strong>+91 8690666771</strong>. Refunds are accepted only in genuine cases such as damaged packages or incorrect products.</p>
-        <hr style={{ margin: "48px 0", borderColor: "#f0e4df" }} />
-        <h2 style={{ fontFamily: "Cormorant Garamond, serif", color: "#7B2E3E", fontSize: "32px", fontWeight: 300, marginBottom: "24px" }}>Frequently Asked Questions</h2>
+        <hr style={{ margin: "48px 0", borderColor: "var(--border)" }} />
+        <h2 style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--primary)", fontSize: "32px", fontWeight: 300, marginBottom: "24px" }}>Refund &amp; Cancellation Policy</h2>
+        <p style={{ color: "var(--text-muted)", marginBottom: "16px" }}>Customers may request order cancellation within 24 hours by contacting us at <strong>+91 8690666771</strong>. Refunds are accepted only in genuine cases such as damaged packages or incorrect products.</p>
+        <hr style={{ margin: "48px 0", borderColor: "var(--border)" }} />
+        <h2 style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--primary)", fontSize: "32px", fontWeight: 300, marginBottom: "24px" }}>Frequently Asked Questions</h2>
         {[
           ["What type of jewelry does Ray Fine Ornates offer?", "We specialize in handcrafted gold-plated jewelry featuring precious, semi-precious, natural, and lab-created stones."],
           ["Are your jewelry pieces handmade?", "Yes, all our jewelry pieces are handcrafted by skilled artisans in Jaipur, India."],
           ["Do you accept custom orders?", "Yes, contact us via WhatsApp at +91 8690666771."],
-          ["Do you ship internationally?", "Yes, we ship worldwide."],
+          ["Do you ship internationally?", "Yes! We ship worldwide to 150+ countries. Tracking information is provided after dispatch."],
           ["Can I cancel my order?", "Yes, within 24 hours by contacting us at +91 8690666771."],
           ["How should I care for my jewelry?", "Keep away from water and perfumes, store in a dry airtight pouch."],
           ["Where is your store?", "223, 1st Floor, Memiyon Ka Darwaja, Haldiyon Ka Rasta, Johari Bazar, Jaipur – 302003."],
         ].map(([q, a]) => (
-          <details key={q} style={{ marginBottom: "10px", padding: "14px 18px", border: "1px solid #f0e4df", borderRadius: "8px", background: "#fff" }}>
-            <summary style={{ cursor: "pointer", fontWeight: 600, fontSize: "15px", color: "#1a0a0f" }}>{q}</summary>
-            <p style={{ marginTop: "12px", color: "#7a6060", lineHeight: "1.7" }}>{a}</p>
+          <details key={q}>
+            <summary>{q}</summary>
+            <p>{a}</p>
           </details>
         ))}
-        <div style={{ background: "#fdf2ee", padding: "24px", borderRadius: "8px", border: "1px solid #f0e4df", marginTop: "40px" }}>
-          <h3 style={{ fontFamily: "Cormorant Garamond, serif", color: "#7B2E3E", fontSize: "22px", marginBottom: "12px" }}>Contact Information</h3>
-          <p style={{ color: "#7a6060" }}><strong>Phone:</strong> +91 8690666771</p>
-          <p style={{ color: "#7a6060" }}><strong>Address:</strong> 223, 1st Floor, Memiyon Ka Darwaja, Haldiyon Ka Rasta, Johari Bazar, Jaipur – 302003</p>
-          <p style={{ color: "#7a6060", marginBottom: "16px" }}><strong>Hours:</strong> Monday–Saturday, 10:00 AM–7:00 PM</p>
+        <div style={{ background: "var(--bg3)", padding: "24px", borderRadius: "16px", border: "1px solid var(--border)", marginTop: "40px" }}>
+          <h3 style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--primary)", fontSize: "22px", marginBottom: "12px" }}>Contact Information</h3>
+          <p style={{ color: "var(--text-muted)" }}><strong>Phone:</strong> +91 8690666771</p>
+          <p style={{ color: "var(--text-muted)" }}><strong>Address:</strong> 223, 1st Floor, Memiyon Ka Darwaja, Haldiyon Ka Rasta, Johari Bazar, Jaipur – 302003</p>
+          <p style={{ color: "var(--text-muted)", marginBottom: "16px" }}><strong>Hours:</strong> Monday–Saturday, 10:00 AM–7:00 PM</p>
           <a href="https://wa.me/918690666771" target="_blank" rel="noreferrer" className="btn-primary">WhatsApp Us</a>
         </div>
       </div>
@@ -753,13 +927,13 @@ function Footer() {
   return (
     <footer className="footer">
       <div className="footer-top">
-        🚚 Free Express Delivery &nbsp;·&nbsp; ✨ Use Code <strong>GIFT15</strong> for 15% Off &nbsp;·&nbsp; 🔄 Easy Returns
+        🌍 Worldwide Shipping &nbsp;·&nbsp; 🚚 Free Express Delivery &nbsp;·&nbsp; ✨ Use Code <strong>GIFT15</strong> for 15% Off &nbsp;·&nbsp; 🔄 Easy Returns
       </div>
       <div className="footer-grid">
         <div>
           <h4>Ray Fine Ornates</h4>
-          <p className="footer-brand-desc">Luxury fashion jewellery crafted for the modern woman. Handmade by artisans in Jaipur.</p>
-          <p className="footer-brand-desc" style={{ marginTop: "8px", color: "#C9963C", fontSize: "12px", letterSpacing: "1px" }}>Est. 2021 · Johari Bazar, Jaipur</p>
+          <p className="footer-brand-desc">Luxury fashion jewellery crafted for the modern woman. Handmade by artisans in Jaipur. Delivered worldwide.</p>
+          <p className="footer-brand-desc" style={{ marginTop: "8px", color: "var(--primary)", fontSize: "12px", letterSpacing: "1px" }}>Est. 2021 · Johari Bazar, Jaipur · 🌍 150+ Countries</p>
           <div className="footer-social">
             <a href="https://www.instagram.com/rayfineornates/" target="_blank" rel="noreferrer">Instagram</a>
             <a href="https://www.facebook.com/rayfineornatesjewellery" target="_blank" rel="noreferrer">Facebook</a>
@@ -786,11 +960,12 @@ function Footer() {
           <div className="footer-contact-item"><span className="footer-contact-icon">✉</span><span style={{ color: "var(--footer-text)", fontSize: "13px" }}>info@rayfineornates.com</span></div>
           <div className="footer-contact-item"><span className="footer-contact-icon">☎</span><span style={{ color: "var(--footer-text)", fontSize: "13px" }}>+91 8112240112</span></div>
           <div className="footer-contact-item"><span className="footer-contact-icon">📍</span><span style={{ color: "var(--footer-text)", fontSize: "13px" }}>Johari Bazar, Jaipur 302003</span></div>
+          <div className="footer-contact-item"><span className="footer-contact-icon">🌍</span><span style={{ color: "var(--footer-text)", fontSize: "13px" }}>Ships to 150+ Countries</span></div>
           <div style={{ marginTop: "8px", color: "var(--footer-text)", fontSize: "12px" }}>Mon–Sat · 10:30 AM – 8:30 PM</div>
         </div>
       </div>
       <div className="footer-bottom">
-        © 2021 Ray Fine Ornates. All rights reserved. &nbsp;|&nbsp; Designed with ❤️ in Jaipur
+        © 2021 Ray Fine Ornates. All rights reserved. &nbsp;|&nbsp; Designed with ❤️ in Jaipur &nbsp;|&nbsp; 🌍 Shipping Worldwide
       </div>
     </footer>
   );
