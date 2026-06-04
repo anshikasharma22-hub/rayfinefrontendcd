@@ -12,25 +12,24 @@
   --pink: #FBEAF0;
   --pink-mid: #F4C0D1;
   --pink-dark: #ED93B1;
-  --text: #3D1A28;
+  --text: #d4c1c9;
   --text-muted: #8A6070;
   --bg: #FFFFFF;
   --bg2: #FDF6F9;
   --bg3: #FAEDF3;
   --card: #FFFFFF;
   --border: #F2DCE6;
-  --dark: #2A0E1A;
-  --shadow: 0 4px 24px rgba(200,91,130,0.10);
-  --shadow-lg: 0 12px 48px rgba(200,91,130,0.16);
+  --dark: #93838a;
+  --shadow: 0 4px 24px rgba(125, 116, 119, 0.1);
+  --shadow-lg: 0 12px 48px rgba(205, 179, 188, 0.16);
   --footer-bg: #FDF0F5;
-  --footer-mid: #3D1A28;
+  --footer-mid: #d6c5cc;
   --footer-dark: #FBEAF0;
   --footer-border: #F2DCE6;
-  --footer-text: #5A3040;
+  --footer-text: #f1bfd3;
   --footer-link: #C85B82;
-  --footer-accent: #C85B82;
+  --footer-accent: #C89895;
 }
-
 html { scroll-behavior: smooth; }
 
 body {
