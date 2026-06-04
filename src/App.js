@@ -8,10 +8,7 @@ import Chatbot from "./Chatbot";
 const INR_TO_USD = 0.012;
 
 const WALLPAPERS = [
-  "https://images.unsplash.com/photo-1617038260897-41a1f14a0d7b?auto=format&fit=crop&w=1600&q=80",
-  "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=1600&q=80",
-  "https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&w=1600&q=80",
-  "https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=1920&q=90",
+ "/images/bracelet.jpg",
 ];
 
 const ANNOUNCEMENT_MESSAGES = [
