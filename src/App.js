@@ -890,13 +890,13 @@ const ANNOUNCEMENT_MESSAGES = [
 ];
 
 const WALLPAPERS = [
-  "https://rayfinesite-3.onrender.com/images/ring-1.jpeg",
+  "https://rayfinesite-3.onrender.com/images/bracelet.jpg",
   "https://rayfinesite-3.onrender.com/images/wallpaper1.jpg.jpeg",
   "https://rayfinesite-3.onrender.com/images/earrings.jpg.jpeg",
 ];
 
 const HERO_SLIDES = [
-  { bg: "https://rayfinesite-3.onrender.com/images/ring-1.jpeg", eyebrow: "New Collection", title: ["Elegance", "Redefined"], desc: "Handcrafted jewellery for the modern woman. Explore our new arrivals from Jaipur's finest artisans." },
+  { bg: "https://rayfinesite-3.onrender.com/images/bracelet.jpg", eyebrow: "New Collection", title: ["Elegance", "Redefined"], desc: "Handcrafted jewellery for the modern woman. Explore our new arrivals from Jaipur's finest artisans." },
   { bg: "https://rayfinesite-3.onrender.com/images/wallpaper1.jpg.jpeg", eyebrow: "Ships Worldwide", title: ["Crafted with", "Love"], desc: "From Jaipur to your doorstep — across 140+ countries. Use code GIFT15 for 15% off your order." },
   { bg: "https://rayfinesite-3.onrender.com/images/earrings.jpg.jpeg", eyebrow: "Trending Now", title: ["Timeless", "Beauty"], desc: "Gold-plated, stone-studded, handmade with care. Every piece tells a story." },
 ];
