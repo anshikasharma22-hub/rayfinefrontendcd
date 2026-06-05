@@ -870,6 +870,7 @@
 // export default function App() {
 //   return <BrowserRouter><AppInner /></BrowserRouter>;
 // }
+
 import { useEffect, useState, useCallback } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation, useSearchParams } from "react-router-dom";
 import "./App.css";
@@ -896,7 +897,7 @@ const WALLPAPERS = [
 ];
 
 const HERO_SLIDES = [
-  { bg: WALLPAPERS[0], eyebrow: "New Collection 2025", title: ["Elegance", "Redefined"], desc: "Handcrafted jewellery for the modern woman. Explore our new arrivals from Jaipur's finest artisans." },
+  { bg: WALLPAPERS[0], eyebrow: "New Collection ", title: ["Elegance", "Redefined"], desc: "Handcrafted jewellery for the modern woman. Explore our new arrivals from Jaipur's finest artisans." },
   { bg: WALLPAPERS[1], eyebrow: "Ships Worldwide", title: ["Crafted with", "Love"], desc: "From Jaipur to your doorstep — across 140+ countries. Use code GIFT15 for 15% off your order." },
   { bg: WALLPAPERS[2], eyebrow: "Trending Now", title: ["Timeless", "Beauty"], desc: "Gold-plated, stone-studded, handmade with care. Every piece tells a story." },
   { bg: WALLPAPERS[3], eyebrow: "Gifting Season", title: ["Perfect", "Gifts"], desc: "Thoughtfully crafted for birthdays, weddings, and every celebration." },
@@ -1026,7 +1027,7 @@ function WorldwideStrip() {
 }
 
 // ── Navbar ── (CHANGED: removed admin icon, kept only wishlist + cart)
-function Navbar({ cart, wishlist, onCartOpen }) {
+function Navbar({ cart, wishlist, onCartOpen, user }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const loc = useLocation();
@@ -1057,9 +1058,12 @@ function Navbar({ cart, wishlist, onCartOpen }) {
         <Link to="/contact" className={loc.pathname === "/contact" ? "active" : ""}>Contact</Link>
       </div>
       <div className="nav-actions">
-        {/* CHANGED: only wishlist + cart, removed admin/account icon */}
+        {/* Wishlist + Cart only; Account links to customer page */}
         <Link to="/wishlist" className="nav-icon" title="Wishlist">🤍 <span className="badge">{wishlist.length}</span></Link>
         <button className="nav-icon" onClick={onCartOpen} title="Cart">🛒 <span className="badge">{cart.reduce((s, i) => s + i.quantity, 0)}</span></button>
+        <Link to="/account" className="nav-icon" title={user ? `Hi, ${user.name || "Account"}` : "Account"}>
+          {user ? <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--primary)" }}>{(user.name || user.email)[0].toUpperCase()}</span> : "👤"}
+        </Link>
         <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">{menuOpen ? "✕" : "☰"}</button>
       </div>
     </nav>
@@ -1563,59 +1567,21 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
       {/* 4. WORLDWIDE STRIP */}
       <WorldwideStrip />
 
-      {/* 5. CATEGORIES — CHANGED: premium editorial UI */}
+      {/* 5. CATEGORIES — Square grid 4 across */}
       <section className="categories-section">
         <SectionDivider subtitle="Browse by Style" title="Shop by Category" />
-        <div className="categories-editorial-grid">
+        <div className="cat-square-grid">
           {[
-            {
-              name: "Earrings",
-              label: "EARRINGS",
-              tagline: "From subtle to statement",
-              img: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&q=85",
-              path: "/shop?cat=Earring",
-              accent: "#C4956A",
-            },
-            {
-              name: "Necklaces",
-              label: "NECKLACES",
-              tagline: "Worn close to the heart",
-              img: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=85",
-              path: "/shop?cat=Necklace",
-              accent: "#8A6E5A",
-            },
-            {
-              name: "Bracelets",
-              label: "BRACELETS",
-              tagline: "Stack, layer, adore",
-              img: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&q=85",
-              path: "/shop?cat=Bracelet",
-              accent: "#B07A5A",
-            },
-            {
-              name: "Rings",
-              label: "RINGS",
-              tagline: "Timeless on every finger",
-              img: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&q=85",
-              path: "/shop?cat=Ring",
-              accent: "#9C7B5A",
-            },
-          ].map((cat, i) => (
-            <Link to={cat.path} key={cat.name} className="cat-editorial-card" style={{ "--accent": cat.accent, animationDelay: `${i * 0.08}s` }}>
-              <div className="cat-editorial-img-wrap">
-                <img src={cat.img} alt={cat.name} />
-                <div className="cat-editorial-overlay" />
-              </div>
-              <div className="cat-editorial-content">
-                <span className="cat-editorial-label">{cat.label}</span>
-                <h3 className="cat-editorial-name">{cat.name}</h3>
-                <p className="cat-editorial-tagline">{cat.tagline}</p>
-                <span className="cat-editorial-cta">
-                  Shop Now
-                  <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
-                    <path d="M1 5h12M8 1l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </span>
+            { name: "Earrings",  img: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&q=85", path: "/shop?cat=Earring" },
+            { name: "Necklaces", img: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=85", path: "/shop?cat=Necklace" },
+            { name: "Bracelets", img: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&q=85", path: "/shop?cat=Bracelet" },
+            { name: "Rings",     img: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&q=85", path: "/shop?cat=Ring" },
+          ].map(cat => (
+            <Link to={cat.path} key={cat.name} className="cat-square-card">
+              <img src={cat.img} alt={cat.name} />
+              <div className="cat-square-overlay">
+                <span className="cat-square-name">{cat.name}</span>
+                <span className="cat-square-cta">Shop Now →</span>
               </div>
             </Link>
           ))}
@@ -1956,25 +1922,180 @@ function WhatsAppFloat({ onOpenChat }) {
   );
 }
 
-// ── App Root ──
+// ── User Auth Context ──
+function useUserAuth() {
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("rfo_user")) || null; } catch { return null; }
+  });
+
+  const login = (userData) => {
+    localStorage.setItem("rfo_user", JSON.stringify(userData));
+    setUser(userData);
+  };
+  const logout = () => {
+    localStorage.removeItem("rfo_user");
+    setUser(null);
+  };
+  const signup = (userData) => {
+    // Save to localStorage as simple user store
+    const users = JSON.parse(localStorage.getItem("rfo_users") || "[]");
+    const exists = users.find(u => u.email === userData.email);
+    if (exists) return { error: "Email already registered." };
+    const newUser = { ...userData, id: Date.now() };
+    users.push(newUser);
+    localStorage.setItem("rfo_users", JSON.stringify(users));
+    login(newUser);
+    return { success: true };
+  };
+  const loginWithCredentials = (email, password) => {
+    const users = JSON.parse(localStorage.getItem("rfo_users") || "[]");
+    const found = users.find(u => u.email === email && u.password === password);
+    if (!found) return { error: "Incorrect email or password." };
+    login(found);
+    return { success: true };
+  };
+
+  return { user, login, logout, signup, loginWithCredentials };
+}
+
+
+// ── Customer Account Page ──
+function CustomerAccount({ userAuth }) {
+  const { user, logout, signup, loginWithCredentials } = userAuth;
+  const [mode, setMode] = useState("login");
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    setError("");
+    if (!form.email || !form.password) { setError("Please fill all required fields."); return; }
+    if (mode === "signup" && !form.name) { setError("Please enter your name."); return; }
+    if (form.password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    setLoading(true);
+    await new Promise(r => setTimeout(r, 500));
+    const result = mode === "signup"
+      ? signup(form)
+      : loginWithCredentials(form.email, form.password);
+    setLoading(false);
+    if (result?.error) setError(result.error);
+  };
+
+  const inputStyle = {
+    width: "100%", padding: "13px 16px", borderRadius: "6px",
+    border: "1.5px solid var(--border, #d9ccc2)", fontSize: "14px",
+    fontFamily: "inherit", outline: "none", background: "#fff",
+    color: "var(--text, #2C2418)", boxSizing: "border-box",
+    transition: "border-color 0.2s",
+  };
+
+  if (user) {
+    return (
+      <div className="page-content">
+        <div className="shop-hero">
+          <h1>My Account</h1>
+          <p>Welcome back, {user.name || user.email}</p>
+        </div>
+        <div style={{ maxWidth: 480, margin: "60px auto", padding: "0 24px 80px" }}>
+          <div style={{ background: "linear-gradient(135deg, #fdf8f4, #f5ede4)", border: "1px solid var(--border-light, #e8ddd4)", borderRadius: 16, padding: "40px 36px", textAlign: "center" }}>
+            <div style={{ width: 72, height: 72, borderRadius: "50%", background: "var(--primary, #B07A5A)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, margin: "0 auto 20px", color: "#fff", fontFamily: "Playfair Display, serif" }}>
+              {(user.name || user.email)[0].toUpperCase()}
+            </div>
+            <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 24, fontWeight: 400, color: "var(--text)", marginBottom: 6 }}>{user.name || "Valued Customer"}</h2>
+            <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 32 }}>{user.email}</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <a href="https://wa.me/918690666771" target="_blank" rel="noreferrer"
+                style={{ display: "block", padding: "13px", background: "#25D366", color: "#fff", borderRadius: 6, fontSize: 12, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", textDecoration: "none" }}>
+                💬 Track Order on WhatsApp
+              </a>
+              <Link to="/wishlist"
+                style={{ display: "block", padding: "13px", background: "var(--cream, #fdf8f4)", color: "var(--text)", borderRadius: 6, fontSize: 12, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", textDecoration: "none", border: "1.5px solid var(--border, #d9ccc2)" }}>
+                🤍 My Wishlist
+              </Link>
+              <button onClick={logout}
+                style={{ width: "100%", padding: 13, background: "transparent", color: "#c0392b", border: "1.5px solid #f5c6c6", borderRadius: 6, fontSize: 12, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", cursor: "pointer" }}>
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page-content">
+      <div className="shop-hero">
+        <h1>{mode === "login" ? "Welcome Back" : "Create Account"}</h1>
+        <p>{mode === "login" ? "Sign in to your account" : "Join Ray Fine Ornates"}</p>
+      </div>
+      <div style={{ maxWidth: 440, margin: "60px auto", padding: "0 24px 80px" }}>
+        <div style={{ background: "linear-gradient(135deg, #fdf8f4, #f5ede4)", border: "1px solid var(--border-light, #e8ddd4)", borderRadius: 16, padding: "40px 36px" }}>
+          <div style={{ display: "flex", background: "#fff", borderRadius: 8, padding: 4, marginBottom: 28, border: "1px solid var(--border-light)" }}>
+            {["login", "signup"].map(m => (
+              <button key={m} onClick={() => { setMode(m); setError(""); }}
+                style={{ flex: 1, padding: "10px", borderRadius: 6, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 12, letterSpacing: "1.5px", textTransform: "uppercase", transition: "all 0.2s",
+                  background: mode === m ? "var(--primary, #B07A5A)" : "transparent",
+                  color: mode === m ? "#fff" : "var(--text-muted, #8A7968)" }}>
+                {m === "login" ? "Sign In" : "Sign Up"}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {mode === "signup" && (
+              <input placeholder="Full Name *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+                style={inputStyle}
+                onFocus={e => e.target.style.borderColor = "var(--primary, #B07A5A)"}
+                onBlur={e => e.target.style.borderColor = "var(--border, #d9ccc2)"} />
+            )}
+            <input placeholder="Email Address *" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
+              style={inputStyle}
+              onFocus={e => e.target.style.borderColor = "var(--primary, #B07A5A)"}
+              onBlur={e => e.target.style.borderColor = "var(--border, #d9ccc2)"} />
+            <input placeholder="Password *" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })}
+              style={inputStyle}
+              onFocus={e => e.target.style.borderColor = "var(--primary, #B07A5A)"}
+              onBlur={e => e.target.style.borderColor = "var(--border, #d9ccc2)"}
+              onKeyDown={e => e.key === "Enter" && handleSubmit()} />
+          </div>
+          {error && <p style={{ color: "#c0392b", fontSize: 13, marginTop: 12, textAlign: "center" }}>{error}</p>}
+          <button onClick={handleSubmit} disabled={loading}
+            style={{ width: "100%", marginTop: 20, padding: 14, background: loading ? "#c4a98a" : "var(--primary, #B07A5A)", color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", cursor: loading ? "not-allowed" : "pointer" }}>
+            {loading ? "Please wait..." : mode === "login" ? "Sign In →" : "Create Account →"}
+          </button>
+          <p style={{ textAlign: "center", fontSize: 12, color: "var(--text-muted)", marginTop: 16 }}>
+            {mode === "login" ? "New here? " : "Already have an account? "}
+            <button onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}
+              style={{ background: "none", border: "none", color: "var(--primary, #B07A5A)", fontWeight: 700, cursor: "pointer", fontSize: 12 }}>
+              {mode === "login" ? "Create account" : "Sign in"}
+            </button>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AppInner() {
   const [cart, setCart] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const userAuth = useUserAuth();
   const loc = useLocation();
   const isAdminPage = loc.pathname === "/admin" || loc.pathname === "/login";
 
   return (
     <>
       {!isAdminPage && <AnnouncementBar />}
-      {!isAdminPage && <Navbar cart={cart} wishlist={wishlist} onCartOpen={() => setCartOpen(true)} />}
+      {!isAdminPage && <Navbar cart={cart} wishlist={wishlist} onCartOpen={() => setCartOpen(true)} user={userAuth.user} />}
       {!isAdminPage && <CartDrawer cart={cart} setCart={setCart} open={cartOpen} onClose={() => setCartOpen(false)} />}
 
       <Routes>
         <Route path="/"         element={<Home     cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />} />
         <Route path="/shop"     element={<Shop     cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />} />
         <Route path="/wishlist" element={<Wishlist wishlist={wishlist} setWishlist={setWishlist} cart={cart} setCart={setCart} />} />
+        <Route path="/account"  element={<CustomerAccount userAuth={userAuth} />} />
         <Route path="/about"    element={<About />} />
         <Route path="/contact"  element={<Contact />} />
         <Route path="/terms"    element={<Terms />} />
