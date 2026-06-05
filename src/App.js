@@ -880,6 +880,12 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
       <TrustStrip />
 
       {/* 4. WORLDWIDE STRIP */}
+        {/* 5. SHOP BY OCCASION */}
+<OccasionSection />
+
+{/* 6. GIFTING */}
+<GiftingSection />
+  
       <WorldwideStrip />
 
       {/* 5. CATEGORIES — Square grid 4 across */}
