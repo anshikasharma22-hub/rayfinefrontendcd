@@ -867,26 +867,26 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
 
   return (
     <>
-      {/* 1. HERO */}
-      <HeroSlider />
+     {/* 1. HERO */}
+<HeroSlider />
 
-      {/* 2. SALE BANNER */}
-      <div className="sale-banner">
-        <span>🔥 SALE IS LIVE — Use Code <strong>GIFT15</strong> for Extra 15% Off!</span>
-        <Link to="/shop?cat=sale" className="sale-banner-btn">Shop Sale</Link>
-      </div>
+{/* 2. SALE BANNER */}
+<div className="sale-banner">
+  <span>🔥 SALE IS LIVE — Use Code <strong>GIFT15</strong> for Extra 15% Off!</span>
+  <Link to="/shop?cat=sale" className="sale-banner-btn">Shop Sale</Link>
+</div>
 
-      {/* 3. TRUST STRIP */}
-      <TrustStrip />
+{/* 3. TRUST STRIP */}
+<TrustStrip />
 
-      {/* 4. WORLDWIDE STRIP */}
-        {/* 5. SHOP BY OCCASION */}
+{/* 4. WORLDWIDE STRIP */}
+<WorldwideStrip />
+
+{/* 5. SHOP BY OCCASION */}
 <OccasionSection />
 
 {/* 6. GIFTING */}
 <GiftingSection />
-  
-      <WorldwideStrip />
 
       {/* 5. CATEGORIES — Square grid 4 across */}
       <section className="categories-section">
