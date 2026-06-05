@@ -5,7 +5,7 @@
 // import Admin from "./Admin";
 // import Chatbot from "./Chatbot";
 
-// const INR_TO_USD = 0.012;
+// const INR_TO_USD = 0.012; 
 
 // const WALLPAPERS = [
 //   "/images/bracelet.jpg",
