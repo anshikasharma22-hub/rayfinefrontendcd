@@ -890,19 +890,16 @@ const ANNOUNCEMENT_MESSAGES = [
 ];
 
 const WALLPAPERS = [
-  "/images/ring-1.jpeg",
-  "/images/wallpaper1.jpg.jpeg",
-  "/images/earrings.jpg.jpeg",
-  "https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=1920&q=90",
+  "https://rayfinesite-3.onrender.com/images/ring-1.jpeg",
+  "https://rayfinesite-3.onrender.com/images/wallpaper1.jpg.jpeg",
+  "https://rayfinesite-3.onrender.com/images/earrings.jpg.jpeg",
 ];
 
 const HERO_SLIDES = [
-  { bg: "/images/ring-1.jpeg", eyebrow: "New Collection", title: ["Elegance", "Redefined"], desc: "Handcrafted jewellery for the modern woman. Explore our new arrivals from Jaipur's finest artisans." },
-  { bg: "/images/wallpaper1.jpg.jpeg", eyebrow: "Ships Worldwide", title: ["Crafted with", "Love"], desc: "From Jaipur to your doorstep — across 140+ countries. Use code GIFT15 for 15% off your order." },
-  { bg: "/images/earrings.jpg.jpeg", eyebrow: "Trending Now", title: ["Timeless", "Beauty"], desc: "Gold-plated, stone-studded, handmade with care. Every piece tells a story." },
-  { bg: "https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=1920&q=90", eyebrow: "Gifting Season", title: ["Perfect", "Gifts"], desc: "Thoughtfully crafted for birthdays, weddings, and every celebration." },
+  { bg: "https://rayfinesite-3.onrender.com/images/ring-1.jpeg", eyebrow: "New Collection", title: ["Elegance", "Redefined"], desc: "Handcrafted jewellery for the modern woman. Explore our new arrivals from Jaipur's finest artisans." },
+  { bg: "https://rayfinesite-3.onrender.com/images/wallpaper1.jpg.jpeg", eyebrow: "Ships Worldwide", title: ["Crafted with", "Love"], desc: "From Jaipur to your doorstep — across 140+ countries. Use code GIFT15 for 15% off your order." },
+  { bg: "https://rayfinesite-3.onrender.com/images/earrings.jpg.jpeg", eyebrow: "Trending Now", title: ["Timeless", "Beauty"], desc: "Gold-plated, stone-studded, handmade with care. Every piece tells a story." },
 ];
-  
 
 // ── Helpers ──
 function formatUSD(inr) {
