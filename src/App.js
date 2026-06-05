@@ -890,18 +890,19 @@ const ANNOUNCEMENT_MESSAGES = [
 ];
 
 const WALLPAPERS = [
-  "https://images.unsplash.com/photo-1617038260897-41a1f14a0d7b?auto=format&fit=crop&w=1600&q=80",
-  "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=1600&q=80",
-  "https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&w=1600&q=80",
+  "/images/ring-1.jpeg",
+  "/images/wallpaper1.jpg.jpeg",
+  "/images/earrings.jpg.jpeg",
   "https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=1920&q=90",
 ];
 
 const HERO_SLIDES = [
-  { bg: WALLPAPERS[0], eyebrow: "New Collection ", title: ["Elegance", "Redefined"], desc: "Handcrafted jewellery for the modern woman. Explore our new arrivals from Jaipur's finest artisans." },
-  { bg: WALLPAPERS[1], eyebrow: "Ships Worldwide", title: ["Crafted with", "Love"], desc: "From Jaipur to your doorstep — across 140+ countries. Use code GIFT15 for 15% off your order." },
-  { bg: WALLPAPERS[2], eyebrow: "Trending Now", title: ["Timeless", "Beauty"], desc: "Gold-plated, stone-studded, handmade with care. Every piece tells a story." },
-  { bg: WALLPAPERS[3], eyebrow: "Gifting Season", title: ["Perfect", "Gifts"], desc: "Thoughtfully crafted for birthdays, weddings, and every celebration." },
+  { bg: "/images/ring-1.jpeg", eyebrow: "New Collection", title: ["Elegance", "Redefined"], desc: "Handcrafted jewellery for the modern woman. Explore our new arrivals from Jaipur's finest artisans." },
+  { bg: "/images/wallpaper1.jpg.jpeg", eyebrow: "Ships Worldwide", title: ["Crafted with", "Love"], desc: "From Jaipur to your doorstep — across 140+ countries. Use code GIFT15 for 15% off your order." },
+  { bg: "/images/earrings.jpg.jpeg", eyebrow: "Trending Now", title: ["Timeless", "Beauty"], desc: "Gold-plated, stone-studded, handmade with care. Every piece tells a story." },
+  { bg: "https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=1920&q=90", eyebrow: "Gifting Season", title: ["Perfect", "Gifts"], desc: "Thoughtfully crafted for birthdays, weddings, and every celebration." },
 ];
+  
 
 // ── Helpers ──
 function formatUSD(inr) {
