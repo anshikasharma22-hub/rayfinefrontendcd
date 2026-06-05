@@ -1595,7 +1595,9 @@ details p { margin-top: 10px; color: var(--text-muted); line-height: 1.7; font-s
   .products-grid { padding: 0 20px 56px !important; }
   .trust-strip { display: none; }
 }
-
+@media (max-width: 480px) {
+  .occasion-grid { gap: 8px !important; }
+}
 /* ── SMALL PHONE ── */
 @media (max-width: 480px) {
   .navbar { padding: 0 12px; height: 58px; }
