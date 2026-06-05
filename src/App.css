@@ -1650,3 +1650,200 @@ details p { margin-top: 10px; color: var(--text-muted); line-height: 1.7; font-s
   button, .btn-primary, .btn-outline, .cat-tab, .nav-icon, .hamburger { min-height: 44px; }
   input, select, textarea { font-size: 16px !important; }
 }
+.categories-editorial-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  padding: 0 40px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Each card */
+.cat-editorial-card {
+  position: relative;
+  display: block;
+  text-decoration: none;
+  border-radius: 4px;
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  background: #1a1410;
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              box-shadow 0.4s ease;
+  box-shadow: 0 8px 30px rgba(44, 36, 24, 0.10);
+}
+
+.cat-editorial-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 50px rgba(44, 36, 24, 0.22);
+}
+
+/* Image wrapper */
+.cat-editorial-img-wrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.cat-editorial-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  filter: brightness(0.75) saturate(0.9);
+}
+
+.cat-editorial-card:hover .cat-editorial-img-wrap img {
+  transform: scale(1.07);
+  filter: brightness(0.6) saturate(1.0);
+}
+
+/* Gradient overlay */
+.cat-editorial-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(20, 14, 8, 0.88) 0%,
+    rgba(20, 14, 8, 0.30) 50%,
+    rgba(20, 14, 8, 0.05) 100%
+  );
+  transition: background 0.4s ease;
+}
+
+.cat-editorial-card:hover .cat-editorial-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(20, 14, 8, 0.92) 0%,
+    rgba(20, 14, 8, 0.50) 60%,
+    rgba(20, 14, 8, 0.10) 100%
+  );
+}
+
+/* Text content — sits at bottom */
+.cat-editorial-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Small label */
+.cat-editorial-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+  color: var(--accent, #C4956A);
+  opacity: 0.9;
+}
+
+/* Category name */
+.cat-editorial-name {
+  font-family: 'Cormorant Garamond', 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 400;
+  font-style: italic;
+  color: #fff;
+  margin: 0;
+  line-height: 1.1;
+  letter-spacing: 0.3px;
+}
+
+/* Tagline */
+.cat-editorial-tagline {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0;
+  letter-spacing: 0.3px;
+  transform: translateY(4px);
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.cat-editorial-card:hover .cat-editorial-tagline {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* CTA arrow */
+.cat-editorial-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent, #C4956A);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.35s ease 0.05s, transform 0.35s ease 0.05s;
+}
+
+.cat-editorial-card:hover .cat-editorial-cta {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Thin top accent line on hover */
+.cat-editorial-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent, #C4956A);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  z-index: 2;
+}
+
+.cat-editorial-card:hover::before {
+  transform: scaleX(1);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .categories-editorial-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    padding: 0 24px 20px;
+  }
+  .cat-editorial-name {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .categories-editorial-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 0 16px 16px;
+  }
+  .cat-editorial-content {
+    padding: 18px 16px;
+  }
+  .cat-editorial-name {
+    font-size: 20px;
+  }
+  .cat-editorial-cta {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .cat-editorial-tagline {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
