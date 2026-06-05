@@ -203,6 +203,20 @@ const HERO_SLIDES = [
   { bg: "https://rayfinesite-3.onrender.com/images/wallpaper1.jpg.jpeg", eyebrow: "Ships Worldwide", title: ["Crafted with", "Love"], desc: "From Jaipur to your doorstep — across 140+ countries. Use code GIFT15 for 15% off your order." },
   { bg: "https://rayfinesite-3.onrender.com/images/earrings.jpg.jpeg", eyebrow: "Trending Now", title: ["Timeless", "Beauty"], desc: "Gold-plated, stone-studded, handmade with care. Every piece tells a story." },
 ];
+const OCCASIONS = [
+  { name: "Wedding", emoji: "💍", path: "/shop?cat=Necklace" },
+  { name: "Birthday", emoji: "🎂", path: "/shop?cat=Earring" },
+  { name: "Anniversary", emoji: "💝", path: "/shop?cat=Bracelet" },
+  { name: "Festive", emoji: "✨", path: "/shop?cat=Ring" },
+  { name: "Bridal", emoji: "👰", path: "/shop?cat=Necklace" },
+  { name: "Gift", emoji: "🎁", path: "/shop?cat=Bracelet" },
+];
+
+const GIFT_SETS = [
+  { name: "Under ₹3000", desc: "Perfect everyday gifts", price: "₹999 – ₹2999", img: "https://rayfinesite-3.onrender.com/images/earrings.jpg.jpeg", path: "/shop?cat=Earring" },
+  { name: "Under ₹5000", desc: "Thoughtful & elegant", price: "₹1999 – ₹4999", img: "https://rayfinesite-3.onrender.com/images/necklace.jpg", path: "/shop?cat=Necklace" },
+  { name: "Premium Gifts", desc: "Luxury for loved ones", price: "₹10000+", img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg", path: "/shop?cat=Bracelet" },
+];
 
 // ── Helpers ──
 function formatUSD(inr) {
@@ -1164,7 +1178,95 @@ function Terms() {
     </div>
   );
 }
+// ── Shop by Occasion ──
+function OccasionSection() {
+  return (
+    <section style={{ padding: "80px 40px", background: "var(--cream)" }}>
+      <SectionDivider subtitle="Find Your Perfect Piece" title="Shop by Occasion" />
+      <div style={{
+        display: "flex", gap: "16px", justifyContent: "center",
+        flexWrap: "wrap", maxWidth: "900px", margin: "0 auto"
+      }}>
+        {OCCASIONS.map(occ => (
+          <Link to={occ.path} key={occ.name} style={{
+            display: "flex", flexDirection: "column", alignItems: "center",
+            gap: "10px", padding: "24px 20px", background: "#fff",
+            border: "1px solid var(--border-light)", borderRadius: "12px",
+            textDecoration: "none", minWidth: "120px", flex: "1 1 120px",
+            maxWidth: "150px", transition: "all 0.3s", cursor: "pointer",
+          }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(176,122,90,0.15)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-light)"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+          >
+            <span style={{ fontSize: "32px" }}>{occ.emoji}</span>
+            <span style={{ fontSize: "12px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--text)", textAlign: "center" }}>{occ.name}</span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
+// ── Gifting Section ──
+function GiftingSection() {
+  return (
+    <section style={{ padding: "80px 40px", background: "var(--bg)" }}>
+      <SectionDivider subtitle="Curated with Love" title="Gift by Budget" />
+      <div style={{
+        display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+        gap: "24px", maxWidth: "1000px", margin: "0 auto"
+      }}>
+        {GIFT_SETS.map(g => (
+          <Link to={g.path} key={g.name} style={{
+            position: "relative", borderRadius: "12px", overflow: "hidden",
+            textDecoration: "none", display: "block", aspectRatio: "4/3",
+            boxShadow: "0 4px 20px rgba(44,36,24,0.08)", transition: "all 0.35s",
+          }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 16px 40px rgba(44,36,24,0.16)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(44,36,24,0.08)"; }}
+          >
+            <img src={g.img} alt={g.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              onError={e => e.target.src = "https://placehold.co/400x300?text=Gift"} />
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(to top, rgba(44,36,24,0.85) 0%, rgba(44,36,24,0.2) 50%, transparent 100%)",
+              display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "24px"
+            }}>
+              <div style={{
+                display: "inline-block", background: "var(--primary)", color: "#fff",
+                fontSize: "10px", fontWeight: 700, letterSpacing: "2px",
+                textTransform: "uppercase", padding: "4px 12px", borderRadius: "2px",
+                marginBottom: "8px", alignSelf: "flex-start"
+              }}>🎁 {g.price}</div>
+              <h3 style={{ fontFamily: "Playfair Display, serif", fontSize: "22px", fontWeight: 400, color: "#fff", margin: "0 0 4px" }}>{g.name}</h3>
+              <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.8)", margin: 0, letterSpacing: "1px" }}>{g.desc}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Gift note box */}
+      <div style={{
+        maxWidth: "600px", margin: "48px auto 0", textAlign: "center",
+        background: "var(--cream2)", border: "1px solid var(--border-light)",
+        borderRadius: "12px", padding: "32px 40px"
+      }}>
+        <div style={{ fontSize: "32px", marginBottom: "12px" }}>💌</div>
+        <h4 style={{ fontFamily: "Playfair Display, serif", fontSize: "22px", fontWeight: 400, color: "var(--text)", marginBottom: "10px" }}>
+          Want a Personal Gift Note?
+        </h4>
+        <p style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: "1.8", marginBottom: "20px" }}>
+          We add a handwritten gift message with every order. Just mention it on WhatsApp when ordering!
+        </p>
+        <a href="https://wa.me/918690666771" target="_blank" rel="noreferrer" style={{
+          display: "inline-block", padding: "12px 32px", background: "#25D366",
+          color: "#fff", borderRadius: "2px", fontSize: "11px", fontWeight: 700,
+          letterSpacing: "2px", textTransform: "uppercase", textDecoration: "none"
+        }}>💬 WhatsApp Us</a>
+      </div>
+    </section>
+  );
+}
 // ── Footer ── (CHANGED: removed top footer strip, kept main footer only)
 function Footer() {
   return (
