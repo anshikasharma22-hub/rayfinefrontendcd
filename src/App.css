@@ -1798,3 +1798,16 @@ details p { margin-top: 10px; color: var(--text-muted); line-height: 1.7; font-s
     transform: translateY(0);
   }
 }
+/* ── TOAST ANIMATION ── */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── QUICK ADD BUTTON FIX ── */
+.product-img-wrap {
+  overflow: visible !important;
+}
+.product-card {
+  overflow: hidden;
+}
