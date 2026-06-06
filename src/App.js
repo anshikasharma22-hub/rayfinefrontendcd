@@ -1129,13 +1129,14 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
         <SectionDivider subtitle="Browse by Style" title="Shop by Category" />
         <div className="cat-square-grid">
           {[
-            { name: "Earrings",  img: "https://rayfinesite-3.onrender.com/images/IMG-20260527-WA0037.jpg", path: "/shop?cat=Earring" },
-            { name: "Necklaces", img: "https://rayfinesite-3.onrender.com/images/necklace.jpg", path: "/shop?cat=Necklace" },
-            { name: "Pendants",   img: "https://rayfinesite-3.onrender.com/images/pendant-2", path: "/shop?cat=Pendants" },
-            { name: "Rings",     img: "https://rayfinesite-3.onrender.com/images/ring-cateo.jpg", path: "/shop?cat=Ring" },
-            { name: "Bracelet",     img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg", path: "/shop?cat=Bracelet" },
-            { name: "Bangles",     img: "https://rayfinesite-3.onrender.com/images/bangles.jpg, path: "/shop?cat=Bangle" },
-            { name: "Gemstone Charms",     img: "https://rayfinesite-3.onrender.com/images/pendant-3.jpg", path: "/shop?cat=Gemstone Charm" },
+            { name: "Earrings",        img: "https://rayfinesite-3.onrender.com/images/IMG-20260527-WA0037.jpg", path: "/shop?cat=Earring" },
+{ name: "Necklaces",       img: "https://rayfinesite-3.onrender.com/images/necklace.jpg",            path: "/shop?cat=Necklace" },
+{ name: "Pendants",        img: "https://rayfinesite-3.onrender.com/images/pendant-2.jpg",           path: "/shop?cat=Pendants" },
+{ name: "Rings",           img: "https://rayfinesite-3.onrender.com/images/ring-cateo.jpg",          path: "/shop?cat=Ring" },
+{ name: "Bracelet",        img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",            path: "/shop?cat=Bracelet" },
+{ name: "Bangles",         img: "https://rayfinesite-3.onrender.com/images/bangles.jpg",             path: "/shop?cat=Bangle" },
+{ name: "Gemstone Charms", img: "https://rayfinesite-3.onrender.com/images/pendant-3.jpg",          path: "/shop?cat=Gemstone Charm" },
+            
           ].map(cat => (
             <Link to={cat.path} key={cat.name} className="cat-square-card">
               <img src={cat.img} alt={cat.name} />
@@ -1526,7 +1527,7 @@ function Footer() {
         </div>
         <div>
           <h4>Categories</h4>
-          {["Earrings", "Necklaces", "Bracelets", "Rings", "Anklets"].map(c => (
+          {["Earrings", "Necklaces", "Bracelets", "Rings", "Anklets","Gemstone Charms","Bangles","Pendants"].map(c => (
             <Link to={`/shop?cat=${c.replace(/s$/, "")}`} key={c}>{c}</Link>
           ))}
         </div>
