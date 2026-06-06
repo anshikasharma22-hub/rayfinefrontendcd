@@ -1474,14 +1474,16 @@
 // export default function App() {
 //   return <BrowserRouter><AppInner /></BrowserRouter>;
 // }
-import React, { useEffect, useState, useCallback, createContext, useContext } from "react";
-import { BrowserRouter, Routes, Route, Link, useLocation, useSearchParams } from "react-router-dom";
+import React, { useEffect, useState, useCallback, createContext, useContext, useRef } from "react";
+import { BrowserRouter, Routes, Route, Link, useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import "./App.css";
 import Login from "./login";
 import Admin from "./Admin";
 import Chatbot from "./Chatbot";
 
-// ── Constants ──
+// ─────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────
 const ANNOUNCEMENT_MESSAGES = [
   "✨ Free Delivery on All Orders",
   "💎 Handcrafted in Jaipur, India",
@@ -1491,9 +1493,24 @@ const ANNOUNCEMENT_MESSAGES = [
 ];
 
 const HERO_SLIDES = [
-  { bg: "[rayfinesite-3.onrender.com](https://rayfinesite-3.onrender.com/images/bracelet.jpg)", eyebrow: "New Collection", title: ["Elegance", "Redefined"], desc: "Handcrafted jewellery for the modern woman. Explore our new arrivals from Jaipur's finest artisans." },
-  { bg: "[rayfinesite-3.onrender.com](https://rayfinesite-3.onrender.com/images/wallpaper1.jpg.jpeg)", eyebrow: "Ships Worldwide", title: ["Crafted with", "Love"], desc: "From Jaipur to your doorstep — across 140+ countries. Use code GIFT15 for 15% off your order." },
-  { bg: "[rayfinesite-3.onrender.com](https://rayfinesite-3.onrender.com/images/earrings.jpg.jpeg)", eyebrow: "Trending Now", title: ["Timeless", "Beauty"], desc: "Gold-plated, stone-studded, handmade with care. Every piece tells a story." },
+  {
+    bg: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",
+    eyebrow: "New Collection",
+    title: ["Elegance", "Redefined"],
+    desc: "Handcrafted jewellery for the modern woman. Explore our new arrivals from Jaipur's finest artisans.",
+  },
+  {
+    bg: "https://rayfinesite-3.onrender.com/images/wallpaper1.jpg.jpeg",
+    eyebrow: "Ships Worldwide",
+    title: ["Crafted with", "Love"],
+    desc: "From Jaipur to your doorstep — across 140+ countries. Use code GIFT15 for 15% off your order.",
+  },
+  {
+    bg: "https://rayfinesite-3.onrender.com/images/earrings.jpg.jpeg",
+    eyebrow: "Trending Now",
+    title: ["Timeless", "Beauty"],
+    desc: "Gold-plated, stone-studded, handmade with care. Every piece tells a story.",
+  },
 ];
 
 const OCCASIONS = [
@@ -1505,7 +1522,33 @@ const OCCASIONS = [
   { name: "Gift", emoji: "🎁", path: "/shop?cat=Bracelet" },
 ];
 
-// ── Currency Context ──
+const GIFT_SETS = [
+  {
+    name: "Under ₹3000",
+    desc: "Perfect everyday gifts",
+    price: "₹999 – ₹2999",
+    img: "https://rayfinesite-3.onrender.com/images/earrings.jpg.jpeg",
+    path: "/shop?cat=Earring",
+  },
+  {
+    name: "Under ₹5000",
+    desc: "Thoughtful & elegant",
+    price: "₹1999 – ₹4999",
+    img: "https://rayfinesite-3.onrender.com/images/necklace.jpg",
+    path: "/shop?cat=Necklace",
+  },
+  {
+    name: "Premium Gifts",
+    desc: "Luxury for loved ones",
+    price: "₹10000+",
+    img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",
+    path: "/shop?cat=Bracelet",
+  },
+];
+
+// ─────────────────────────────────────────────
+// CURRENCY CONTEXT
+// ─────────────────────────────────────────────
 const CURRENCIES = [
   { code: "INR", symbol: "₹", rate: 1 },
   { code: "USD", symbol: "$", rate: 0.012 },
@@ -1523,7 +1566,44 @@ function formatPrice(inr, currency) {
   return `${currency.symbol}${currency.code === "INR" ? Math.round(val).toLocaleString() : val.toFixed(2)}`;
 }
 
-// ── Currency Dropdown ──
+// ─────────────────────────────────────────────
+// RECENTLY VIEWED CONTEXT
+// ─────────────────────────────────────────────
+const RecentlyViewedContext = createContext({ viewed: [], addViewed: () => {} });
+function useRecentlyViewed() { return useContext(RecentlyViewedContext); }
+
+// ─────────────────────────────────────────────
+// TOAST NOTIFICATION
+// ─────────────────────────────────────────────
+const ToastContext = createContext({ showToast: () => {} });
+function useToast() { return useContext(ToastContext); }
+
+function ToastContainer({ toasts }) {
+  return (
+    <div style={{
+      position: "fixed", bottom: "90px", right: "20px", zIndex: 99999,
+      display: "flex", flexDirection: "column", gap: "10px",
+    }}>
+      {toasts.map(t => (
+        <div key={t.id} style={{
+          background: t.type === "success" ? "#2C2418" : "#c0392b",
+          color: "#fff", padding: "12px 20px", borderRadius: "6px",
+          fontSize: "13px", fontWeight: 600, letterSpacing: "0.5px",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+          animation: "slideInRight 0.3s ease",
+          display: "flex", alignItems: "center", gap: "8px",
+        }}>
+          <span>{t.type === "success" ? "✓" : "✕"}</span>
+          {t.message}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// CURRENCY DROPDOWN
+// ─────────────────────────────────────────────
 function CurrencyDropdown() {
   const { currency, setCurrency } = useCurrency();
   return (
@@ -1531,17 +1611,10 @@ function CurrencyDropdown() {
       value={currency.code}
       onChange={e => setCurrency(CURRENCIES.find(c => c.code === e.target.value))}
       style={{
-        background: "transparent",
-        border: "1px solid var(--border-light)",
-        color: "var(--text)",
-        fontSize: "11px",
-        padding: "5px 7px",
-        borderRadius: "4px",
-        cursor: "pointer",
-        fontFamily: "inherit",
-        fontWeight: 600,
-        letterSpacing: "0.5px",
-        outline: "none",
+        background: "transparent", border: "1px solid var(--border-light)",
+        color: "var(--text)", fontSize: "11px", padding: "5px 7px",
+        borderRadius: "4px", cursor: "pointer", fontFamily: "inherit",
+        fontWeight: 600, letterSpacing: "0.5px", outline: "none",
       }}
     >
       {CURRENCIES.map(c => (
@@ -1553,81 +1626,300 @@ function CurrencyDropdown() {
   );
 }
 
-// ── Product Modal ──
+// ─────────────────────────────────────────────
+// PINCODE CHECKER
+// ─────────────────────────────────────────────
+function PincodeChecker() {
+  const [pin, setPin] = useState("");
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const check = async () => {
+    if (pin.length !== 6 || isNaN(pin)) { setResult({ ok: false, msg: "Enter a valid 6-digit pincode" }); return; }
+    setLoading(true);
+    await new Promise(r => setTimeout(r, 800));
+    setLoading(false);
+    // Mock: serviceable for most pincodes
+    const serviceable = parseInt(pin) % 7 !== 0;
+    setResult({
+      ok: serviceable,
+      msg: serviceable
+        ? `✓ Delivery available to ${pin} in 3-5 days`
+        : `✕ Sorry, we don't deliver to ${pin} yet. Try WhatsApp ordering.`,
+    });
+  };
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 8 }}>
+        Check Delivery
+      </p>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          placeholder="Enter Pincode"
+          value={pin}
+          maxLength={6}
+          onChange={e => { setPin(e.target.value); setResult(null); }}
+          onKeyDown={e => e.key === "Enter" && check()}
+          style={{
+            flex: 1, padding: "9px 12px", borderRadius: "4px", fontSize: "13px",
+            border: "1.5px solid var(--border)", outline: "none", fontFamily: "inherit",
+            color: "var(--text)",
+          }}
+        />
+        <button
+          onClick={check}
+          disabled={loading}
+          style={{
+            padding: "9px 16px", borderRadius: "4px", fontSize: "11px", fontWeight: 700,
+            letterSpacing: "1px", textTransform: "uppercase", cursor: "pointer",
+            background: "var(--text)", color: "#fff", border: "none",
+          }}
+        >
+          {loading ? "..." : "Check"}
+        </button>
+      </div>
+      {result && (
+        <p style={{ fontSize: "12px", marginTop: 6, color: result.ok ? "#27ae60" : "#c0392b", fontWeight: 600 }}>
+          {result.msg}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// PRODUCT MODAL (Amama-style with pincode + share + size guide)
+// ─────────────────────────────────────────────
 function ProductModal({ product, onClose, cart, setCart, wishlist, setWishlist }) {
   const { currency } = useCurrency();
+  const { showToast } = useToast();
+  const { addViewed } = useRecentlyViewed();
   const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0] || "");
+  const [qty, setQty] = useState(1);
+  const [imgIdx, setImgIdx] = useState(0);
   const inWishlist = wishlist.find(w => w.id === product.id);
   const inCart = cart.find(c => c.id === product.id && c.selectedVariant === selectedVariant);
   const discount = product.originalPrice ? Math.round((1 - product.price / product.originalPrice) * 100) : null;
 
+  // Multiple images support
+  const images = product.images || [product.image];
+
   const addToCart = () => {
     if (!product.inStock) return;
     if (inCart) {
-      setCart(cart.map(c => c.id === product.id && c.selectedVariant === selectedVariant ? { ...c, quantity: c.quantity + 1 } : c));
+      setCart(cart.map(c =>
+        c.id === product.id && c.selectedVariant === selectedVariant
+          ? { ...c, quantity: c.quantity + qty }
+          : c
+      ));
     } else {
-      setCart([...cart, { ...product, quantity: 1, selectedVariant }]);
+      setCart([...cart, { ...product, quantity: qty, selectedVariant }]);
     }
+    showToast(`${product.name} added to cart!`, "success");
     onClose();
   };
 
   const toggleWishlist = () => {
-    if (inWishlist) setWishlist(wishlist.filter(w => w.id !== product.id));
-    else setWishlist([...wishlist, product]);
+    if (inWishlist) {
+      setWishlist(wishlist.filter(w => w.id !== product.id));
+      showToast("Removed from wishlist", "error");
+    } else {
+      setWishlist([...wishlist, product]);
+      showToast("Added to wishlist ♥", "success");
+    }
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({ title: product.name, text: product.description, url: window.location.href });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      showToast("Link copied!", "success");
+    }
   };
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
+    addViewed(product);
     return () => { document.body.style.overflow = "unset"; };
   }, []);
 
   return (
     <div
-      style={{ position: "fixed", inset: 0, background: "rgba(44,36,24,0.65)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", backdropFilter: "blur(4px)" }}
+      style={{ position: "fixed", inset: 0, background: "rgba(44,36,24,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", backdropFilter: "blur(6px)" }}
       onClick={onClose}
     >
       <div
-        style={{ background: "#fff", borderRadius: "8px", maxWidth: "900px", width: "100%", maxHeight: "90vh", overflow: "auto", display: "flex", flexWrap: "wrap", boxShadow: "0 32px 80px rgba(44,36,24,0.18)" }}
+        style={{ background: "#fff", borderRadius: "12px", maxWidth: "960px", width: "100%", maxHeight: "92vh", overflow: "auto", display: "flex", flexWrap: "wrap", boxShadow: "0 40px 100px rgba(44,36,24,0.22)" }}
         onClick={e => e.stopPropagation()}
       >
-        <div style={{ flex: "1 1 350px", position: "relative", minHeight: "350px" }}>
+        {/* Image Side */}
+        <div style={{ flex: "1 1 380px", position: "relative", minHeight: "400px", background: "#fdf8f4" }}>
           <img
-            src={product.image} alt={product.name}
-            style={{ width: "100%", height: "100%", minHeight: "350px", objectFit: "cover", borderRadius: "8px 0 0 8px", display: "block" }}
-            onError={e => { e.target.src = "[placehold.co](https://placehold.co/400x400?text=Jewellery)"; }}
+            src={images[imgIdx] || product.image} alt={product.name}
+            style={{ width: "100%", height: "100%", minHeight: "400px", objectFit: "cover", borderRadius: "12px 0 0 12px", display: "block" }}
+            onError={e => { e.target.src = "https://placehold.co/400x400?text=Jewellery"; }}
           />
-          {!product.inStock && <div style={{ position: "absolute", top: 16, left: 16, background: "#555", color: "#fff", padding: "6px 14px", borderRadius: "2px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px" }}>OUT OF STOCK</div>}
-          {discount && product.inStock && <div style={{ position: "absolute", top: 16, left: 16, background: "var(--primary)", color: "#fff", padding: "6px 14px", borderRadius: "2px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px" }}>-{discount}% OFF</div>}
+          {!product.inStock && (
+            <div style={{ position: "absolute", top: 16, left: 16, background: "#555", color: "#fff", padding: "6px 14px", borderRadius: "2px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px" }}>
+              OUT OF STOCK
+            </div>
+          )}
+          {discount && product.inStock && (
+            <div style={{ position: "absolute", top: 16, left: 16, background: "var(--primary)", color: "#fff", padding: "6px 14px", borderRadius: "2px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px" }}>
+              -{discount}% OFF
+            </div>
+          )}
+          {product.isNew && (
+            <div style={{ position: "absolute", top: discount ? 52 : 16, left: 16, background: "#2C2418", color: "#fff", padding: "6px 14px", borderRadius: "2px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px" }}>
+              NEW
+            </div>
+          )}
+          {/* Thumbnail strip */}
+          {images.length > 1 && (
+            <div style={{ position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6 }}>
+              {images.map((_, i) => (
+                <button key={i} onClick={() => setImgIdx(i)} style={{
+                  width: 8, height: 8, borderRadius: "50%", border: "none", cursor: "pointer",
+                  background: i === imgIdx ? "var(--primary)" : "rgba(255,255,255,0.6)",
+                }} />
+              ))}
+            </div>
+          )}
+          {/* Share button */}
+          <button onClick={handleShare} style={{
+            position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.9)",
+            border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+          }} title="Share">🔗</button>
         </div>
-        <div style={{ flex: "1 1 300px", padding: "40px 36px" }}>
-          <button onClick={onClose} style={{ float: "right", background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#aaa" }}>✕</button>
-          <div style={{ fontSize: "10px", color: "var(--primary)", fontWeight: 700, letterSpacing: "3px", textTransform: "uppercase", marginBottom: 10 }}>{product.category}</div>
-          <h2 style={{ fontFamily: "Playfair Display, serif", color: "var(--text)", fontSize: "28px", marginBottom: 16, fontWeight: 400, lineHeight: 1.2 }}>{product.name}</h2>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20, flexWrap: "wrap" }}>
-            <span style={{ fontSize: "26px", fontWeight: 700, color: "var(--primary)" }}>{formatPrice(product.price, currency)}</span>
-            {product.originalPrice && <span style={{ textDecoration: "line-through", color: "var(--text-light)", fontSize: "16px" }}>{formatPrice(product.originalPrice, currency)}</span>}
-            {discount && <span style={{ background: "#fff0f3", color: "var(--primary)", fontSize: "12px", padding: "3px 10px", borderRadius: "20px", fontWeight: 700 }}>Save {discount}%</span>}
+
+        {/* Info Side */}
+        <div style={{ flex: "1 1 320px", padding: "36px 32px", overflowY: "auto" }}>
+          <button onClick={onClose} style={{ float: "right", background: "none", border: "none", fontSize: "22px", cursor: "pointer", color: "#aaa", lineHeight: 1 }}>✕</button>
+          <div style={{ fontSize: "10px", color: "var(--primary)", fontWeight: 700, letterSpacing: "3px", textTransform: "uppercase", marginBottom: 8 }}>{product.category}</div>
+          <h2 style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--text)", fontSize: "28px", marginBottom: 12, fontWeight: 500, lineHeight: 1.2 }}>{product.name}</h2>
+
+          {/* Rating mock */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+            <span style={{ color: "#E8B84B", fontSize: "14px" }}>★★★★★</span>
+            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>4.9 (124 reviews)</span>
           </div>
-          <p style={{ color: "var(--text-muted)", lineHeight: "1.8", marginBottom: 24, fontSize: "14px" }}>{product.description}</p>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
+            <span style={{ fontSize: "26px", fontWeight: 700, color: "var(--primary)" }}>{formatPrice(product.price, currency)}</span>
+            {product.originalPrice && (
+              <span style={{ textDecoration: "line-through", color: "var(--text-light)", fontSize: "16px" }}>
+                {formatPrice(product.originalPrice, currency)}
+              </span>
+            )}
+            {discount && (
+              <span style={{ background: "#fff0f3", color: "var(--primary)", fontSize: "12px", padding: "3px 10px", borderRadius: "20px", fontWeight: 700 }}>
+                Save {discount}%
+              </span>
+            )}
+          </div>
+
+          <p style={{ color: "var(--text-muted)", lineHeight: "1.8", marginBottom: 20, fontSize: "14px" }}>{product.description}</p>
+
+          {/* Variants */}
           {product.variants && product.variants.length > 0 && (
-            <div style={{ marginBottom: 22 }}>
-              <p style={{ fontWeight: 600, marginBottom: 10, fontSize: "12px", letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--text-muted)" }}>Select Finish</p>
+            <div style={{ marginBottom: 18 }}>
+              <p style={{ fontWeight: 700, marginBottom: 10, fontSize: "11px", letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--text-muted)" }}>
+                Select Finish: <span style={{ color: "var(--primary)" }}>{selectedVariant}</span>
+              </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {product.variants.map(v => (
-                  <button key={v} onClick={() => setSelectedVariant(v)} style={{ padding: "7px 16px", borderRadius: "2px", fontSize: "12px", cursor: "pointer", background: selectedVariant === v ? "var(--text)" : "var(--cream)", color: selectedVariant === v ? "#fff" : "var(--text-muted)", border: selectedVariant === v ? "1.5px solid var(--text)" : "1.5px solid var(--border)", fontWeight: selectedVariant === v ? 700 : 400, transition: "all 0.2s" }}>{v}</button>
+                  <button
+                    key={v} onClick={() => setSelectedVariant(v)}
+                    style={{
+                      padding: "8px 16px", borderRadius: "2px", fontSize: "12px", cursor: "pointer",
+                      background: selectedVariant === v ? "var(--text)" : "#fff",
+                      color: selectedVariant === v ? "#fff" : "var(--text-muted)",
+                      border: selectedVariant === v ? "1.5px solid var(--text)" : "1.5px solid var(--border)",
+                      fontWeight: selectedVariant === v ? 700 : 400, transition: "all 0.2s",
+                    }}
+                  >{v}</button>
                 ))}
               </div>
             </div>
           )}
-          {product.material && <div style={{ marginBottom: 12, fontSize: "13px", color: "var(--text-muted)" }}><strong>Material:</strong> {product.material}</div>}
-          {product.careInstructions && <div style={{ marginBottom: 24, fontSize: "13px", color: "var(--text-muted)", background: "var(--cream)", padding: "14px", borderRadius: "6px", border: "1px solid var(--border-light)" }}><strong>✨ Care:</strong> {product.careInstructions}</div>}
-          <div style={{ display: "flex", gap: 12 }}>
-            <button onClick={addToCart} disabled={!product.inStock} style={{ flex: 1, padding: 15, borderRadius: "2px", border: "none", cursor: product.inStock ? "pointer" : "not-allowed", background: product.inStock ? "var(--text)" : "#ccc", color: "#fff", fontWeight: 700, fontSize: "11px", letterSpacing: "2.5px", textTransform: "uppercase", transition: "all 0.3s" }}>
-              {!product.inStock ? "Out of Stock" : inCart ? "✓ Added" : "Add to Cart"}
+
+          {/* Qty selector */}
+          <div style={{ marginBottom: 18 }}>
+            <p style={{ fontWeight: 700, marginBottom: 10, fontSize: "11px", letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--text-muted)" }}>Quantity</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 0, border: "1.5px solid var(--border)", borderRadius: "4px", width: "fit-content" }}>
+              <button onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: 36, height: 36, background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "var(--text)" }}>−</button>
+              <span style={{ width: 40, textAlign: "center", fontWeight: 700, fontSize: "14px", color: "var(--text)" }}>{qty}</span>
+              <button onClick={() => setQty(q => q + 1)} style={{ width: 36, height: 36, background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "var(--text)" }}>+</button>
+            </div>
+          </div>
+
+          {/* Pincode checker */}
+          <PincodeChecker />
+
+          {/* Material & Care */}
+          {product.material && (
+            <div style={{ marginBottom: 10, fontSize: "13px", color: "var(--text-muted)" }}>
+              <strong>Material:</strong> {product.material}
+            </div>
+          )}
+          {product.careInstructions && (
+            <div style={{ marginBottom: 20, fontSize: "12px", color: "var(--text-muted)", background: "var(--cream)", padding: "12px", borderRadius: "6px", border: "1px solid var(--border-light)", lineHeight: 1.7 }}>
+              <strong>✨ Care:</strong> {product.careInstructions}
+            </div>
+          )}
+
+          {/* CTA Buttons */}
+          <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+            <button
+              onClick={addToCart} disabled={!product.inStock}
+              style={{
+                flex: 1, padding: 15, borderRadius: "2px", border: "none",
+                cursor: product.inStock ? "pointer" : "not-allowed",
+                background: product.inStock ? "var(--text)" : "#ccc",
+                color: "#fff", fontWeight: 700, fontSize: "11px", letterSpacing: "2.5px",
+                textTransform: "uppercase", transition: "all 0.3s",
+              }}
+            >
+              {!product.inStock ? "Out of Stock" : inCart ? "✓ Add More" : "Add to Cart"}
             </button>
-            <button onClick={toggleWishlist} style={{ padding: "15px 20px", borderRadius: "2px", border: "1.5px solid var(--border)", background: inWishlist ? "var(--primary)" : "transparent", color: inWishlist ? "#fff" : "var(--text)", cursor: "pointer", fontSize: "18px", transition: "all 0.3s" }}>
+            <button
+              onClick={toggleWishlist}
+              style={{
+                padding: "15px 18px", borderRadius: "2px",
+                border: "1.5px solid var(--border)",
+                background: inWishlist ? "var(--primary)" : "transparent",
+                color: inWishlist ? "#fff" : "var(--text)", cursor: "pointer", fontSize: "18px", transition: "all 0.3s",
+              }}
+            >
               {inWishlist ? "❤️" : "🤍"}
             </button>
+          </div>
+
+          {/* WhatsApp order */}
+          <a
+            href={`https://wa.me/918690666771?text=Hi! I'm interested in ${encodeURIComponent(product.name)} (${formatPrice(product.price, currency)})`}
+            target="_blank" rel="noreferrer"
+            style={{
+              display: "block", textAlign: "center", padding: "13px", background: "#25D366",
+              color: "#fff", borderRadius: "2px", fontSize: "11px", fontWeight: 700,
+              letterSpacing: "2px", textTransform: "uppercase", textDecoration: "none",
+            }}
+          >
+            💬 Order via WhatsApp
+          </a>
+
+          {/* Trust badges */}
+          <div style={{ display: "flex", gap: 16, marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border-light)", justifyContent: "center" }}>
+            {[["🚚", "Free Delivery"], ["🔒", "Secure Pay"], ["🔄", "Easy Returns"]].map(([icon, label]) => (
+              <div key={label} style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)" }}>
+                <div style={{ fontSize: "18px", marginBottom: 3 }}>{icon}</div>
+                {label}
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -1635,7 +1927,9 @@ function ProductModal({ product, onClose, cart, setCart, wishlist, setWishlist }
   );
 }
 
-// ── Announcement Bar ──
+// ─────────────────────────────────────────────
+// ANNOUNCEMENT BAR
+// ─────────────────────────────────────────────
 function AnnouncementBar() {
   const [idx, setIdx] = useState(0);
   useEffect(() => {
@@ -1649,7 +1943,9 @@ function AnnouncementBar() {
   );
 }
 
-// ── Worldwide Strip ──
+// ─────────────────────────────────────────────
+// WORLDWIDE STRIP
+// ─────────────────────────────────────────────
 function WorldwideStrip() {
   const items = [
     "🇮🇳 India", "🇺🇸 USA", "🇬🇧 UK", "🇦🇪 UAE", "🇦🇺 Australia",
@@ -1671,11 +1967,17 @@ function WorldwideStrip() {
   );
 }
 
-// ── Navbar ──
+// ─────────────────────────────────────────────
+// NAVBAR (with search bar like Amama)
+// ─────────────────────────────────────────────
 function Navbar({ cart, wishlist, onCartOpen, user }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchVal, setSearchVal] = useState("");
   const loc = useLocation();
+  const navigate = useNavigate();
+  const searchRef = useRef(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -1683,49 +1985,138 @@ function Navbar({ cart, wishlist, onCartOpen, user }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => { setMenuOpen(false); }, [loc]);
+  useEffect(() => { setMenuOpen(false); setSearchOpen(false); }, [loc]);
+
+  useEffect(() => {
+    if (searchOpen && searchRef.current) searchRef.current.focus();
+  }, [searchOpen]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchVal.trim()) {
+      navigate(`/shop?search=${encodeURIComponent(searchVal.trim())}`);
+      setSearchOpen(false);
+      setSearchVal("");
+    }
+  };
 
   return (
-    <nav className="navbar" style={scrolled ? { boxShadow: "0 2px 20px rgba(176,122,90,0.10)" } : {}}>
-      <Link to="/" className="navbar-logo" onClick={() => setMenuOpen(false)}>
-        <svg width="160" height="40" viewBox="0 0 200 48" fill="none" xmlns="[w3.org](http://www.w3.org/2000/svg)">
-          <text x="0" y="34" fontFamily="Cormorant Garamond, serif" fontSize="32" fontStyle="italic" fontWeight="300" fill="#B07A5A" letterSpacing="1">Ray</text>
-          <text x="60" y="34" fontFamily="Cormorant Garamond, serif" fontSize="32" fontWeight="400" fill="#2C2418" letterSpacing="1"> Fine</text>
-          <line x1="0" y1="40" x2="150" y2="40" stroke="#B07A5A" strokeWidth="0.6" opacity="0.3"/>
-          <text x="0" y="47" fontFamily="DM Sans, sans-serif" fontSize="7" fontWeight="300" fill="#8A7968" letterSpacing="5">ORNATES</text>
-        </svg>
-      </Link>
-      <div className={`nav-links ${menuOpen ? "open" : ""}`}>
-        <Link to="/" className={loc.pathname === "/" ? "active" : ""}>Home</Link>
-        <Link to="/shop" className={loc.pathname === "/shop" ? "active" : ""}>Shop</Link>
-        <Link to="/shop?cat=sale">Sale</Link>
-        <Link to="/about" className={loc.pathname === "/about" ? "active" : ""}>About</Link>
-        <Link to="/contact" className={loc.pathname === "/contact" ? "active" : ""}>Contact</Link>
-        <Link to="/track" className={loc.pathname === "/track" ? "active" : ""}>Track Order</Link>
-      </div>
-      <div className="nav-actions">
-        <CurrencyDropdown />
-        <Link to="/wishlist" className="nav-icon" title="Wishlist">🤍 <span className="badge">{wishlist.length}</span></Link>
-        <button className="nav-icon" onClick={onCartOpen} title="Cart">🛒 <span className="badge">{cart.reduce((s, i) => s + i.quantity, 0)}</span></button>
-        <Link to="/account" className="nav-icon" title={user ? `Hi, ${user.name || "Account"}` : "Account"}>
-          {user ? <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--primary)" }}>{(user.name || user.email)[0].toUpperCase()}</span> : "👤"}
+    <>
+      {searchOpen && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(44,36,24,0.5)", zIndex: 10000,
+          display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: "80px",
+          backdropFilter: "blur(4px)",
+        }} onClick={() => setSearchOpen(false)}>
+          <div style={{
+            background: "#fff", width: "min(600px, 90vw)", borderRadius: "8px",
+            padding: "20px", boxShadow: "0 20px 60px rgba(44,36,24,0.2)",
+          }} onClick={e => e.stopPropagation()}>
+            <form onSubmit={handleSearch} style={{ display: "flex", gap: 10 }}>
+              <input
+                ref={searchRef}
+                value={searchVal}
+                onChange={e => setSearchVal(e.target.value)}
+                placeholder="Search jewellery, categories..."
+                style={{
+                  flex: 1, padding: "14px 16px", fontSize: "16px", border: "1.5px solid var(--border)",
+                  borderRadius: "4px", outline: "none", fontFamily: "inherit", color: "var(--text)",
+                }}
+              />
+              <button type="submit" style={{
+                padding: "14px 20px", background: "var(--text)", color: "#fff", border: "none",
+                borderRadius: "4px", cursor: "pointer", fontWeight: 700, fontSize: "13px",
+              }}>Search</button>
+            </form>
+            <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+              {["Earrings", "Necklace", "Bracelet", "Ring", "Anklet"].map(tag => (
+                <button key={tag} onClick={() => { navigate(`/shop?cat=${tag}`); setSearchOpen(false); }}
+                  style={{
+                    padding: "6px 14px", borderRadius: "20px", background: "var(--cream)",
+                    border: "1px solid var(--border-light)", fontSize: "12px", cursor: "pointer",
+                    color: "var(--text-muted)", fontWeight: 600,
+                  }}>
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <nav className="navbar" style={scrolled ? { boxShadow: "0 2px 20px rgba(176,122,90,0.10)" } : {}}>
+        <Link to="/" className="navbar-logo" onClick={() => setMenuOpen(false)}>
+          <svg width="160" height="40" viewBox="0 0 200 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <text x="0" y="34" fontFamily="Cormorant Garamond, serif" fontSize="32" fontStyle="italic" fontWeight="300" fill="#B07A5A" letterSpacing="1">Ray</text>
+            <text x="60" y="34" fontFamily="Cormorant Garamond, serif" fontSize="32" fontWeight="400" fill="#2C2418" letterSpacing="1"> Fine</text>
+            <line x1="0" y1="40" x2="150" y2="40" stroke="#B07A5A" strokeWidth="0.6" opacity="0.3"/>
+            <text x="0" y="47" fontFamily="DM Sans, sans-serif" fontSize="7" fontWeight="300" fill="#8A7968" letterSpacing="5">ORNATES</text>
+          </svg>
         </Link>
-        <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">{menuOpen ? "✕" : "☰"}</button>
-      </div>
-    </nav>
+
+        <div className={`nav-links ${menuOpen ? "open" : ""}`}>
+          <Link to="/" className={loc.pathname === "/" ? "active" : ""}>Home</Link>
+          <Link to="/shop" className={loc.pathname === "/shop" ? "active" : ""}>Shop</Link>
+          <Link to="/shop?cat=sale">Sale</Link>
+          <Link to="/about" className={loc.pathname === "/about" ? "active" : ""}>About</Link>
+          <Link to="/contact" className={loc.pathname === "/contact" ? "active" : ""}>Contact</Link>
+          <Link to="/track" className={loc.pathname === "/track" ? "active" : ""}>Track Order</Link>
+        </div>
+
+        <div className="nav-actions">
+          <CurrencyDropdown />
+          <button className="nav-icon" onClick={() => setSearchOpen(true)} title="Search" style={{ background: "none", border: "none", cursor: "pointer" }}>
+            🔍
+          </button>
+          <Link to="/wishlist" className="nav-icon" title="Wishlist">
+            🤍 <span className="badge">{wishlist.length}</span>
+          </Link>
+          <button className="nav-icon" onClick={onCartOpen} title="Cart">
+            🛒 <span className="badge">{cart.reduce((s, i) => s + i.quantity, 0)}</span>
+          </button>
+          <Link to="/account" className="nav-icon" title={user ? `Hi, ${user.name || "Account"}` : "Account"}>
+            {user ? (
+              <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--primary)" }}>
+                {(user.name || user.email)[0].toUpperCase()}
+              </span>
+            ) : "👤"}
+          </Link>
+          <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
+            {menuOpen ? "✕" : "☰"}
+          </button>
+        </div>
+      </nav>
+    </>
   );
 }
 
-// ── Cart Drawer ──
+// ─────────────────────────────────────────────
+// CART DRAWER (with gift wrap option)
+// ─────────────────────────────────────────────
 function CartDrawer({ cart, setCart, open, onClose }) {
   const { currency } = useCurrency();
   const [customer, setCustomer] = useState({ name: "", address: "", phone: "" });
   const [step, setStep] = useState("cart");
+  const [giftWrap, setGiftWrap] = useState(false);
+  const [giftNote, setGiftNote] = useState("");
+  const [coupon, setCoupon] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const [couponMsg, setCouponMsg] = useState("");
+
+  const GIFT_WRAP_PRICE = 99;
   const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
   const savings = cart.reduce((s, i) => s + ((i.originalPrice || i.price) - i.price) * i.quantity, 0);
+  const grandTotal = total + (giftWrap ? GIFT_WRAP_PRICE : 0) - discount;
 
-  const placeOrder = () => {
-    alert("Payment integration pending");
+  const applyCoupon = () => {
+    if (coupon.toUpperCase() === "GIFT15") {
+      const d = Math.round(total * 0.15);
+      setDiscount(d);
+      setCouponMsg(`✓ GIFT15 applied! You save ${formatPrice(d, currency)}`);
+    } else {
+      setDiscount(0);
+      setCouponMsg("✕ Invalid coupon code");
+    }
   };
 
   const updateQty = (id, delta) => {
@@ -1735,6 +2126,8 @@ function CartDrawer({ cart, setCart, open, onClose }) {
     );
   };
 
+  const placeOrder = () => alert("Payment integration pending");
+
   return (
     <>
       <div className={`cart-overlay ${open ? "show" : ""}`} onClick={onClose} />
@@ -1743,38 +2136,113 @@ function CartDrawer({ cart, setCart, open, onClose }) {
           <h3>{step === "cart" ? `Your Cart (${cart.length})` : "Checkout"}</h3>
           <button className="cart-close" onClick={onClose}>✕</button>
         </div>
+
         {step === "cart" ? (
           <div style={{ flex: 1, overflowY: "auto" }}>
             {cart.length === 0 ? (
               <div className="cart-empty">
                 <div style={{ fontSize: "48px", marginBottom: "16px" }}>🛒</div>
-                <p style={{ marginBottom: "8px", fontFamily: "Playfair Display, serif", fontSize: "20px", color: "var(--text)" }}>Your cart is empty</p>
-                <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "24px" }}>Discover our beautiful collection</p>
+                <p style={{ marginBottom: "8px", fontFamily: "Cormorant Garamond, serif", fontSize: "22px", color: "var(--text)" }}>
+                  Your cart is empty
+                </p>
+                <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "24px" }}>
+                  Discover our beautiful collection
+                </p>
                 <Link to="/shop" className="btn-primary" style={{ display: "inline-block" }} onClick={onClose}>Shop Now</Link>
               </div>
-            ) : cart.map(item => (
-              <div className="cart-item" key={item.id + (item.selectedVariant || "")}>
-                <img src={item.image} alt={item.name} onError={e => e.target.src = "[placehold.co](https://placehold.co/76x76?text=Item)"} />
-                <div className="cart-item-info">
-                  <p className="cart-item-name">{item.name}</p>
-                  {item.selectedVariant && <p style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: 4 }}>{item.selectedVariant}</p>}
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <p className="cart-item-price">{formatPrice(item.price, currency)}</p>
-                    {item.originalPrice && <p className="cart-item-original">{formatPrice(item.originalPrice, currency)}</p>}
+            ) : (
+              <>
+                {cart.map(item => (
+                  <div className="cart-item" key={item.id + (item.selectedVariant || "")}>
+                    <img src={item.image} alt={item.name} onError={e => e.target.src = "https://placehold.co/76x76?text=Item"} />
+                    <div className="cart-item-info">
+                      <p className="cart-item-name">{item.name}</p>
+                      {item.selectedVariant && (
+                        <p style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: 4 }}>{item.selectedVariant}</p>
+                      )}
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <p className="cart-item-price">{formatPrice(item.price, currency)}</p>
+                        {item.originalPrice && (
+                          <p className="cart-item-original">{formatPrice(item.originalPrice, currency)}</p>
+                        )}
+                      </div>
+                      <div className="qty-controls">
+                        <button onClick={() => updateQty(item.id, -1)}>−</button>
+                        <span>{item.quantity}</span>
+                        <button onClick={() => updateQty(item.id, 1)}>+</button>
+                      </div>
+                    </div>
+                    <button className="cart-item-remove" onClick={() => updateQty(item.id, -item.quantity)}>🗑</button>
                   </div>
-                  <div className="qty-controls">
-                    <button onClick={() => updateQty(item.id, -1)}>−</button>
-                    <span>{item.quantity}</span>
-                    <button onClick={() => updateQty(item.id, 1)}>+</button>
+                ))}
+
+                {/* Coupon */}
+                <div style={{ padding: "16px 20px", borderTop: "1px solid var(--border-light)" }}>
+                  <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 8 }}>
+                    Have a Coupon?
+                  </p>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input
+                      placeholder="Enter code (try GIFT15)"
+                      value={coupon}
+                      onChange={e => { setCoupon(e.target.value); setCouponMsg(""); }}
+                      style={{
+                        flex: 1, padding: "9px 12px", borderRadius: "4px", fontSize: "12px",
+                        border: "1.5px solid var(--border)", outline: "none", fontFamily: "inherit",
+                      }}
+                    />
+                    <button onClick={applyCoupon} style={{
+                      padding: "9px 14px", background: "var(--text)", color: "#fff",
+                      border: "none", borderRadius: "4px", fontSize: "11px", fontWeight: 700, cursor: "pointer",
+                    }}>Apply</button>
                   </div>
+                  {couponMsg && (
+                    <p style={{ fontSize: "11px", marginTop: 6, color: discount > 0 ? "#27ae60" : "#c0392b", fontWeight: 600 }}>
+                      {couponMsg}
+                    </p>
+                  )}
                 </div>
-                <button className="cart-item-remove" onClick={() => updateQty(item.id, -item.quantity)}>🗑</button>
-              </div>
-            ))}
+
+                {/* Gift Wrap */}
+                <div style={{ padding: "0 20px 16px", borderBottom: "1px solid var(--border-light)" }}>
+                  <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+                    <input
+                      type="checkbox" checked={giftWrap}
+                      onChange={e => setGiftWrap(e.target.checked)}
+                      style={{ marginTop: 3, accentColor: "var(--primary)", width: 16, height: 16 }}
+                    />
+                    <div>
+                      <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>
+                        🎁 Add Gift Wrapping (+{formatPrice(GIFT_WRAP_PRICE, currency)})
+                      </p>
+                      <p style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                        Premium box with ribbon & handwritten note
+                      </p>
+                    </div>
+                  </label>
+                  {giftWrap && (
+                    <textarea
+                      placeholder="Add a personal gift message..."
+                      value={giftNote}
+                      onChange={e => setGiftNote(e.target.value)}
+                      rows={2}
+                      style={{
+                        width: "100%", marginTop: 10, padding: "10px 12px",
+                        borderRadius: "4px", border: "1.5px solid var(--border)", fontSize: "12px",
+                        fontFamily: "inherit", outline: "none", resize: "vertical", boxSizing: "border-box",
+                        color: "var(--text)",
+                      }}
+                    />
+                  )}
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <div className="checkout-form">
-            <h4 style={{ color: "var(--primary)", fontFamily: "Playfair Display, serif", fontSize: "22px", fontWeight: 400 }}>Delivery Details</h4>
+            <h4 style={{ color: "var(--primary)", fontFamily: "Cormorant Garamond, serif", fontSize: "22px", fontWeight: 500 }}>
+              Delivery Details
+            </h4>
             <input placeholder="Full Name *" value={customer.name} onChange={e => setCustomer({ ...customer, name: e.target.value })} />
             <input placeholder="Phone Number *" value={customer.phone} onChange={e => setCustomer({ ...customer, phone: e.target.value })} />
             <input placeholder="Delivery Address" value={customer.address} onChange={e => setCustomer({ ...customer, address: e.target.value })} />
@@ -1786,22 +2254,41 @@ function CartDrawer({ cart, setCart, open, onClose }) {
                   <span>{formatPrice(item.price * item.quantity, currency)}</span>
                 </div>
               ))}
+              {discount > 0 && (
+                <div className="order-summary-item" style={{ color: "#27ae60" }}>
+                  <span>Coupon Discount</span>
+                  <span>-{formatPrice(discount, currency)}</span>
+                </div>
+              )}
+              {giftWrap && (
+                <div className="order-summary-item">
+                  <span>🎁 Gift Wrapping</span>
+                  <span>{formatPrice(GIFT_WRAP_PRICE, currency)}</span>
+                </div>
+              )}
               <div className="order-summary-total">
                 <span>Total</span>
-                <strong>{formatPrice(total, currency)}</strong>
+                <strong>{formatPrice(grandTotal, currency)}</strong>
               </div>
             </div>
-            <button className="btn-checkout" onClick={placeOrder}>Pay {formatPrice(total, currency)} →</button>
+            <button className="btn-checkout" onClick={placeOrder}>Pay {formatPrice(grandTotal, currency)} →</button>
             <button className="btn-ghost" onClick={() => setStep("cart")}>← Back to Cart</button>
           </div>
         )}
+
         {step === "cart" && cart.length > 0 && (
           <div className="cart-footer">
             {savings > 0 && <div className="cart-savings">🎉 You save {formatPrice(savings, currency)}!</div>}
             <div className="cart-total">
               <span>Total</span>
               <div style={{ textAlign: "right" }}>
-                <strong>{formatPrice(total, currency)}</strong>
+                <strong>{formatPrice(grandTotal, currency)}</strong>
+                {(discount > 0 || giftWrap) && (
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                    {discount > 0 ? `Coupon: -${formatPrice(discount, currency)} ` : ""}
+                    {giftWrap ? `+ 🎁 ${formatPrice(GIFT_WRAP_PRICE, currency)}` : ""}
+                  </div>
+                )}
               </div>
             </div>
             <button className="btn-checkout" onClick={() => setStep("checkout")}>Proceed to Checkout →</button>
@@ -1812,10 +2299,14 @@ function CartDrawer({ cart, setCart, open, onClose }) {
   );
 }
 
-// ── Product Card ──
+// ─────────────────────────────────────────────
+// PRODUCT CARD (Amama-style with quick-add hover)
+// ─────────────────────────────────────────────
 function ProductCard({ product, cart, setCart, wishlist, setWishlist }) {
   const { currency } = useCurrency();
+  const { showToast } = useToast();
   const [showModal, setShowModal] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const inWishlist = wishlist.find(w => w.id === product.id);
   const inCart = cart.find(c => c.id === product.id);
   const discount = product.originalPrice ? Math.round((1 - product.price / product.originalPrice) * 100) : null;
@@ -1825,33 +2316,74 @@ function ProductCard({ product, cart, setCart, wishlist, setWishlist }) {
     if (!product.inStock) return;
     if (inCart) setCart(cart.map(c => c.id === product.id ? { ...c, quantity: c.quantity + 1 } : c));
     else setCart([...cart, { ...product, quantity: 1 }]);
+    showToast(`${product.name} added!`, "success");
   };
 
   const toggleWishlist = (e) => {
     e.stopPropagation();
-    if (inWishlist) setWishlist(wishlist.filter(w => w.id !== product.id));
-    else setWishlist([...wishlist, product]);
+    if (inWishlist) {
+      setWishlist(wishlist.filter(w => w.id !== product.id));
+    } else {
+      setWishlist([...wishlist, product]);
+      showToast("Added to wishlist ♥", "success");
+    }
   };
 
   return (
     <>
       {showModal && (
-        <ProductModal product={product} onClose={() => setShowModal(false)} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
+        <ProductModal
+          product={product} onClose={() => setShowModal(false)}
+          cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist}
+        />
       )}
-      <div className="product-card" onClick={() => setShowModal(true)} style={{ cursor: "pointer", opacity: product.inStock ? 1 : 0.7 }}>
+      <div
+        className="product-card"
+        onClick={() => setShowModal(true)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{ cursor: "pointer", opacity: product.inStock ? 1 : 0.7 }}
+      >
         <div className="product-img-wrap">
-          <img src={product.image} alt={product.name} onError={e => { e.target.src = "[placehold.co](https://placehold.co/300x300?text=Jewellery)"; }} />
-          <button className={`wishlist-btn ${inWishlist ? "active" : ""}`} onClick={toggleWishlist}>{inWishlist ? "❤️" : "🤍"}</button>
+          <img
+            src={product.image} alt={product.name}
+            onError={e => { e.target.src = "https://placehold.co/300x300?text=Jewellery"; }}
+          />
+          <button className={`wishlist-btn ${inWishlist ? "active" : ""}`} onClick={toggleWishlist}>
+            {inWishlist ? "❤️" : "🤍"}
+          </button>
           {!product.inStock && <div className="sale-badge" style={{ background: "#555" }}>Out of Stock</div>}
           {discount && product.inStock && <div className="sale-badge">-{discount}%</div>}
-          {product.isBestseller && product.inStock && !discount && (
+          {product.isNew && product.inStock && !discount && (
+            <div className="sale-badge" style={{ background: "#2C2418" }}>✨ New</div>
+          )}
+          {product.isBestseller && product.inStock && !discount && !product.isNew && (
             <div className="sale-badge" style={{ background: "#8B6914" }}>⭐ Bestseller</div>
           )}
           <div className="product-category-tag">{product.category}</div>
+
+          {/* Quick Add — Amama style hover button */}
+          {product.inStock && (
+            <button
+              className="quick-add-btn"
+              onClick={addToCart}
+              style={{
+                position: "absolute", bottom: 0, left: 0, right: 0,
+                padding: "12px", background: "rgba(44,36,24,0.9)", color: "#fff",
+                border: "none", cursor: "pointer", fontSize: "11px", fontWeight: 700,
+                letterSpacing: "2px", textTransform: "uppercase",
+                transform: hovered ? "translateY(0)" : "translateY(100%)",
+                transition: "transform 0.3s ease",
+              }}
+            >
+              {inCart ? "✓ Added" : "Quick Add +"}
+            </button>
+          )}
         </div>
+
         <div className="product-info">
           <h4>{product.name}</h4>
-          <p className="product-desc">{product.description?.substring(0, 80)}...</p>
+          <p className="product-desc">{product.description?.substring(0, 75)}...</p>
           {product.variants && (
             <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
               {product.variants.slice(0, 3).map(v => (
@@ -1861,9 +2393,15 @@ function ProductCard({ product, cart, setCart, wishlist, setWishlist }) {
           )}
           <div className="price-wrap">
             <span className="price-current">{formatPrice(product.price, currency)}</span>
-            {product.originalPrice && <span className="price-original">{formatPrice(product.originalPrice, currency)}</span>}
+            {product.originalPrice && (
+              <span className="price-original">{formatPrice(product.originalPrice, currency)}</span>
+            )}
           </div>
-          <button className={`btn-add-cart ${inCart ? "added" : ""}`} onClick={addToCart} disabled={!product.inStock}>
+          <button
+            className={`btn-add-cart ${inCart ? "added" : ""}`}
+            onClick={addToCart}
+            disabled={!product.inStock}
+          >
             {!product.inStock ? "Out of Stock" : inCart ? "✓ Added to Cart" : "Add to Cart"}
           </button>
         </div>
@@ -1872,7 +2410,9 @@ function ProductCard({ product, cart, setCart, wishlist, setWishlist }) {
   );
 }
 
-// ── Section Divider ──
+// ─────────────────────────────────────────────
+// SECTION DIVIDER
+// ─────────────────────────────────────────────
 function SectionDivider({ subtitle, title }) {
   return (
     <div style={{ textAlign: "center", marginBottom: "52px" }}>
@@ -1887,7 +2427,9 @@ function SectionDivider({ subtitle, title }) {
   );
 }
 
-// ── Trust Strip ──
+// ─────────────────────────────────────────────
+// TRUST STRIP
+// ─────────────────────────────────────────────
 function TrustStrip() {
   return (
     <div className="trust-strip">
@@ -1907,7 +2449,9 @@ function TrustStrip() {
   );
 }
 
-// ── Platforms Section ──
+// ─────────────────────────────────────────────
+// PLATFORMS SECTION
+// ─────────────────────────────────────────────
 function PlatformsSection() {
   return (
     <div className="platforms-section">
@@ -1917,9 +2461,9 @@ function PlatformsSection() {
       </div>
       <div className="platforms-grid">
         {[
-          { icon: "📸", name: "Instagram", handle: "@rayfineornates", url: "[instagram.com](https://www.instagram.com/rayfineornates/)" },
-          { icon: "👍", name: "Facebook", handle: "Ray Fine Ornates", url: "[facebook.com](https://www.facebook.com/rayfineornatesjewellery)" },
-          { icon: "📌", name: "Pinterest", handle: "rayfineornates", url: "[in.pinterest.com](https://in.pinterest.com/rayfineornates/)" },
+          { icon: "📸", name: "Instagram", handle: "@rayfineornates", url: "https://www.instagram.com/rayfineornates/" },
+          { icon: "👍", name: "Facebook", handle: "Ray Fine Ornates", url: "https://www.facebook.com/rayfineornatesjewellery" },
+          { icon: "📌", name: "Pinterest", handle: "rayfineornates", url: "https://in.pinterest.com/rayfineornates/" },
         ].map(p => (
           <a key={p.name} href={p.url} target="_blank" rel="noreferrer" className="platform-item" style={{ textDecoration: "none" }}>
             <div className="platform-icon">{p.icon}</div>
@@ -1932,7 +2476,9 @@ function PlatformsSection() {
   );
 }
 
-// ── Hero Slider ──
+// ─────────────────────────────────────────────
+// HERO SLIDER
+// ─────────────────────────────────────────────
 function HeroSlider() {
   const [current, setCurrent] = useState(0);
   const next = useCallback(() => setCurrent(p => (p + 1) % HERO_SLIDES.length), []);
@@ -1954,9 +2500,7 @@ function HeroSlider() {
           <div className="hero-eyebrow-line" />
           <span className="hero-sub">{slide.eyebrow}</span>
         </div>
-        <h1 key={current + "h1"}>
-          {slide.title[0]}<br /><span>{slide.title[1]}</span>
-        </h1>
+        <h1 key={current + "h1"}>{slide.title[0]}<br /><span>{slide.title[1]}</span></h1>
         <p className="hero-desc" key={current + "desc"}>{slide.desc}</p>
         <div className="hero-btns" key={current + "btns"}>
           <Link to="/shop" className="btn-primary">Explore Collection</Link>
@@ -1972,7 +2516,9 @@ function HeroSlider() {
   );
 }
 
-// ── Order Tracking ──
+// ─────────────────────────────────────────────
+// ORDER TRACKING
+// ─────────────────────────────────────────────
 function OrderTracking() {
   const [orderId, setOrderId] = useState("");
   const [phone, setPhone] = useState("");
@@ -1995,104 +2541,73 @@ function OrderTracking() {
 
   const statusSteps = ["Order Placed", "Confirmed", "Shipped", "Out for Delivery", "Delivered"];
 
+  const inputStyle = {
+    padding: "13px 16px", borderRadius: "6px", border: "1.5px solid var(--border, #d9ccc2)",
+    fontSize: "14px", fontFamily: "inherit", outline: "none", background: "#fff",
+    color: "var(--text, #2C2418)", transition: "border-color 0.2s", width: "100%", boxSizing: "border-box",
+  };
+
   return (
     <div style={{
       background: "linear-gradient(135deg, #fdf8f4 0%, #f5ede4 100%)",
       border: "1px solid var(--border-light, #e8ddd4)",
-      borderRadius: "16px",
-      padding: "36px 32px",
-      maxWidth: "540px",
-      margin: "0 auto",
+      borderRadius: "16px", padding: "36px 32px",
+      maxWidth: "540px", margin: "0 auto",
     }}>
       <div style={{ textAlign: "center", marginBottom: "28px" }}>
         <div style={{ fontSize: "36px", marginBottom: "10px" }}>📦</div>
-        <h3 style={{ fontFamily: "Playfair Display, serif", fontSize: "24px", fontWeight: 400, color: "var(--text, #2C2418)", marginBottom: "6px" }}>Track Your Order</h3>
-        <p style={{ fontSize: "13px", color: "var(--text-muted, #8A7968)", lineHeight: 1.6 }}>
+        <h3 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "26px", fontWeight: 500, color: "var(--text)", marginBottom: "6px" }}>
+          Track Your Order
+        </h3>
+        <p style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.6 }}>
           Enter your Order ID or registered phone number to check your delivery status.
         </p>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px" }}>
-        <input
-          placeholder="Order ID (e.g. RFO-2024-1234)"
-          value={orderId}
-          onChange={e => setOrderId(e.target.value)}
-          style={{ padding: "13px 16px", borderRadius: "6px", border: "1.5px solid var(--border, #d9ccc2)", fontSize: "14px", fontFamily: "inherit", outline: "none", background: "#fff", color: "var(--text, #2C2418)", transition: "border-color 0.2s" }}
+        <input placeholder="Order ID (e.g. RFO-2024-1234)" value={orderId} onChange={e => setOrderId(e.target.value)} style={inputStyle}
           onFocus={e => e.target.style.borderColor = "var(--primary, #B07A5A)"}
-          onBlur={e => e.target.style.borderColor = "var(--border, #d9ccc2)"}
-        />
-        <div style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted, #8A7968)", letterSpacing: "1px" }}>— OR —</div>
-        <input
-          placeholder="Registered Phone Number"
-          value={phone}
-          onChange={e => setPhone(e.target.value)}
-          style={{ padding: "13px 16px", borderRadius: "6px", border: "1.5px solid var(--border, #d9ccc2)", fontSize: "14px", fontFamily: "inherit", outline: "none", background: "#fff", color: "var(--text, #2C2418)", transition: "border-color 0.2s" }}
+          onBlur={e => e.target.style.borderColor = "var(--border, #d9ccc2)"} />
+        <div style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)", letterSpacing: "1px" }}>— OR —</div>
+        <input placeholder="Registered Phone Number" value={phone} onChange={e => setPhone(e.target.value)} style={inputStyle}
           onFocus={e => e.target.style.borderColor = "var(--primary, #B07A5A)"}
-          onBlur={e => e.target.style.borderColor = "var(--border, #d9ccc2)"}
-        />
+          onBlur={e => e.target.style.borderColor = "var(--border, #d9ccc2)"} />
       </div>
       {error && <p style={{ color: "#c0392b", fontSize: "13px", marginBottom: "12px", textAlign: "center" }}>{error}</p>}
-      <button
-        onClick={trackOrder}
-        disabled={loading}
-        style={{ width: "100%", padding: "14px", background: loading ? "#c4a98a" : "var(--primary, #B07A5A)", color: "#fff", border: "none", borderRadius: "6px", fontSize: "12px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", cursor: loading ? "not-allowed" : "pointer", transition: "background 0.3s", marginBottom: "16px" }}
-      >
+      <button onClick={trackOrder} disabled={loading} style={{
+        width: "100%", padding: "14px", background: loading ? "#c4a98a" : "var(--primary, #B07A5A)",
+        color: "#fff", border: "none", borderRadius: "6px", fontSize: "12px",
+        fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase",
+        cursor: loading ? "not-allowed" : "pointer", transition: "background 0.3s", marginBottom: "16px",
+      }}>
         {loading ? "Tracking..." : "Track Order →"}
       </button>
       {result && !result.found && (
         <div style={{ background: "#fff8f5", border: "1px solid #f0ddd0", borderRadius: "10px", padding: "20px", textAlign: "center" }}>
           <div style={{ fontSize: "28px", marginBottom: "8px" }}>🔍</div>
-          <p style={{ fontWeight: 600, color: "var(--text, #2C2418)", marginBottom: "6px", fontSize: "15px" }}>Order Not Found</p>
-          <p style={{ fontSize: "13px", color: "var(--text-muted, #8A7968)", marginBottom: "14px", lineHeight: 1.6 }}>
-            We couldn't find this order. Please double-check your details or contact us on WhatsApp for help.
+          <p style={{ fontWeight: 600, color: "var(--text)", marginBottom: "6px", fontSize: "15px" }}>Order Not Found</p>
+          <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "14px", lineHeight: 1.6 }}>
+            We couldn't find this order. Please double-check your details or contact us on WhatsApp.
           </p>
-          <a href="[wa.me](https://wa.me/918690666771)" target="_blank" rel="noreferrer"
+          <a href="https://wa.me/918690666771" target="_blank" rel="noreferrer"
             style={{ display: "inline-block", padding: "10px 24px", background: "#25D366", color: "#fff", borderRadius: "6px", fontSize: "12px", fontWeight: 700, letterSpacing: "1.5px", textDecoration: "none", textTransform: "uppercase" }}>
             💬 WhatsApp Us
           </a>
         </div>
       )}
-      {result && result.found && (
-        <div style={{ background: "#fff", border: "1px solid var(--border-light)", borderRadius: "10px", padding: "24px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px", flexWrap: "wrap", gap: 8 }}>
-            <div>
-              <p style={{ fontSize: "11px", color: "var(--text-muted)", letterSpacing: "1px", textTransform: "uppercase" }}>Order ID</p>
-              <p style={{ fontWeight: 700, color: "var(--text)" }}>{result.orderId}</p>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <p style={{ fontSize: "11px", color: "var(--text-muted)", letterSpacing: "1px", textTransform: "uppercase" }}>Status</p>
-              <p style={{ fontWeight: 700, color: "var(--primary)" }}>{result.status}</p>
-            </div>
-          </div>
-          <div style={{ marginBottom: "16px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-              {statusSteps.map((step, i) => {
-                const currentIdx = statusSteps.indexOf(result.status);
-                const done = i <= currentIdx;
-                return (
-                  <div key={step} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
-                    <div style={{ width: 20, height: 20, borderRadius: "50%", background: done ? "var(--primary, #B07A5A)" : "#e0d4cb", border: done ? "none" : "2px solid #e0d4cb", marginBottom: 4, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", color: "#fff", fontWeight: 700 }}>{done ? "✓" : ""}</div>
-                    <span style={{ fontSize: "9px", color: done ? "var(--primary)" : "var(--text-muted)", textAlign: "center", lineHeight: 1.2 }}>{step}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          {result.estimatedDelivery && (
-            <p style={{ fontSize: "13px", color: "var(--text-muted)", textAlign: "center" }}>
-              📅 Estimated Delivery: <strong>{result.estimatedDelivery}</strong>
-            </p>
-          )}
-        </div>
-      )}
-      <p style={{ textAlign: "center", fontSize: "12px", color: "var(--text-muted, #8A7968)", marginTop: "14px" }}>
+      <p style={{ textAlign: "center", fontSize: "12px", color: "var(--text-muted)", marginTop: "14px" }}>
         Need help?{" "}
-        <a href="[wa.me](https://wa.me/918690666771)" target="_blank" rel="noreferrer" style={{ color: "var(--primary, #B07A5A)", fontWeight: 600, textDecoration: "none" }}>WhatsApp us</a>
+        <a href="https://wa.me/918690666771" target="_blank" rel="noreferrer"
+          style={{ color: "var(--primary)", fontWeight: 600, textDecoration: "none" }}>
+          WhatsApp us
+        </a>
       </p>
     </div>
   );
 }
 
-// ── Track Order Page ──
+// ─────────────────────────────────────────────
+// TRACK ORDER PAGE
+// ─────────────────────────────────────────────
 function TrackOrderPage() {
   return (
     <div className="page-content">
@@ -2108,12 +2623,33 @@ function TrackOrderPage() {
   );
 }
 
-// ── Bestsellers Section (Amama-style) ──
+// ─────────────────────────────────────────────
+// RECENTLY VIEWED (Amama feature)
+// ─────────────────────────────────────────────
+function RecentlyViewedSection({ cart, setCart, wishlist, setWishlist }) {
+  const { viewed } = useRecentlyViewed();
+  if (viewed.length === 0) return null;
+
+  return (
+    <section className="featured-section" style={{ background: "#fff", paddingTop: "60px" }}>
+      <SectionDivider subtitle="Your Browsing History" title="Recently Viewed" />
+      <div className="products-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
+        {viewed.slice(0, 6).map(p => (
+          <ProductCard key={p._id || p.id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────
+// BESTSELLERS SECTION
+// ─────────────────────────────────────────────
 function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    fetch("[rayfinesite-3.onrender.com](https://rayfinesite-3.onrender.com/api/products)")
+    fetch("https://rayfinesite-3.onrender.com/api/products")
       .then(res => res.json())
       .then(data => {
         const list = Array.isArray(data?.data) ? data.data : [];
@@ -2144,14 +2680,22 @@ function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
   );
 }
 
-// ── Shop by Occasion ──
+// ─────────────────────────────────────────────
+// SHOP BY OCCASION
+// ─────────────────────────────────────────────
 function OccasionSection() {
   return (
     <section style={{ padding: "80px 40px", background: "var(--cream)" }}>
       <SectionDivider subtitle="Find Your Perfect Piece" title="Shop by Occasion" />
       <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap", maxWidth: "900px", margin: "0 auto" }}>
         {OCCASIONS.map(occ => (
-          <Link to={occ.path} key={occ.name} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", padding: "24px 20px", background: "#fff", border: "1px solid var(--border-light)", borderRadius: "12px", textDecoration: "none", minWidth: "120px", flex: "1 1 120px", maxWidth: "150px", transition: "all 0.3s", cursor: "pointer" }}
+          <Link to={occ.path} key={occ.name} style={{
+            display: "flex", flexDirection: "column", alignItems: "center",
+            gap: "10px", padding: "24px 20px", background: "#fff",
+            border: "1px solid var(--border-light)", borderRadius: "12px",
+            textDecoration: "none", minWidth: "120px", flex: "1 1 120px",
+            maxWidth: "150px", transition: "all 0.3s", cursor: "pointer",
+          }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(176,122,90,0.15)"; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-light)"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
           >
@@ -2164,18 +2708,72 @@ function OccasionSection() {
   );
 }
 
-// ── Home Page ──
+// ─────────────────────────────────────────────
+// GIFTING SECTION
+// ─────────────────────────────────────────────
+function GiftingSection() {
+  return (
+    <section style={{ padding: "80px 40px", background: "var(--bg)" }}>
+      <SectionDivider subtitle="Curated with Love" title="Gift by Budget" />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "24px", maxWidth: "1000px", margin: "0 auto" }}>
+        {GIFT_SETS.map(g => (
+          <Link to={g.path} key={g.name} style={{
+            position: "relative", borderRadius: "12px", overflow: "hidden",
+            textDecoration: "none", display: "block", aspectRatio: "4/3",
+            boxShadow: "0 4px 20px rgba(44,36,24,0.08)", transition: "all 0.35s",
+          }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 16px 40px rgba(44,36,24,0.16)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(44,36,24,0.08)"; }}
+          >
+            <img src={g.img} alt={g.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              onError={e => e.target.src = "https://placehold.co/400x300?text=Gift"} />
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(to top, rgba(44,36,24,0.85) 0%, rgba(44,36,24,0.2) 50%, transparent 100%)",
+              display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "24px",
+            }}>
+              <div style={{ display: "inline-block", background: "var(--primary)", color: "#fff", fontSize: "10px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", padding: "4px 12px", borderRadius: "2px", marginBottom: "8px", alignSelf: "flex-start" }}>
+                🎁 {g.price}
+              </div>
+              <h3 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "22px", fontWeight: 500, color: "#fff", margin: "0 0 4px" }}>{g.name}</h3>
+              <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.8)", margin: 0, letterSpacing: "1px" }}>{g.desc}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+      <div style={{ maxWidth: "600px", margin: "48px auto 0", textAlign: "center", background: "var(--cream)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "32px 40px" }}>
+        <div style={{ fontSize: "32px", marginBottom: "12px" }}>💌</div>
+        <h4 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "22px", fontWeight: 500, color: "var(--text)", marginBottom: "10px" }}>
+          Want a Personal Gift Note?
+        </h4>
+        <p style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: "1.8", marginBottom: "20px" }}>
+          We add a handwritten gift message with every order. Just mention it on WhatsApp!
+        </p>
+        <a href="https://wa.me/918690666771" target="_blank" rel="noreferrer" style={{
+          display: "inline-block", padding: "12px 32px", background: "#25D366",
+          color: "#fff", borderRadius: "2px", fontSize: "11px", fontWeight: 700,
+          letterSpacing: "2px", textTransform: "uppercase", textDecoration: "none",
+        }}>💬 WhatsApp Us</a>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────
+// HOME PAGE
+// ─────────────────────────────────────────────
 function Home({ cart, setCart, wishlist, setWishlist }) {
   const [featured, setFeatured] = useState([]);
 
   useEffect(() => {
-    fetch("[rayfinesite-3.onrender.com](https://rayfinesite-3.onrender.com/api/products)")
+    fetch("https://rayfinesite-3.onrender.com/api/products")
       .then(res => res.json())
       .then(data => {
         const list = Array.isArray(data?.data) ? data.data : [];
-        const fixed = list.map(p => ({
+        const fixed = list.map((p, i) => ({
           ...p,
-          image: p.image?.replace(/^http:\/\//i, "https://")?.split(",")[0]?.trim()
+          image: p.image?.replace(/^http:\/\//i, "https://")?.split(",")[0]?.trim(),
+          isNew: i < 4,
         }));
         setFeatured(fixed.slice(0, 8));
       })
@@ -2184,36 +2782,26 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
 
   return (
     <>
-      {/* 1. HERO */}
       <HeroSlider />
-
-      {/* 2. SALE BANNER */}
       <div className="sale-banner">
         <span>🔥 SALE IS LIVE — Use Code <strong>GIFT15</strong> for Extra 15% Off!</span>
         <Link to="/shop?cat=sale" className="sale-banner-btn">Shop Sale</Link>
       </div>
-
-      {/* 3. TRUST STRIP */}
       <TrustStrip />
-
-      {/* 4. WORLDWIDE STRIP */}
       <WorldwideStrip />
-
-      {/* 5. SHOP BY OCCASION */}
       <OccasionSection />
-
-      {/* 6. BESTSELLERS */}
+      <GiftingSection />
       <BestsellersSection cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
 
-      {/* 7. CATEGORIES */}
+      {/* Categories */}
       <section className="categories-section">
         <SectionDivider subtitle="Browse by Style" title="Shop by Category" />
         <div className="cat-square-grid">
           {[
-            { name: "Earrings",  img: "[rayfinesite-3.onrender.com](https://rayfinesite-3.onrender.com/images/IMG-20260527-WA0037.jpg)", path: "/shop?cat=Earring" },
-            { name: "Necklaces", img: "[rayfinesite-3.onrender.com](https://rayfinesite-3.onrender.com/images/necklace.jpg)", path: "/shop?cat=Necklace" },
-            { name: "Anklets",   img: "[rayfinesite-3.onrender.com](https://rayfinesite-3.onrender.com/images/golden.jpg)", path: "/shop?cat=Anklets" },
-            { name: "Rings",     img: "[rayfinesite-3.onrender.com](https://rayfinesite-3.onrender.com/images/ring-cateo.jpg)", path: "/shop?cat=Ring" },
+            { name: "Earrings",  img: "https://rayfinesite-3.onrender.com/images/IMG-20260527-WA0037.jpg", path: "/shop?cat=Earring" },
+            { name: "Necklaces", img: "https://rayfinesite-3.onrender.com/images/necklace.jpg", path: "/shop?cat=Necklace" },
+            { name: "Anklets",   img: "https://rayfinesite-3.onrender.com/images/golden.jpg", path: "/shop?cat=Anklets" },
+            { name: "Rings",     img: "https://rayfinesite-3.onrender.com/images/ring-cateo.jpg", path: "/shop?cat=Ring" },
           ].map(cat => (
             <Link to={cat.path} key={cat.name} className="cat-square-card">
               <img src={cat.img} alt={cat.name} />
@@ -2226,7 +2814,7 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
         </div>
       </section>
 
-      {/* 8. FEATURED PRODUCTS */}
+      {/* Featured */}
       <section className="featured-section">
         <SectionDivider subtitle="Curated For You" title="Trending Now" />
         <div className="products-grid">
@@ -2239,10 +2827,9 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
         </div>
       </section>
 
-      {/* 9. PLATFORMS */}
       <PlatformsSection />
 
-      {/* 10. TESTIMONIALS */}
+      {/* Testimonials */}
       <section className="testimonials-section">
         <SectionDivider subtitle="Customer Love" title="What They Say" />
         <div className="testimonials-grid">
@@ -2264,29 +2851,35 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
   );
 }
 
-// ── Shop Page ──
+// ─────────────────────────────────────────────
+// SHOP PAGE (with search param support + price filter)
+// ─────────────────────────────────────────────
 function Shop({ cart, setCart, wishlist, setWishlist }) {
   const [searchParams] = useSearchParams();
   const [category, setCategory] = useState(searchParams.get("cat") || "All");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(searchParams.get("search") || "");
   const [sort, setSort] = useState("default");
   const [products, setProducts] = useState([]);
   const [showInStock, setShowInStock] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [priceRange, setPriceRange] = useState([0, 50000]);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     const cat = searchParams.get("cat");
+    const q = searchParams.get("search");
     if (cat) setCategory(cat);
+    if (q) setSearch(q);
   }, [searchParams]);
 
   useEffect(() => {
-    fetch("[rayfinesite-3.onrender.com](https://rayfinesite-3.onrender.com/api/products)")
+    fetch("https://rayfinesite-3.onrender.com/api/products")
       .then(res => res.json())
       .then(data => {
         const list = Array.isArray(data?.data) ? data.data : [];
         const fixed = list.map(p => ({
           ...p,
-          image: p.image?.replace(/^http:\/\//i, "https://")?.split(",")[0]?.trim()
+          image: p.image?.replace(/^http:\/\//i, "https://")?.split(",")[0]?.trim(),
         }));
         setProducts(fixed);
         setLoading(false);
@@ -2300,11 +2893,13 @@ function Shop({ cart, setCart, wishlist, setWishlist }) {
       : (p.category || "").toLowerCase().trim() === category.toLowerCase().trim();
     const matchSearch = (p.name || "").toLowerCase().includes(search.toLowerCase());
     const matchStock = showInStock ? p.inStock : true;
-    return matchCat && matchSearch && matchStock;
+    const matchPrice = p.price >= priceRange[0] && p.price <= priceRange[1];
+    return matchCat && matchSearch && matchStock && matchPrice;
   });
 
   if (sort === "low") filtered = [...filtered].sort((a, b) => a.price - b.price);
   if (sort === "high") filtered = [...filtered].sort((a, b) => b.price - a.price);
+  if (sort === "newest") filtered = [...filtered].reverse();
 
   return (
     <div className="shop-page">
@@ -2313,26 +2908,86 @@ function Shop({ cart, setCart, wishlist, setWishlist }) {
         <h1>Our Collection</h1>
         <p>Discover timeless pieces crafted with love</p>
       </div>
+
       <div className="shop-controls">
-        <input className="shop-search" placeholder="🔍 Search jewellery..." value={search} onChange={e => setSearch(e.target.value)} />
+        <input
+          className="shop-search"
+          placeholder="🔍 Search jewellery..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
         <select className="shop-sort" value={sort} onChange={e => setSort(e.target.value)}>
           <option value="default">Sort: Featured</option>
+          <option value="newest">Sort: Newest</option>
           <option value="low">Price: Low to High</option>
           <option value="high">Price: High to Low</option>
         </select>
         <button
           onClick={() => setShowInStock(!showInStock)}
-          style={{ padding: "10px 18px", borderRadius: "2px", border: "none", cursor: "pointer", background: showInStock ? "var(--text)" : "var(--cream)", color: showInStock ? "#fff" : "var(--text-muted)", fontWeight: 600, fontSize: "11px", letterSpacing: "1.5px", textTransform: "uppercase", minHeight: "44px" }}
+          style={{
+            padding: "10px 18px", borderRadius: "2px", border: "none", cursor: "pointer",
+            background: showInStock ? "var(--text)" : "var(--cream)",
+            color: showInStock ? "#fff" : "var(--text-muted)",
+            fontWeight: 600, fontSize: "11px", letterSpacing: "1.5px", textTransform: "uppercase", minHeight: "44px",
+          }}
         >
           {showInStock ? "✓ In Stock" : "All Products"}
         </button>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          style={{
+            padding: "10px 18px", borderRadius: "2px", border: "1.5px solid var(--border)",
+            cursor: "pointer", background: showFilters ? "var(--cream)" : "transparent",
+            color: "var(--text-muted)", fontWeight: 600, fontSize: "11px",
+            letterSpacing: "1.5px", textTransform: "uppercase", minHeight: "44px",
+          }}
+        >
+          ⚙ Filters
+        </button>
       </div>
+
+      {/* Price filter */}
+      {showFilters && (
+        <div style={{ padding: "20px 40px", background: "var(--cream)", borderBottom: "1px solid var(--border-light)" }}>
+          <p style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 12 }}>
+            Price Range: ₹{priceRange[0].toLocaleString()} – ₹{priceRange[1].toLocaleString()}
+          </p>
+          <div style={{ display: "flex", gap: 16, alignItems: "center", maxWidth: 400 }}>
+            <input type="range" min={0} max={50000} step={500} value={priceRange[1]}
+              onChange={e => setPriceRange([priceRange[0], Number(e.target.value)])}
+              style={{ flex: 1, accentColor: "var(--primary)" }}
+            />
+            <button onClick={() => setPriceRange([0, 50000])} style={{
+              padding: "6px 14px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px",
+              textTransform: "uppercase", background: "transparent", border: "1.5px solid var(--border)",
+              borderRadius: "2px", cursor: "pointer", color: "var(--text-muted)",
+            }}>Reset</button>
+          </div>
+        </div>
+      )}
+
       <div className="category-tabs">
         {["All", "Earring", "Necklace", "Bracelet", "Ring", "Anklet", "Sale 🔥"].map(cat => (
-          <button key={cat} className={`cat-tab ${(cat === "Sale 🔥" ? category === "sale" : category === cat) ? "active" : ""}`} onClick={() => setCategory(cat === "Sale 🔥" ? "sale" : cat)}>{cat}</button>
+          <button
+            key={cat}
+            className={`cat-tab ${(cat === "Sale 🔥" ? category === "sale" : category === cat) ? "active" : ""}`}
+            onClick={() => setCategory(cat === "Sale 🔥" ? "sale" : cat)}
+          >{cat}</button>
         ))}
       </div>
-      {loading && <p style={{ textAlign: "center", padding: "80px", color: "var(--text-muted)", fontFamily: "Playfair Display, serif", fontSize: "20px", fontStyle: "italic" }}>Loading collection...</p>}
+
+      {/* Results count */}
+      {!loading && (
+        <p style={{ textAlign: "right", padding: "0 40px 16px", fontSize: "12px", color: "var(--text-muted)", fontWeight: 600 }}>
+          {filtered.length} piece{filtered.length !== 1 ? "s" : ""} found
+        </p>
+      )}
+
+      {loading && (
+        <p style={{ textAlign: "center", padding: "80px", color: "var(--text-muted)", fontFamily: "Cormorant Garamond, serif", fontSize: "22px", fontStyle: "italic" }}>
+          Loading collection...
+        </p>
+      )}
       {!loading && (
         <div className="products-grid" style={{ padding: "0 40px 80px" }}>
           {filtered.map(p => (
@@ -2341,13 +2996,23 @@ function Shop({ cart, setCart, wishlist, setWishlist }) {
         </div>
       )}
       {!loading && filtered.length === 0 && (
-        <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "80px", fontFamily: "Playfair Display, serif", fontSize: "20px", fontStyle: "italic" }}>No pieces found.</p>
+        <div style={{ textAlign: "center", padding: "80px 20px" }}>
+          <div style={{ fontSize: "48px", marginBottom: 16 }}>🔍</div>
+          <p style={{ color: "var(--text-muted)", fontFamily: "Cormorant Garamond, serif", fontSize: "22px", fontStyle: "italic", marginBottom: 20 }}>
+            No pieces found.
+          </p>
+          <button onClick={() => { setSearch(""); setCategory("All"); setPriceRange([0, 50000]); }} className="btn-primary">
+            Clear Filters
+          </button>
+        </div>
       )}
     </div>
   );
 }
 
-// ── Wishlist ──
+// ─────────────────────────────────────────────
+// WISHLIST
+// ─────────────────────────────────────────────
 function Wishlist({ wishlist, setWishlist, cart, setCart }) {
   return (
     <div className="shop-page">
@@ -2358,21 +3023,42 @@ function Wishlist({ wishlist, setWishlist, cart, setCart }) {
       {wishlist.length === 0 ? (
         <div style={{ textAlign: "center", padding: "100px 20px" }}>
           <div style={{ fontSize: "56px", marginBottom: "20px" }}>🤍</div>
-          <p style={{ color: "var(--text-muted)", fontSize: "18px", marginBottom: "28px", fontFamily: "Playfair Display, serif", fontStyle: "italic" }}>No items saved yet</p>
+          <p style={{ color: "var(--text-muted)", fontSize: "18px", marginBottom: "28px", fontFamily: "Cormorant Garamond, serif", fontStyle: "italic" }}>
+            No items saved yet
+          </p>
           <Link to="/shop" className="btn-primary">Explore Collection</Link>
         </div>
       ) : (
-        <div className="products-grid" style={{ padding: "40px" }}>
-          {wishlist.map(p => (
-            <ProductCard key={p.id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
-          ))}
-        </div>
+        <>
+          <div className="products-grid" style={{ padding: "40px" }}>
+            {wishlist.map(p => (
+              <ProductCard key={p.id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
+            ))}
+          </div>
+          <div style={{ textAlign: "center", padding: "0 0 60px" }}>
+            <button onClick={() => {
+              // move all to cart
+              wishlist.forEach(p => {
+                if (p.inStock) {
+                  setCart(prev => {
+                    const exists = prev.find(c => c.id === p.id);
+                    return exists ? prev.map(c => c.id === p.id ? { ...c, quantity: c.quantity + 1 } : c) : [...prev, { ...p, quantity: 1 }];
+                  });
+                }
+              });
+            }} className="btn-primary">
+              Add All to Cart
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
 }
 
-// ── About (REMOVED "500+ Products" stat) ──
+// ─────────────────────────────────────────────
+// ABOUT
+// ─────────────────────────────────────────────
 function About() {
   return (
     <div className="page-content">
@@ -2392,7 +3078,7 @@ function About() {
           <p>We ship to 140+ countries across the globe. From India to the USA, UAE to Australia — our jewellery reaches every corner of the world. Find us on Instagram, Facebook, and Pinterest.</p>
         </div>
         <div className="about-image">
-          <img src="[images.unsplash.com](https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=800&q=80)" alt="Ray Fine Ornates" />
+          <img src="https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=800&q=80" alt="Ray Fine Ornates" />
         </div>
       </div>
       <div className="about-stats">
@@ -2404,7 +3090,9 @@ function About() {
   );
 }
 
-// ── Contact (FIXED: Track Order now links properly) ──
+// ─────────────────────────────────────────────
+// CONTACT
+// ─────────────────────────────────────────────
 function Contact() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
   return (
@@ -2424,9 +3112,9 @@ function Contact() {
             </Link>
           </div>
           <div className="social-links">
-            <a href="[instagram.com](https://www.instagram.com/rayfineornates/)" target="_blank" rel="noreferrer">Instagram</a>
-            <a href="[facebook.com](https://www.facebook.com/rayfineornatesjewellery)" target="_blank" rel="noreferrer">Facebook</a>
-            <a href="[in.pinterest.com](https://in.pinterest.com/rayfineornates/)" target="_blank" rel="noreferrer">Pinterest</a>
+            <a href="https://www.instagram.com/rayfineornates/" target="_blank" rel="noreferrer">Instagram</a>
+            <a href="https://www.facebook.com/rayfineornatesjewellery" target="_blank" rel="noreferrer">Facebook</a>
+            <a href="https://in.pinterest.com/rayfineornates/" target="_blank" rel="noreferrer">Pinterest</a>
           </div>
         </div>
         <div className="contact-form">
@@ -2440,7 +3128,9 @@ function Contact() {
   );
 }
 
-// ── Terms ──
+// ─────────────────────────────────────────────
+// TERMS
+// ─────────────────────────────────────────────
 function Terms() {
   return (
     <div className="page-content">
@@ -2449,7 +3139,7 @@ function Terms() {
         <p>Ray Fine Ornates Policies &amp; Information</p>
       </div>
       <div style={{ maxWidth: "1000px", margin: "40px auto", padding: "20px 40px", lineHeight: "1.8" }}>
-        <h2 style={{ fontFamily: "Playfair Display, serif", color: "var(--primary)", fontSize: "32px", fontWeight: 300, marginBottom: "24px" }}>Terms &amp; Conditions</h2>
+        <h2 style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--primary)", fontSize: "32px", fontWeight: 400, marginBottom: "24px" }}>Terms &amp; Conditions</h2>
         {[
           ["1. General Information", "Ray Fine Ornates is a Jaipur-based jewelry brand specializing in handcrafted jewelry made with precious, semi-precious, natural, and lab-created stones. All products are handcrafted and may have slight variations, making each piece unique."],
           ["2. Product Information", "We make every effort to display product images, colors, materials, and descriptions accurately. However, slight differences may occur due to lighting, screen settings, photography, and the handmade nature of our jewelry."],
@@ -2463,16 +3153,16 @@ function Terms() {
           ["10. Governing Law", "These Terms & Conditions are governed by the laws of India. Any disputes shall be subject to the jurisdiction of Jaipur, Rajasthan."],
         ].map(([title, text]) => (
           <div key={title} style={{ marginBottom: "24px" }}>
-            <h3 style={{ fontFamily: "Playfair Display, serif", color: "var(--text)", fontSize: "20px", fontWeight: 500, marginBottom: "8px" }}>{title}</h3>
+            <h3 style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--text)", fontSize: "20px", fontWeight: 500, marginBottom: "8px" }}>{title}</h3>
             <p style={{ color: "var(--text-muted)", lineHeight: "1.9" }}>{text}</p>
           </div>
         ))}
         <hr style={{ margin: "48px 0", borderColor: "var(--border-light)" }} />
-        <h2 style={{ fontFamily: "Playfair Display, serif", color: "var(--primary)", fontSize: "32px", fontWeight: 300, marginBottom: "24px" }}>Refund &amp; Cancellation Policy</h2>
-        <p style={{ color: "var(--text-muted)", marginBottom: "16px" }}>Customers may request order cancellation within 24 hours of placing the order by contacting us at <strong>+91 8690666771</strong>. Refunds are accepted only in genuine cases such as damaged packages or incorrect products.</p>
+        <h2 style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--primary)", fontSize: "32px", fontWeight: 400, marginBottom: "24px" }}>Refund &amp; Cancellation Policy</h2>
+        <p style={{ color: "var(--text-muted)", marginBottom: "16px" }}>Customers may request order cancellation within 24 hours by contacting us at <strong>+91 8690666771</strong>. Refunds are accepted only in genuine cases such as damaged packages or incorrect products.</p>
         <p style={{ color: "var(--text-muted)", marginBottom: "8px" }}><strong>Non-Refundable:</strong> Customized orders, personalized products, used/worn jewelry, and orders damaged due to customer mishandling.</p>
         <hr style={{ margin: "48px 0", borderColor: "var(--border-light)" }} />
-        <h2 style={{ fontFamily: "Playfair Display, serif", color: "var(--primary)", fontSize: "32px", fontWeight: 300, marginBottom: "24px" }}>Frequently Asked Questions</h2>
+        <h2 style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--primary)", fontSize: "32px", fontWeight: 400, marginBottom: "24px" }}>Frequently Asked Questions</h2>
         {[
           ["What type of jewelry does Ray Fine Ornates offer?", "We specialize in handcrafted gold-plated jewelry featuring precious, semi-precious, natural, and lab-created stones. Our collection includes necklaces, bracelets, earrings, rings, bridal jewelry, spiritual jewelry, and custom-made designs."],
           ["Are your jewelry pieces handmade?", "Yes, all our jewelry pieces are handcrafted by skilled artisans in Jaipur, India. Slight variations are natural characteristics of handmade jewelry."],
@@ -2489,18 +3179,20 @@ function Terms() {
         ))}
         <hr style={{ margin: "48px 0", borderColor: "var(--border-light)" }} />
         <div style={{ background: "var(--cream)", padding: "24px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
-          <h3 style={{ fontFamily: "Playfair Display, serif", color: "var(--primary)", fontSize: "22px", marginBottom: "12px" }}>Contact Information</h3>
+          <h3 style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--primary)", fontSize: "22px", marginBottom: "12px" }}>Contact Information</h3>
           <p style={{ color: "var(--text-muted)" }}><strong>Phone:</strong> +91 8690666771</p>
           <p style={{ color: "var(--text-muted)" }}><strong>Address:</strong> 223, 1st Floor, Memiyon Ka Darwaja, Haldiyon Ka Rasta, Johari Bazar, Jaipur – 302003</p>
           <p style={{ color: "var(--text-muted)", marginBottom: "16px" }}><strong>Hours:</strong> Monday–Saturday, 10:00 AM–7:00 PM</p>
-          <a href="[wa.me](https://wa.me/918690666771)" target="_blank" rel="noreferrer" className="btn-primary">WhatsApp Us</a>
+          <a href="https://wa.me/918690666771" target="_blank" rel="noreferrer" className="btn-primary">WhatsApp Us</a>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Footer ──
+// ─────────────────────────────────────────────
+// FOOTER
+// ─────────────────────────────────────────────
 function Footer() {
   return (
     <footer className="footer">
@@ -2510,9 +3202,9 @@ function Footer() {
           <p className="footer-brand-desc">Luxury fashion jewellery crafted for the modern woman. Handmade by artisans in the jewellery capital of India — Jaipur.</p>
           <p className="footer-brand-desc" style={{ marginTop: "8px", color: "var(--primary)", fontSize: "12px", letterSpacing: "1px" }}>Est. 2021 · Johari Bazar, Jaipur</p>
           <div className="footer-social">
-            <a href="[instagram.com](https://www.instagram.com/rayfineornates/)" target="_blank" rel="noreferrer">Instagram</a>
-            <a href="[facebook.com](https://www.facebook.com/rayfineornatesjewellery)" target="_blank" rel="noreferrer">Facebook</a>
-            <a href="[in.pinterest.com](https://in.pinterest.com/rayfineornates/)" target="_blank" rel="noreferrer">Pinterest</a>
+            <a href="https://www.instagram.com/rayfineornates/" target="_blank" rel="noreferrer">Instagram</a>
+            <a href="https://www.facebook.com/rayfineornatesjewellery" target="_blank" rel="noreferrer">Facebook</a>
+            <a href="https://in.pinterest.com/rayfineornates/" target="_blank" rel="noreferrer">Pinterest</a>
           </div>
         </div>
         <div>
@@ -2528,7 +3220,7 @@ function Footer() {
         <div>
           <h4>Categories</h4>
           {["Earrings", "Necklaces", "Bracelets", "Rings", "Anklets"].map(c => (
-            <Link to="/shop" key={c}>{c}</Link>
+            <Link to={`/shop?cat=${c.replace(/s$/, "")}`} key={c}>{c}</Link>
           ))}
         </div>
         <div>
@@ -2545,11 +3237,13 @@ function Footer() {
   );
 }
 
-// ── WhatsApp Float ──
+// ─────────────────────────────────────────────
+// WHATSAPP FLOAT
+// ─────────────────────────────────────────────
 function WhatsAppFloat({ onOpenChat }) {
   return (
     <>
-      <a href="[wa.me](https://wa.me/918690666771)" target="_blank" rel="noreferrer" className="whatsapp-float" title="WhatsApp">
+      <a href="https://wa.me/918690666771" target="_blank" rel="noreferrer" className="whatsapp-float" title="WhatsApp">
         <span style={{ fontSize: "28px" }}>💬</span>
       </a>
       <button className="chat-float-btn" onClick={onOpenChat} title="AI Chat">🤖</button>
@@ -2557,7 +3251,9 @@ function WhatsAppFloat({ onOpenChat }) {
   );
 }
 
-// ── User Auth Context ──
+// ─────────────────────────────────────────────
+// USER AUTH
+// ─────────────────────────────────────────────
 function useUserAuth() {
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem("rfo_user")) || null; } catch { return null; }
@@ -2592,7 +3288,9 @@ function useUserAuth() {
   return { user, login, logout, signup, loginWithCredentials };
 }
 
-// ── Customer Account Page ──
+// ─────────────────────────────────────────────
+// CUSTOMER ACCOUNT
+// ─────────────────────────────────────────────
 function CustomerAccount({ userAuth }) {
   const { user, logout, signup, loginWithCredentials } = userAuth;
   const [mode, setMode] = useState("login");
@@ -2618,8 +3316,7 @@ function CustomerAccount({ userAuth }) {
     width: "100%", padding: "13px 16px", borderRadius: "6px",
     border: "1.5px solid var(--border, #d9ccc2)", fontSize: "14px",
     fontFamily: "inherit", outline: "none", background: "#fff",
-    color: "var(--text, #2C2418)", boxSizing: "border-box",
-    transition: "border-color 0.2s",
+    color: "var(--text, #2C2418)", boxSizing: "border-box", transition: "border-color 0.2s",
   };
 
   if (user) {
@@ -2630,23 +3327,20 @@ function CustomerAccount({ userAuth }) {
           <p>Welcome back, {user.name || user.email}</p>
         </div>
         <div style={{ maxWidth: 480, margin: "60px auto", padding: "0 24px 80px" }}>
-          <div style={{ background: "linear-gradient(135deg, #fdf8f4, #f5ede4)", border: "1px solid var(--border-light, #e8ddd4)", borderRadius: 16, padding: "40px 36px", textAlign: "center" }}>
-            <div style={{ width: 72, height: 72, borderRadius: "50%", background: "var(--primary, #B07A5A)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, margin: "0 auto 20px", color: "#fff", fontFamily: "Playfair Display, serif" }}>
+          <div style={{ background: "linear-gradient(135deg, #fdf8f4, #f5ede4)", border: "1px solid var(--border-light)", borderRadius: 16, padding: "40px 36px", textAlign: "center" }}>
+            <div style={{ width: 72, height: 72, borderRadius: "50%", background: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, margin: "0 auto 20px", color: "#fff", fontFamily: "Cormorant Garamond, serif" }}>
               {(user.name || user.email)[0].toUpperCase()}
             </div>
-            <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 24, fontWeight: 400, color: "var(--text)", marginBottom: 6 }}>{user.name || "Valued Customer"}</h2>
+            <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 26, fontWeight: 500, color: "var(--text)", marginBottom: 6 }}>{user.name || "Valued Customer"}</h2>
             <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 32 }}>{user.email}</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <Link to="/track"
-                style={{ display: "block", padding: "13px", background: "var(--primary, #B07A5A)", color: "#fff", borderRadius: 6, fontSize: 12, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", textDecoration: "none" }}>
+              <Link to="/track" style={{ display: "block", padding: "13px", background: "var(--primary)", color: "#fff", borderRadius: 6, fontSize: 12, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", textDecoration: "none" }}>
                 📦 Track My Order
               </Link>
-              <Link to="/wishlist"
-                style={{ display: "block", padding: "13px", background: "var(--cream, #fdf8f4)", color: "var(--text)", borderRadius: 6, fontSize: 12, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", textDecoration: "none", border: "1.5px solid var(--border, #d9ccc2)" }}>
+              <Link to="/wishlist" style={{ display: "block", padding: "13px", background: "var(--cream)", color: "var(--text)", borderRadius: 6, fontSize: 12, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", textDecoration: "none", border: "1.5px solid var(--border)" }}>
                 🤍 My Wishlist
               </Link>
-              <button onClick={logout}
-                style={{ width: "100%", padding: 13, background: "transparent", color: "#c0392b", border: "1.5px solid #f5c6c6", borderRadius: 6, fontSize: 12, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", cursor: "pointer" }}>
+              <button onClick={logout} style={{ width: "100%", padding: 13, background: "transparent", color: "#c0392b", border: "1.5px solid #f5c6c6", borderRadius: 6, fontSize: 12, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", cursor: "pointer" }}>
                 Sign Out
               </button>
             </div>
@@ -2663,43 +3357,38 @@ function CustomerAccount({ userAuth }) {
         <p>{mode === "login" ? "Sign in to your account" : "Join Ray Fine Ornates"}</p>
       </div>
       <div style={{ maxWidth: 440, margin: "60px auto", padding: "0 24px 80px" }}>
-        <div style={{ background: "linear-gradient(135deg, #fdf8f4, #f5ede4)", border: "1px solid var(--border-light, #e8ddd4)", borderRadius: 16, padding: "40px 36px" }}>
+        <div style={{ background: "linear-gradient(135deg, #fdf8f4, #f5ede4)", border: "1px solid var(--border-light)", borderRadius: 16, padding: "40px 36px" }}>
           <div style={{ display: "flex", background: "#fff", borderRadius: 8, padding: 4, marginBottom: 28, border: "1px solid var(--border-light)" }}>
             {["login", "signup"].map(m => (
               <button key={m} onClick={() => { setMode(m); setError(""); }}
-                style={{ flex: 1, padding: "10px", borderRadius: 6, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 12, letterSpacing: "1.5px", textTransform: "uppercase", transition: "all 0.2s",
-                  background: mode === m ? "var(--primary, #B07A5A)" : "transparent",
-                  color: mode === m ? "#fff" : "var(--text-muted, #8A7968)" }}>
+                style={{ flex: 1, padding: "10px", borderRadius: 6, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 12, letterSpacing: "1.5px", textTransform: "uppercase", transition: "all 0.2s", background: mode === m ? "var(--primary)" : "transparent", color: mode === m ? "#fff" : "var(--text-muted)" }}>
                 {m === "login" ? "Sign In" : "Sign Up"}
               </button>
             ))}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {mode === "signup" && (
-              <input placeholder="Full Name *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-                style={inputStyle}
-                onFocus={e => e.target.style.borderColor = "var(--primary, #B07A5A)"}
-                onBlur={e => e.target.style.borderColor = "var(--border, #d9ccc2)"} />
+              <input placeholder="Full Name *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} style={inputStyle}
+                onFocus={e => e.target.style.borderColor = "var(--primary)"}
+                onBlur={e => e.target.style.borderColor = "var(--border)"} />
             )}
-            <input placeholder="Email Address *" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
-              style={inputStyle}
-              onFocus={e => e.target.style.borderColor = "var(--primary, #B07A5A)"}
-              onBlur={e => e.target.style.borderColor = "var(--border, #d9ccc2)"} />
-            <input placeholder="Password *" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })}
-              style={inputStyle}
-              onFocus={e => e.target.style.borderColor = "var(--primary, #B07A5A)"}
-              onBlur={e => e.target.style.borderColor = "var(--border, #d9ccc2)"}
+            <input placeholder="Email Address *" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} style={inputStyle}
+              onFocus={e => e.target.style.borderColor = "var(--primary)"}
+              onBlur={e => e.target.style.borderColor = "var(--border)"} />
+            <input placeholder="Password *" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} style={inputStyle}
+              onFocus={e => e.target.style.borderColor = "var(--primary)"}
+              onBlur={e => e.target.style.borderColor = "var(--border)"}
               onKeyDown={e => e.key === "Enter" && handleSubmit()} />
           </div>
           {error && <p style={{ color: "#c0392b", fontSize: 13, marginTop: 12, textAlign: "center" }}>{error}</p>}
           <button onClick={handleSubmit} disabled={loading}
-            style={{ width: "100%", marginTop: 20, padding: 14, background: loading ? "#c4a98a" : "var(--primary, #B07A5A)", color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", cursor: loading ? "not-allowed" : "pointer" }}>
+            style={{ width: "100%", marginTop: 20, padding: 14, background: loading ? "#c4a98a" : "var(--primary)", color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", cursor: loading ? "not-allowed" : "pointer" }}>
             {loading ? "Please wait..." : mode === "login" ? "Sign In →" : "Create Account →"}
           </button>
           <p style={{ textAlign: "center", fontSize: 12, color: "var(--text-muted)", marginTop: 16 }}>
             {mode === "login" ? "New here? " : "Already have an account? "}
             <button onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}
-              style={{ background: "none", border: "none", color: "var(--primary, #B07A5A)", fontWeight: 700, cursor: "pointer", fontSize: 12 }}>
+              style={{ background: "none", border: "none", color: "var(--primary)", fontWeight: 700, cursor: "pointer", fontSize: 12 }}>
               {mode === "login" ? "Create account" : "Sign in"}
             </button>
           </p>
@@ -2709,42 +3398,71 @@ function CustomerAccount({ userAuth }) {
   );
 }
 
+// ─────────────────────────────────────────────
+// APP INNER
+// ─────────────────────────────────────────────
 function AppInner() {
   const [cart, setCart] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [currency, setCurrency] = useState(CURRENCIES[0]);
+  const [viewed, setViewed] = useState([]);
+  const [toasts, setToasts] = useState([]);
   const userAuth = useUserAuth();
   const loc = useLocation();
   const isAdminPage = loc.pathname === "/admin" || loc.pathname === "/login";
 
+  const addViewed = useCallback((product) => {
+    setViewed(prev => {
+      const filtered = prev.filter(p => p.id !== product.id);
+      return [product, ...filtered].slice(0, 10);
+    });
+  }, []);
+
+  const showToast = useCallback((message, type = "success") => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+  }, []);
+
+  // Scroll to top on route change
+  useEffect(() => { window.scrollTo(0, 0); }, [loc.pathname]);
+
   return (
     <CurrencyContext.Provider value={{ currency, setCurrency }}>
-      {!isAdminPage && <AnnouncementBar />}
-      {!isAdminPage && <Navbar cart={cart} wishlist={wishlist} onCartOpen={() => setCartOpen(true)} user={userAuth.user} />}
-      {!isAdminPage && <CartDrawer cart={cart} setCart={setCart} open={cartOpen} onClose={() => setCartOpen(false)} />}
+      <RecentlyViewedContext.Provider value={{ viewed, addViewed }}>
+        <ToastContext.Provider value={{ showToast }}>
+          {!isAdminPage && <AnnouncementBar />}
+          {!isAdminPage && <Navbar cart={cart} wishlist={wishlist} onCartOpen={() => setCartOpen(true)} user={userAuth.user} />}
+          {!isAdminPage && <CartDrawer cart={cart} setCart={setCart} open={cartOpen} onClose={() => setCartOpen(false)} />}
 
-      <Routes>
-        <Route path="/"         element={<Home     cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />} />
-        <Route path="/shop"     element={<Shop     cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />} />
-        <Route path="/wishlist" element={<Wishlist wishlist={wishlist} setWishlist={setWishlist} cart={cart} setCart={setCart} />} />
-        <Route path="/account"  element={<CustomerAccount userAuth={userAuth} />} />
-        <Route path="/about"    element={<About />} />
-        <Route path="/contact"  element={<Contact />} />
-        <Route path="/track"    element={<TrackOrderPage />} />
-        <Route path="/terms"    element={<Terms />} />
-        <Route path="/login"    element={<Login />} />
-        <Route path="/admin"    element={<Admin />} />
-      </Routes>
+          <Routes>
+            <Route path="/"         element={<Home     cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />} />
+            <Route path="/shop"     element={<Shop     cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />} />
+            <Route path="/wishlist" element={<Wishlist wishlist={wishlist} setWishlist={setWishlist} cart={cart} setCart={setCart} />} />
+            <Route path="/account"  element={<CustomerAccount userAuth={userAuth} />} />
+            <Route path="/about"    element={<About />} />
+            <Route path="/contact"  element={<Contact />} />
+            <Route path="/track"    element={<TrackOrderPage />} />
+            <Route path="/terms"    element={<Terms />} />
+            <Route path="/login"    element={<Login />} />
+            <Route path="/admin"    element={<Admin />} />
+          </Routes>
 
-      {!isAdminPage && <Footer />}
-      {!isAdminPage && chatOpen && <Chatbot onClose={() => setChatOpen(false)} />}
-      {!isAdminPage && <WhatsAppFloat onOpenChat={() => setChatOpen(true)} />}
+          {!isAdminPage && <Footer />}
+          {!isAdminPage && chatOpen && <Chatbot onClose={() => setChatOpen(false)} />}
+          {!isAdminPage && <WhatsAppFloat onOpenChat={() => setChatOpen(true)} />}
+          <ToastContainer toasts={toasts} />
+        </ToastContext.Provider>
+      </RecentlyViewedContext.Provider>
     </CurrencyContext.Provider>
   );
 }
 
+// ─────────────────────────────────────────────
+// APP ROOT
+// ─────────────────────────────────────────────
 export default function App() {
   return <BrowserRouter><AppInner /></BrowserRouter>;
 }
