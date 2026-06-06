@@ -1117,7 +1117,14 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
         <span>🔥 SALE IS LIVE — Use Code <strong>GIFT15</strong> for Extra 15% Off!</span>
         <Link to="/shop?cat=sale" className="sale-banner-btn">Shop Sale</Link>
       </div>
-
+{/* Horizontal Scroll div  */}
+<div className="bestsellers-scroll">
+  {products.map(p => (
+    <div key={p._id || p.id} className="bestsellers-scroll-item">
+      <ProductCard product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
+    </div>
+  ))}
+</div>
       <TrustStrip />
       <WorldwideStrip />
 
