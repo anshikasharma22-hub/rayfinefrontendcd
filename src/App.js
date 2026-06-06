@@ -970,7 +970,8 @@ function RecentlyViewedSection({ cart, setCart, wishlist, setWishlist }) {
 // ─────────────────────────────────────────────
 // BESTSELLERS SECTION
 // ─────────────────────────────────────────────
-function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
+
+  function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
@@ -991,15 +992,21 @@ function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
   if (products.length === 0) return null;
 
   return (
-    <section className="featured-section" style={{ background: "var(--cream)" }}>
-      <SectionDivider subtitle="Most Loved" title="Bestsellers" />
-      <div className="products-grid">
-        {products.map(p => (
-          <ProductCard key={p._id || p.id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
-        ))}
+    <section style={{ padding: "60px 0", background: "var(--cream)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "0 40px 28px" }}>
+        <div>
+          <p style={{ fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--primary)", fontWeight: 600, marginBottom: 6 }}>Most Loved</p>
+          <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "clamp(24px,3vw,36px)", fontWeight: 400, color: "var(--text)" }}>Our Best Sellers</h2>
+        </div>
+        <Link to="/shop" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--primary)", textDecoration: "none", borderBottom: "1px solid var(--primary)", paddingBottom: 2 }}>View All</Link>
       </div>
-      <div style={{ textAlign: "center", marginTop: "52px" }}>
-        <Link to="/shop" className="btn-primary">View All</Link>
+
+      <div style={{ display: "flex", gap: 14, overflowX: "auto", padding: "0 40px 16px", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}>
+        {products.map(p => (
+          <div key={p._id || p.id} style={{ minWidth: 200, maxWidth: 200, flexShrink: 0, scrollSnapAlign: "start" }}>
+            <ProductCard product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
+          </div>
+        ))}
       </div>
     </section>
   );
