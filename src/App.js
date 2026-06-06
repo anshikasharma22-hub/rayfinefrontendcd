@@ -17,18 +17,8 @@ const ANNOUNCEMENT_MESSAGES = [
 ];
 
 const HERO_SLIDES = [
-  {
-    bg: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",
-    eyebrow: "New Collection",
-    title: ["Elegance", "Redefined"],
-    desc: "Handcrafted jewellery for the modern woman. Explore our new arrivals from Jaipur's finest artisans.",
-  },
-  {
-    bg: "https://rayfinesite-3.onrender.com/images/wallpaper1.jpg.jpeg",
-    eyebrow: "Ships Worldwide",
-    title: ["Crafted with", "Love"],
-    desc: "From Jaipur to your doorstep — across 140+ countries. Use code GIFT15 for 15% off your order.",
-  },
+ 
+ 
   
   {
     // ── NEW: GitHub wallpapers added ──
@@ -42,6 +32,12 @@ const HERO_SLIDES = [
     eyebrow: "Gift Someone Special",
     title: ["Gifted with", "Love"],
     desc: "Find the perfect jewellery gift for every occasion. Beautifully packaged, always cherished.",
+  },
+   {
+    bg: "https://rayfinesite-3.onrender.com/images/wallpaper1.jpg.jpeg",
+    eyebrow: "Ships Worldwide",
+    title: ["Crafted with", "Love"],
+    desc: "From Jaipur to your doorstep — across 140+ countries. Use code GIFT15 for 15% off your order.",
   },
 ];
 
