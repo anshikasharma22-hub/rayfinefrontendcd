@@ -43,7 +43,7 @@ const OCCASIONS = [
   { name: "Party",          img: "https://rayfinesite-3.onrender.com/images/party.jpg",       path: "/shop?cat=Earring" },
   { name: "Traditional",    img: "https://rayfinesite-3.onrender.com/images/traditional.jpg", path: "/shop?cat=Necklace" },
   { name: "Vacation Ready", img: "https://images.unsplash.com/photo-1506619216599-9d16d0903dfd?w=400&q=80", path: "/shop?cat=Ring" },
-  { name: "Bridal",         img: "https://rayfinesite-3.onrender.com/images/necklace.jpg",   path: "/shop?cat=Necklace" },
+  { name: "Bridal",         img: "https://rayfinesite-3.onrender.com/images/1000128664.jpg",   path: "/shop?cat=Necklace" },
   { name: "Everyday",       img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",   path: "/shop?cat=Bracelet" },
 ];
 
@@ -1042,11 +1042,11 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
         <SectionDivider subtitle="Browse by Style" title="Shop by Category" />
         <div className="cat-square-grid">
           {[
-            { name: "Earrings",        img: "https://rayfinesite-3.onrender.com/images/IMG-20260527-WA0037.jpg", path: "/shop?cat=Earring" },
+            { name: "Earrings",        img: "https://rayfinesite-3.onrender.com/images/1000128648.jpg", path: "/shop?cat=Earring" },
             { name: "Necklaces",       img: "https://rayfinesite-3.onrender.com/images/necklace.jpg",            path: "/shop?cat=Necklace" },
             { name: "Pendants",        img: "https://rayfinesite-3.onrender.com/images/pendant-2.jpg",           path: "/shop?cat=Pendants" },
             { name: "Rings",           img: "https://rayfinesite-3.onrender.com/images/ring-cateo.jpg",          path: "/shop?cat=Ring" },
-            { name: "Bracelet",        img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",            path: "/shop?cat=Bracelet" },
+            { name: "Bracelet",        img: "https://rayfinesite-3.onrender.com/images/1000128686.jpg",            path: "/shop?cat=Bracelet" },
             { name: "Bangles",         img: "https://rayfinesite-3.onrender.com/images/bangles.jpg",             path: "/shop?cat=Bangle" },
             { name: "Gemstone Charms", img: "https://rayfinesite-3.onrender.com/images/pendant-3.jpg",           path: "/shop?cat=Gemstone Charm" },
           ].map(cat => (
