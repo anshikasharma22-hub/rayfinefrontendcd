@@ -54,7 +54,7 @@ const HERO_SLIDES = [
 const OCCASIONS = [
   {
     name: "Festive",
-    img: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&q=80",
+    img: "https://rayfinesite-3.onrender.com/images/festive.jpg",
     path: "/shop?cat=Necklace",
   },
   {
