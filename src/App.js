@@ -37,13 +37,13 @@ const HERO_SLIDES = [
   },
   {
     // ── NEW: GitHub wallpapers added ──
-    bg: "https://raw.githubusercontent.com/anshikasharma22-hub/rayfinesite/master/public/images/wallpaper-1.jpg",
+    bg: "https://rayfinesite-3.onrender.com/images/wallpaper-1.jpg",
     eyebrow: "Festive Season",
     title: ["Celebrate in", "Style"],
     desc: "Adorn yourself for every celebration — from weddings to festivals, we have the perfect piece.",
   },
   {
-    bg: "https://raw.githubusercontent.com/anshikasharma22-hub/rayfinesite/master/public/images/wallpaper-pink.jpg",
+    bg: "https://rayfinesite-3.onrender.com/images/wallpaper-pink.jpg",
     eyebrow: "Gift Someone Special",
     title: ["Gifted with", "Love"],
     desc: "Find the perfect jewellery gift for every occasion. Beautifully packaged, always cherished.",
