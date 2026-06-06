@@ -946,7 +946,7 @@
 //     </div>
 //   );
 // }
-/ ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
 // Admin.jsx — Ray Fine Ornates Admin Panel
 // Drop this file into your src/ folder.
 // Route is already /admin in App.js ✓
