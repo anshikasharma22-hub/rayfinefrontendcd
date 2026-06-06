@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, createContext, useContext, useRef } from "react";
+  import React, { useEffect, useState, useCallback, createContext, useContext, useRef } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import "./App.css";
 import Login from "./login";
@@ -17,11 +17,7 @@ const ANNOUNCEMENT_MESSAGES = [
 ];
 
 const HERO_SLIDES = [
- 
- 
-  
   {
-    // ── NEW: GitHub wallpapers added ──
     bg: "https://rayfinesite-3.onrender.com/images/wallpaper-1.jpg",
     eyebrow: "Festive Season",
     title: ["Celebrate in", "Style"],
@@ -33,7 +29,7 @@ const HERO_SLIDES = [
     title: ["Gifted with", "Love"],
     desc: "Find the perfect jewellery gift for every occasion. Beautifully packaged, always cherished.",
   },
-   {
+  {
     bg: "https://rayfinesite-3.onrender.com/images/wallpaper1.jpg.jpeg",
     eyebrow: "Ships Worldwide",
     title: ["Crafted with", "Love"],
@@ -41,33 +37,14 @@ const HERO_SLIDES = [
   },
 ];
 
-// ── OCCASIONS: Real images, categories instead of emojis ──
 const OCCASIONS = [
-  {
-    name: "Festive",
-    img: "https://rayfinesite-3.onrender.com/images/festive.jpg",
-    path: "/shop?cat=Necklace",
-  },
-  {
-    name: "Gifting",
-    img: "https://rayfinesite-3.onrender.com/images/gifting.jpg",
-    path: "/shop?cat=Bracelet",
-  },
-  {
-    name: "Party",
-    img: "https://rayfinesite-3.onrender.com/images/party.jpg",
-    path: "/shop?cat=Earring",
-  },
-  {
-    name: "Traditional",
-    img: "https://rayfinesite-3.onrender.com/images/traditional.jpg",
-    path: "/shop?cat=Necklace",
-  },
-  {
-    name: "Vacation Ready",
-    img: "https://images.unsplash.com/photo-1506619216599-9d16d0903dfd?w=400&q=80",
-    path: "/shop?cat=Ring",
-  },
+  { name: "Festive",        img: "https://rayfinesite-3.onrender.com/images/festive.jpg",     path: "/shop?cat=Necklace" },
+  { name: "Gifting",        img: "https://rayfinesite-3.onrender.com/images/gifting.jpg",     path: "/shop?cat=Bracelet" },
+  { name: "Party",          img: "https://rayfinesite-3.onrender.com/images/party.jpg",       path: "/shop?cat=Earring" },
+  { name: "Traditional",    img: "https://rayfinesite-3.onrender.com/images/traditional.jpg", path: "/shop?cat=Necklace" },
+  { name: "Vacation Ready", img: "https://images.unsplash.com/photo-1506619216599-9d16d0903dfd?w=400&q=80", path: "/shop?cat=Ring" },
+  { name: "Bridal",         img: "https://rayfinesite-3.onrender.com/images/necklace.jpg",   path: "/shop?cat=Necklace" },
+  { name: "Everyday",       img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",   path: "/shop?cat=Bracelet" },
 ];
 
 // ─────────────────────────────────────────────
@@ -189,15 +166,12 @@ function PincodeChecker() {
             color: "var(--text)",
           }}
         />
-        <button
-          onClick={check}
-          disabled={loading}
+        <button onClick={check} disabled={loading}
           style={{
             padding: "9px 16px", borderRadius: "4px", fontSize: "11px", fontWeight: 700,
             letterSpacing: "1px", textTransform: "uppercase", cursor: "pointer",
             background: "var(--text)", color: "#fff", border: "none",
-          }}
-        >
+          }}>
           {loading ? "..." : "Check"}
         </button>
       </div>
@@ -230,8 +204,7 @@ function ProductModal({ product, onClose, cart, setCart, wishlist, setWishlist }
     if (inCart) {
       setCart(cart.map(c =>
         c.id === product.id && c.selectedVariant === selectedVariant
-          ? { ...c, quantity: c.quantity + qty }
-          : c
+          ? { ...c, quantity: c.quantity + qty } : c
       ));
     } else {
       setCart([...cart, { ...product, quantity: qty, selectedVariant }]);
@@ -281,31 +254,19 @@ function ProductModal({ product, onClose, cart, setCart, wishlist, setWishlist }
             onError={e => { e.target.src = "https://placehold.co/400x400?text=Jewellery"; }}
           />
           {!product.inStock && (
-            <div style={{ position: "absolute", top: 16, left: 16, background: "#555", color: "#fff", padding: "6px 14px", borderRadius: "2px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px" }}>
-              OUT OF STOCK
-            </div>
+            <div style={{ position: "absolute", top: 16, left: 16, background: "#555", color: "#fff", padding: "6px 14px", borderRadius: "2px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px" }}>OUT OF STOCK</div>
           )}
           {discount && product.inStock && (
-            <div style={{ position: "absolute", top: 16, left: 16, background: "var(--primary)", color: "#fff", padding: "6px 14px", borderRadius: "2px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px" }}>
-              -{discount}% OFF
-            </div>
+            <div style={{ position: "absolute", top: 16, left: 16, background: "var(--primary)", color: "#fff", padding: "6px 14px", borderRadius: "2px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px" }}>-{discount}% OFF</div>
           )}
           {images.length > 1 && (
             <div style={{ position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6 }}>
               {images.map((_, i) => (
-                <button key={i} onClick={() => setImgIdx(i)} style={{
-                  width: 8, height: 8, borderRadius: "50%", border: "none", cursor: "pointer",
-                  background: i === imgIdx ? "var(--primary)" : "rgba(255,255,255,0.6)",
-                }} />
+                <button key={i} onClick={() => setImgIdx(i)} style={{ width: 8, height: 8, borderRadius: "50%", border: "none", cursor: "pointer", background: i === imgIdx ? "var(--primary)" : "rgba(255,255,255,0.6)" }} />
               ))}
             </div>
           )}
-          <button onClick={handleShare} style={{
-            position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.9)",
-            border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-          }} title="Share">🔗</button>
+          <button onClick={handleShare} style={{ position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.9)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }} title="Share">🔗</button>
         </div>
         <div style={{ flex: "1 1 320px", padding: "36px 32px", overflowY: "auto" }}>
           <button onClick={onClose} style={{ float: "right", background: "none", border: "none", fontSize: "22px", cursor: "pointer", color: "#aaa", lineHeight: 1 }}>✕</button>
@@ -318,14 +279,10 @@ function ProductModal({ product, onClose, cart, setCart, wishlist, setWishlist }
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
             <span style={{ fontSize: "26px", fontWeight: 700, color: "var(--primary)" }}>{formatPrice(product.price, currency)}</span>
             {product.originalPrice && (
-              <span style={{ textDecoration: "line-through", color: "var(--text-light)", fontSize: "16px" }}>
-                {formatPrice(product.originalPrice, currency)}
-              </span>
+              <span style={{ textDecoration: "line-through", color: "var(--text-light)", fontSize: "16px" }}>{formatPrice(product.originalPrice, currency)}</span>
             )}
             {discount && (
-              <span style={{ background: "#fff0f3", color: "var(--primary)", fontSize: "12px", padding: "3px 10px", borderRadius: "20px", fontWeight: 700 }}>
-                Save {discount}%
-              </span>
+              <span style={{ background: "#fff0f3", color: "var(--primary)", fontSize: "12px", padding: "3px 10px", borderRadius: "20px", fontWeight: 700 }}>Save {discount}%</span>
             )}
           </div>
           <p style={{ color: "var(--text-muted)", lineHeight: "1.8", marginBottom: 20, fontSize: "14px" }}>{product.description}</p>
@@ -353,9 +310,7 @@ function ProductModal({ product, onClose, cart, setCart, wishlist, setWishlist }
           </div>
           <PincodeChecker />
           {product.material && (
-            <div style={{ marginBottom: 10, fontSize: "13px", color: "var(--text-muted)" }}>
-              <strong>Material:</strong> {product.material}
-            </div>
+            <div style={{ marginBottom: 10, fontSize: "13px", color: "var(--text-muted)" }}><strong>Material:</strong> {product.material}</div>
           )}
           {product.careInstructions && (
             <div style={{ marginBottom: 20, fontSize: "12px", color: "var(--text-muted)", background: "var(--cream)", padding: "12px", borderRadius: "6px", border: "1px solid var(--border-light)", lineHeight: 1.7 }}>
@@ -450,10 +405,7 @@ function Navbar({ cart, wishlist, onCartOpen, user }) {
   }, []);
 
   useEffect(() => { setMenuOpen(false); setSearchOpen(false); }, [loc]);
-
-  useEffect(() => {
-    if (searchOpen && searchRef.current) searchRef.current.focus();
-  }, [searchOpen]);
+  useEffect(() => { if (searchOpen && searchRef.current) searchRef.current.focus(); }, [searchOpen]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -467,20 +419,12 @@ function Navbar({ cart, wishlist, onCartOpen, user }) {
   return (
     <>
       {searchOpen && (
-        <div style={{
-          position: "fixed", inset: 0, background: "rgba(44,36,24,0.5)", zIndex: 10000,
-          display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: "80px",
-          backdropFilter: "blur(4px)",
-        }} onClick={() => setSearchOpen(false)}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(44,36,24,0.5)", zIndex: 10000, display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: "80px", backdropFilter: "blur(4px)" }}
+          onClick={() => setSearchOpen(false)}>
           <div style={{ background: "#fff", width: "min(600px, 90vw)", borderRadius: "8px", padding: "20px", boxShadow: "0 20px 60px rgba(44,36,24,0.2)" }} onClick={e => e.stopPropagation()}>
             <form onSubmit={handleSearch} style={{ display: "flex", gap: 10 }}>
-              <input
-                ref={searchRef}
-                value={searchVal}
-                onChange={e => setSearchVal(e.target.value)}
-                placeholder="Search jewellery, categories..."
-                style={{ flex: 1, padding: "14px 16px", fontSize: "16px", border: "1.5px solid var(--border)", borderRadius: "4px", outline: "none", fontFamily: "inherit", color: "var(--text)" }}
-              />
+              <input ref={searchRef} value={searchVal} onChange={e => setSearchVal(e.target.value)} placeholder="Search jewellery, categories..."
+                style={{ flex: 1, padding: "14px 16px", fontSize: "16px", border: "1.5px solid var(--border)", borderRadius: "4px", outline: "none", fontFamily: "inherit", color: "var(--text)" }} />
               <button type="submit" style={{ padding: "14px 20px", background: "var(--text)", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: 700, fontSize: "13px" }}>Search</button>
             </form>
             <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
@@ -494,7 +438,6 @@ function Navbar({ cart, wishlist, onCartOpen, user }) {
           </div>
         </div>
       )}
-
       <nav className="navbar" style={scrolled ? { boxShadow: "0 2px 20px rgba(176,122,90,0.10)" } : {}}>
         <Link to="/" className="navbar-logo" onClick={() => setMenuOpen(false)}>
           <svg width="160" height="40" viewBox="0 0 200 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -573,7 +516,6 @@ function CartDrawer({ cart, setCart, open, onClose }) {
           <h3>{step === "cart" ? `Your Cart (${cart.length})` : "Checkout"}</h3>
           <button className="cart-close" onClick={onClose}>✕</button>
         </div>
-
         {step === "cart" ? (
           <div style={{ flex: 1, overflowY: "auto" }}>
             {cart.length === 0 ? (
@@ -604,21 +546,15 @@ function CartDrawer({ cart, setCart, open, onClose }) {
                     <button className="cart-item-remove" onClick={() => updateQty(item.id, -item.quantity)}>🗑</button>
                   </div>
                 ))}
-
                 <div style={{ padding: "16px 20px", borderTop: "1px solid var(--border-light)" }}>
                   <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 8 }}>Have a Coupon?</p>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <input
-                      placeholder="Enter code (try GIFT15)"
-                      value={coupon}
-                      onChange={e => { setCoupon(e.target.value); setCouponMsg(""); }}
-                      style={{ flex: 1, padding: "9px 12px", borderRadius: "4px", fontSize: "12px", border: "1.5px solid var(--border)", outline: "none", fontFamily: "inherit" }}
-                    />
+                    <input placeholder="Enter code (try GIFT15)" value={coupon} onChange={e => { setCoupon(e.target.value); setCouponMsg(""); }}
+                      style={{ flex: 1, padding: "9px 12px", borderRadius: "4px", fontSize: "12px", border: "1.5px solid var(--border)", outline: "none", fontFamily: "inherit" }} />
                     <button onClick={applyCoupon} style={{ padding: "9px 14px", background: "var(--text)", color: "#fff", border: "none", borderRadius: "4px", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}>Apply</button>
                   </div>
                   {couponMsg && <p style={{ fontSize: "11px", marginTop: 6, color: discount > 0 ? "#27ae60" : "#c0392b", fontWeight: 600 }}>{couponMsg}</p>}
                 </div>
-
                 <div style={{ padding: "0 20px 16px", borderBottom: "1px solid var(--border-light)" }}>
                   <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
                     <input type="checkbox" checked={giftWrap} onChange={e => setGiftWrap(e.target.checked)} style={{ marginTop: 3, accentColor: "var(--primary)", width: 16, height: 16 }} />
@@ -628,13 +564,8 @@ function CartDrawer({ cart, setCart, open, onClose }) {
                     </div>
                   </label>
                   {giftWrap && (
-                    <textarea
-                      placeholder="Add a personal gift message..."
-                      value={giftNote}
-                      onChange={e => setGiftNote(e.target.value)}
-                      rows={2}
-                      style={{ width: "100%", marginTop: 10, padding: "10px 12px", borderRadius: "4px", border: "1.5px solid var(--border)", fontSize: "12px", fontFamily: "inherit", outline: "none", resize: "vertical", boxSizing: "border-box", color: "var(--text)" }}
-                    />
+                    <textarea placeholder="Add a personal gift message..." value={giftNote} onChange={e => setGiftNote(e.target.value)} rows={2}
+                      style={{ width: "100%", marginTop: 10, padding: "10px 12px", borderRadius: "4px", border: "1.5px solid var(--border)", fontSize: "12px", fontFamily: "inherit", outline: "none", resize: "vertical", boxSizing: "border-box", color: "var(--text)" }} />
                   )}
                 </div>
               </>
@@ -662,7 +593,6 @@ function CartDrawer({ cart, setCart, open, onClose }) {
             <button className="btn-ghost" onClick={() => setStep("cart")}>← Back to Cart</button>
           </div>
         )}
-
         {step === "cart" && cart.length > 0 && (
           <div className="cart-footer">
             {savings > 0 && <div className="cart-savings">🎉 You save {formatPrice(savings, currency)}!</div>}
@@ -803,16 +733,14 @@ function TrustStrip() {
 }
 
 // ─────────────────────────────────────────────
-// PLATFORMS SECTION — ── CHANGED: Amazon, Alibaba, eBay, Etsy added ──
+// PLATFORMS SECTION
 // ─────────────────────────────────────────────
 function PlatformsSection() {
   const platforms = [
     { icon: "📸", name: "Instagram", handle: "@rayfineornates", url: "https://www.instagram.com/rayfineornates/" },
     { icon: "👍", name: "Facebook", handle: "Ray Fine Ornates", url: "https://www.facebook.com/rayfineornatesjewellery" },
     { icon: "📌", name: "Pinterest", handle: "rayfineornates", url: "https://in.pinterest.com/rayfineornates/" },
-    
   ];
-
   return (
     <div className="platforms-section">
       <div style={{ textAlign: "center", marginBottom: "36px" }}>
@@ -833,19 +761,16 @@ function PlatformsSection() {
 }
 
 // ─────────────────────────────────────────────
-// HERO SLIDER — ── CHANGED: 5 slides with GitHub wallpapers ──
+// HERO SLIDER
 // ─────────────────────────────────────────────
 function HeroSlider() {
   const [current, setCurrent] = useState(0);
   const next = useCallback(() => setCurrent(p => (p + 1) % HERO_SLIDES.length), []);
-
   useEffect(() => {
     const t = setInterval(next, 5000);
     return () => clearInterval(t);
   }, [next]);
-
   const slide = HERO_SLIDES[current];
-
   return (
     <section className="hero">
       {HERO_SLIDES.map((s, i) => (
@@ -884,19 +809,13 @@ function OrderTracking() {
 
   const trackOrder = async () => {
     if (!orderId.trim() && !phone.trim()) { setError("Please enter your Order ID or Phone Number."); return; }
-    setError("");
-    setLoading(true);
-    setResult(null);
+    setError(""); setLoading(true); setResult(null);
     await new Promise(r => setTimeout(r, 1400));
     setLoading(false);
     setResult({ found: false });
   };
 
-  const inputStyle = {
-    padding: "13px 16px", borderRadius: "6px", border: "1.5px solid var(--border, #d9ccc2)",
-    fontSize: "14px", fontFamily: "inherit", outline: "none", background: "#fff",
-    color: "var(--text, #2C2418)", transition: "border-color 0.2s", width: "100%", boxSizing: "border-box",
-  };
+  const inputStyle = { padding: "13px 16px", borderRadius: "6px", border: "1.5px solid var(--border, #d9ccc2)", fontSize: "14px", fontFamily: "inherit", outline: "none", background: "#fff", color: "var(--text, #2C2418)", transition: "border-color 0.2s", width: "100%", boxSizing: "border-box" };
 
   return (
     <div style={{ background: "linear-gradient(135deg, #fdf8f4 0%, #f5ede4 100%)", border: "1px solid var(--border-light)", borderRadius: "16px", padding: "36px 32px", maxWidth: "540px", margin: "0 auto" }}>
@@ -942,9 +861,7 @@ function TrackOrderPage() {
         <h1>Track Your Order</h1>
         <p>Know exactly where your jewellery is</p>
       </div>
-      <div style={{ padding: "60px 24px 100px" }}>
-        <OrderTracking />
-      </div>
+      <div style={{ padding: "60px 24px 100px" }}><OrderTracking /></div>
     </div>
   );
 }
@@ -968,10 +885,9 @@ function RecentlyViewedSection({ cart, setCart, wishlist, setWishlist }) {
 }
 
 // ─────────────────────────────────────────────
-// BESTSELLERS SECTION
+// BESTSELLERS SECTION — horizontal scroll
 // ─────────────────────────────────────────────
-
-  function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
+function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
@@ -1000,7 +916,6 @@ function RecentlyViewedSection({ cart, setCart, wishlist, setWishlist }) {
         </div>
         <Link to="/shop" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--primary)", textDecoration: "none", borderBottom: "1px solid var(--primary)", paddingBottom: 2 }}>View All</Link>
       </div>
-
       <div style={{ display: "flex", gap: 14, overflowX: "auto", padding: "0 40px 16px", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}>
         {products.map(p => (
           <div key={p._id || p.id} style={{ minWidth: 200, maxWidth: 200, flexShrink: 0, scrollSnapAlign: "start" }}>
@@ -1013,24 +928,37 @@ function RecentlyViewedSection({ cart, setCart, wishlist, setWishlist }) {
 }
 
 // ─────────────────────────────────────────────
-// SHOP BY OCCASION — ── CHANGED: Real images, category cards, no emojis ──
+// SHOP BY OCCASION — horizontal scroll (same style as Bestsellers)
 // ─────────────────────────────────────────────
 function OccasionSection() {
   return (
-    <section style={{ padding: "80px 40px", background: "var(--cream)" }}>
-      <SectionDivider subtitle="Find Your Perfect Piece" title="Shop by Occasion" />
+    <section style={{ padding: "60px 0", background: "#fff" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "0 40px 28px" }}>
+        <div>
+          <p style={{ fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--primary)", fontWeight: 600, marginBottom: 6 }}>Find Your Perfect Piece</p>
+          <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "clamp(24px,3vw,36px)", fontWeight: 400, color: "var(--text)" }}>Shop by Occasion</h2>
+        </div>
+        <Link to="/shop" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--primary)", textDecoration: "none", borderBottom: "1px solid var(--primary)", paddingBottom: 2 }}>View All</Link>
+      </div>
+
+      {/* Horizontal scroll row */}
       <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-        gap: "16px",
-        maxWidth: "1000px",
-        margin: "0 auto",
+        display: "flex",
+        gap: 14,
+        overflowX: "auto",
+        padding: "0 40px 16px",
+        scrollSnapType: "x mandatory",
+        WebkitOverflowScrolling: "touch",
       }}>
         {OCCASIONS.map(occ => (
           <Link
-            to={occ.path}
             key={occ.name}
+            to={occ.path}
             style={{
+              minWidth: 160,
+              maxWidth: 160,
+              flexShrink: 0,
+              scrollSnapAlign: "start",
               position: "relative",
               borderRadius: "10px",
               overflow: "hidden",
@@ -1038,48 +966,30 @@ function OccasionSection() {
               display: "block",
               aspectRatio: "3/4",
               boxShadow: "0 4px 20px rgba(44,36,24,0.10)",
-              transition: "all 0.35s",
+              transition: "all 0.3s",
             }}
-            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-5px)"; e.currentTarget.style.boxShadow = "0 14px 36px rgba(44,36,24,0.18)"; }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(44,36,24,0.18)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(44,36,24,0.10)"; }}
           >
             <img
               src={occ.img}
               alt={occ.name}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.5s ease" }}
-              onError={e => e.target.src = "https://placehold.co/300x400?text=Jewellery"}
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              onError={e => e.target.src = "https://placehold.co/160x213?text=Jewellery"}
             />
-            {/* Dark overlay gradient */}
+            {/* Gradient overlay */}
             <div style={{
               position: "absolute", inset: 0,
-              background: "linear-gradient(to top, rgba(44,36,24,0.75) 0%, rgba(44,36,24,0.1) 55%, transparent 100%)",
+              background: "linear-gradient(to top, rgba(44,36,24,0.80) 0%, rgba(44,36,24,0.08) 55%, transparent 100%)",
             }} />
-            {/* Category label */}
+            {/* Label */}
             <div style={{
-              position: "absolute",
-              bottom: 0, left: 0, right: 0,
-              padding: "20px 16px 18px",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "6px",
+              position: "absolute", bottom: 0, left: 0, right: 0,
+              padding: "18px 12px 14px",
+              display: "flex", flexDirection: "column", alignItems: "center", gap: "5px",
             }}>
-              <span style={{
-                fontFamily: "Cormorant Garamond, serif",
-                fontSize: "18px",
-                fontWeight: 500,
-                color: "#fff",
-                letterSpacing: "0.5px",
-                textAlign: "center",
-              }}>{occ.name}</span>
-              <span style={{
-                fontFamily: "DM Sans, sans-serif",
-                fontSize: "9px",
-                fontWeight: 500,
-                letterSpacing: "2.5px",
-                textTransform: "uppercase",
-                color: "rgba(255,255,255,0.75)",
-              }}>Shop Now →</span>
+              <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "16px", fontWeight: 500, color: "#fff", letterSpacing: "0.5px", textAlign: "center" }}>{occ.name}</span>
+              <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: "8px", fontWeight: 500, letterSpacing: "2px", textTransform: "uppercase", color: "rgba(255,255,255,0.75)" }}>Shop Now →</span>
             </div>
           </Link>
         ))}
@@ -1089,7 +999,7 @@ function OccasionSection() {
 }
 
 // ─────────────────────────────────────────────
-// HOME PAGE — ── CHANGED: GiftingSection replaced with BestsellersSection ──
+// HOME PAGE
 // ─────────────────────────────────────────────
 function Home({ cart, setCart, wishlist, setWishlist }) {
   const [featured, setFeatured] = useState([]);
@@ -1121,10 +1031,10 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
       <TrustStrip />
       <WorldwideStrip />
 
-      {/* Shop by Occasion — real image cards */}
+      {/* Shop by Occasion — horizontal scroll */}
       <OccasionSection />
 
-      {/* ── CHANGED: GiftingSection replaced with BestsellersSection ── */}
+      {/* Bestsellers — horizontal scroll */}
       <BestsellersSection cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
 
       {/* Categories */}
@@ -1133,13 +1043,12 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
         <div className="cat-square-grid">
           {[
             { name: "Earrings",        img: "https://rayfinesite-3.onrender.com/images/IMG-20260527-WA0037.jpg", path: "/shop?cat=Earring" },
-{ name: "Necklaces",       img: "https://rayfinesite-3.onrender.com/images/necklace.jpg",            path: "/shop?cat=Necklace" },
-{ name: "Pendants",        img: "https://rayfinesite-3.onrender.com/images/pendant-2.jpg",           path: "/shop?cat=Pendants" },
-{ name: "Rings",           img: "https://rayfinesite-3.onrender.com/images/ring-cateo.jpg",          path: "/shop?cat=Ring" },
-{ name: "Bracelet",        img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",            path: "/shop?cat=Bracelet" },
-{ name: "Bangles",         img: "https://rayfinesite-3.onrender.com/images/bangles.jpg",             path: "/shop?cat=Bangle" },
-{ name: "Gemstone Charms", img: "https://rayfinesite-3.onrender.com/images/pendant-3.jpg",          path: "/shop?cat=Gemstone Charm" },
-            
+            { name: "Necklaces",       img: "https://rayfinesite-3.onrender.com/images/necklace.jpg",            path: "/shop?cat=Necklace" },
+            { name: "Pendants",        img: "https://rayfinesite-3.onrender.com/images/pendant-2.jpg",           path: "/shop?cat=Pendants" },
+            { name: "Rings",           img: "https://rayfinesite-3.onrender.com/images/ring-cateo.jpg",          path: "/shop?cat=Ring" },
+            { name: "Bracelet",        img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",            path: "/shop?cat=Bracelet" },
+            { name: "Bangles",         img: "https://rayfinesite-3.onrender.com/images/bangles.jpg",             path: "/shop?cat=Bangle" },
+            { name: "Gemstone Charms", img: "https://rayfinesite-3.onrender.com/images/pendant-3.jpg",           path: "/shop?cat=Gemstone Charm" },
           ].map(cat => (
             <Link to={cat.path} key={cat.name} className="cat-square-card">
               <img src={cat.img} alt={cat.name} />
@@ -1152,7 +1061,7 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
         </div>
       </section>
 
-      {/* Featured / Trending */}
+      {/* Trending Now */}
       <section className="featured-section">
         <SectionDivider subtitle="Curated For You" title="Trending Now" />
         <div className="products-grid">
@@ -1165,7 +1074,6 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
         </div>
       </section>
 
-      {/* ── CHANGED: PlatformsSection now includes Amazon, Alibaba, eBay, Etsy ── */}
       <PlatformsSection />
 
       {/* Testimonials */}
@@ -1338,16 +1246,14 @@ function Wishlist({ wishlist, setWishlist, cart, setCart }) {
 }
 
 // ─────────────────────────────────────────────
-// ABOUT — ── CHANGED: Amazon Global, Alibaba, eBay, Etsy added to platforms ──
+// ABOUT
 // ─────────────────────────────────────────────
 function About() {
   const aboutPlatforms = [
     { icon: "📸", name: "Instagram", url: "https://www.instagram.com/rayfineornates/", handle: "@rayfineornates" },
     { icon: "👍", name: "Facebook", url: "https://www.facebook.com/rayfineornatesjewellery", handle: "Ray Fine Ornates" },
     { icon: "📌", name: "Pinterest", url: "https://in.pinterest.com/rayfineornates/", handle: "rayfineornates" },
-    
   ];
-
   return (
     <div className="page-content">
       <div className="shop-hero">
@@ -1369,8 +1275,6 @@ function About() {
           <img src="https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=800&q=80" alt="Ray Fine Ornates" />
         </div>
       </div>
-
-      {/* ── CHANGED: Platform grid with all 7 platforms ── */}
       <div style={{ background: "var(--cream)", padding: "60px 40px", borderTop: "1px solid var(--border-light)", borderBottom: "1px solid var(--border-light)" }}>
         <div style={{ textAlign: "center", marginBottom: "36px" }}>
           <p className="section-subtitle">Find Us Everywhere</p>
@@ -1379,13 +1283,7 @@ function About() {
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "20px", maxWidth: "960px", margin: "0 auto" }}>
           {aboutPlatforms.map(p => (
             <a key={p.name} href={p.url} target="_blank" rel="noreferrer"
-              style={{
-                display: "flex", flexDirection: "column", alignItems: "center", gap: "8px",
-                padding: "24px 20px", background: "#fff",
-                border: "1px solid var(--border-light)", borderRadius: "12px",
-                textDecoration: "none", minWidth: "120px", flex: "1 1 120px", maxWidth: "140px",
-                transition: "all 0.3s",
-              }}
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", padding: "24px 20px", background: "#fff", border: "1px solid var(--border-light)", borderRadius: "12px", textDecoration: "none", minWidth: "120px", flex: "1 1 120px", maxWidth: "140px", transition: "all 0.3s" }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(176,122,90,0.15)"; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-light)"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
             >
@@ -1396,7 +1294,6 @@ function About() {
           ))}
         </div>
       </div>
-
       <div className="about-stats">
         {[["2021", "Founded"], ["10,000+", "Happy Customers"], ["140+", "Countries Shipped"]].map(([n, l]) => (
           <div className="stat-box" key={l}><h3>{n}</h3><p>{l}</p></div>
@@ -1530,7 +1427,7 @@ function Footer() {
         </div>
         <div>
           <h4>Categories</h4>
-          {["Earrings", "Necklaces", "Bracelets", "Rings", "Anklets","Gemstone Charms","Bangles","Pendants"].map(c => (
+          {["Earrings", "Necklaces", "Bracelets", "Rings", "Anklets", "Gemstone Charms", "Bangles", "Pendants"].map(c => (
             <Link to={`/shop?cat=${c.replace(/s$/, "")}`} key={c}>{c}</Link>
           ))}
         </div>
@@ -1569,7 +1466,6 @@ function useUserAuth() {
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem("rfo_user")) || null; } catch { return null; }
   });
-
   const login = (userData) => { localStorage.setItem("rfo_user", JSON.stringify(userData)); setUser(userData); };
   const logout = () => { localStorage.removeItem("rfo_user"); setUser(null); };
   const signup = (userData) => {
@@ -1589,7 +1485,6 @@ function useUserAuth() {
     login(found);
     return { success: true };
   };
-
   return { user, login, logout, signup, loginWithCredentials };
 }
 
