@@ -59,17 +59,17 @@ const OCCASIONS = [
   },
   {
     name: "Gifting",
-    img: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400&q=80",
+    img: "https://rayfinesite-3.onrender.com/images/gifting.jpg",
     path: "/shop?cat=Bracelet",
   },
   {
     name: "Party",
-    img: "https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=400&q=80",
+    img: "https://rayfinesite-3.onrender.com/images/party.jpg",
     path: "/shop?cat=Earring",
   },
   {
     name: "Traditional",
-    img: "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=400&q=80",
+    img: "https://rayfinesite-3.onrender.com/images/traditional.jpg",
     path: "/shop?cat=Necklace",
   },
   {
