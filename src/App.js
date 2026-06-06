@@ -13,7 +13,7 @@ const ANNOUNCEMENT_MESSAGES = [
   "💎 Handcrafted in Jaipur, India",
   "🌍 Worldwide Shipping Available",
   "🎁 Use Code GIFT15 for 15% Off",
-  "🔄 Easy Returns & Exchanges",
+  "🔄 Easy Exchanges",
 ];
 
 const HERO_SLIDES = [
