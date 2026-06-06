@@ -1811,3 +1811,39 @@ details p { margin-top: 10px; color: var(--text-muted); line-height: 1.7; font-s
 .product-card {
   overflow: hidden;
 }
+/* ── BESTSELLERS HORIZONTAL SCROLL ── */
+.bestsellers-scroll {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 4px 40px 20px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) var(--cream);
+}
+
+.bestsellers-scroll::-webkit-scrollbar {
+  height: 3px;
+}
+
+.bestsellers-scroll::-webkit-scrollbar-track {
+  background: var(--cream);
+}
+
+.bestsellers-scroll::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 10px;
+}
+
+.bestsellers-scroll-item {
+  min-width: 220px;
+  max-width: 220px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
+@media (max-width: 480px) {
+  .bestsellers-scroll { padding: 4px 14px 16px; gap: 10px; }
+  .bestsellers-scroll-item { min-width: 170px; max-width: 170px; }
+}
