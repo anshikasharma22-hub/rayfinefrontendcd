@@ -29,12 +29,7 @@ const HERO_SLIDES = [
     title: ["Crafted with", "Love"],
     desc: "From Jaipur to your doorstep — across 140+ countries. Use code GIFT15 for 15% off your order.",
   },
-  {
-    bg: "https://rayfinesite-3.onrender.com/images/earrings.jpg.jpeg",
-    eyebrow: "Trending Now",
-    title: ["Timeless", "Beauty"],
-    desc: "Gold-plated, stone-studded, handmade with care. Every piece tells a story.",
-  },
+  
   {
     // ── NEW: GitHub wallpapers added ──
     bg: "https://rayfinesite-3.onrender.com/images/wallpaper-1.jpg",
@@ -1136,8 +1131,11 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
           {[
             { name: "Earrings",  img: "https://rayfinesite-3.onrender.com/images/IMG-20260527-WA0037.jpg", path: "/shop?cat=Earring" },
             { name: "Necklaces", img: "https://rayfinesite-3.onrender.com/images/necklace.jpg", path: "/shop?cat=Necklace" },
-            { name: "Anklets",   img: "https://rayfinesite-3.onrender.com/images/golden.jpg", path: "/shop?cat=Anklets" },
+            { name: "Pendants",   img: "https://rayfinesite-3.onrender.com/images/pendant-2", path: "/shop?cat=Pendants" },
             { name: "Rings",     img: "https://rayfinesite-3.onrender.com/images/ring-cateo.jpg", path: "/shop?cat=Ring" },
+            { name: "Bracelet",     img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg", path: "/shop?cat=Bracelet" },
+            { name: "Bangles",     img: "https://rayfinesite-3.onrender.com/images/bangles.jpg, path: "/shop?cat=Bangle" },
+            { name: "Gemstone Charms",     img: "https://rayfinesite-3.onrender.com/images/pendant-3.jpg", path: "/shop?cat=Gemstone Charm" },
           ].map(cat => (
             <Link to={cat.path} key={cat.name} className="cat-square-card">
               <img src={cat.img} alt={cat.name} />
