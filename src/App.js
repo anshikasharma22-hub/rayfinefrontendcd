@@ -2059,7 +2059,7 @@ function AppInner() {
             <Route path="/track"    element={<TrackOrderPage />} />
             <Route path="/terms"    element={<Terms />} />
             <Route path="/login"    element={<Login />} />
-            <Route path="/admin"    element={<Admin />} />
+            <Route path="/Admin"    element={<Admin />} />
           </Routes>
 
           {!isAdminPage && <Footer />}
