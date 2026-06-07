@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, createContext, useContext, use
 import { BrowserRouter, Routes, Route, Link, useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import "./App.css";
 import Login from "./login";
-import Admin from "./Admin";
+import Admin from "./admin";
 import Chatbot from "./Chatbot";
 
 // ─────────────────────────────────────────────
