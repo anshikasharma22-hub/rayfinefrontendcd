@@ -2077,4 +2077,8 @@ function AppInner() {
 // ─────────────────────────────────────────────
 export default function App() {
   return <BrowserRouter><AppInner /></BrowserRouter>;
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 4147938 (Fix App.js errors)
