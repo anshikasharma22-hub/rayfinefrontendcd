@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, createContext, useContext, use
 import { BrowserRouter, Routes, Route, Link, useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import "./App.css";
 import Login from "./login";
-import Admin from "./Admin";
+import RFOPanel from "./RFOPanel";
 import Chatbot from "./Chatbot";
 
 // ─────────────────────────────────────────────
@@ -2059,7 +2059,7 @@ function AppInner() {
             <Route path="/track"    element={<TrackOrderPage />} />
             <Route path="/terms"    element={<Terms />} />
             <Route path="/login"    element={<Login />} />
-            <Route path="/Admin"    element={<Admin />} />
+            <Route path="/rfo-panel" element={<RFOPanel />} />
           </Routes>
 
           {!isAdminPage && <Footer />}
