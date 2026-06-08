@@ -263,7 +263,7 @@ function ProductModal({ product, onClose, cart, setCart, wishlist, setWishlist }
     document.body.style.overflow = "hidden";
     addViewed(product);
     return () => { document.body.style.overflow = "unset"; };
-  }, []);
+  }, [addViewed, product]);
 
   return (
     <div
@@ -1036,20 +1036,20 @@ function TrackOrderPage() {
 // ─────────────────────────────────────────────
 // RECENTLY VIEWED
 // ─────────────────────────────────────────────
-function RecentlyViewedSection({ cart, setCart, wishlist, setWishlist }) {
-  const { viewed } = useRecentlyViewed();
-  if (viewed.length === 0) return null;
-  return (
-    <section className="featured-section" style={{ background: "#fff", paddingTop: "60px" }}>
-      <SectionDivider subtitle="Your Browsing History" title="Recently Viewed" />
-      <div className="products-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
-        {viewed.slice(0, 6).map(p => (
-          <ProductCard key={p._id || p.id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
-        ))}
-      </div>
-    </section>
-  );
-}
+// function RecentlyViewedSection({ cart, setCart, wishlist, setWishlist }) {
+//   const { viewed } = useRecentlyViewed();
+//   if (viewed.length === 0) return null;
+//   return (
+//     <section className="featured-section" style={{ background: "#fff", paddingTop: "60px" }}>
+//       <SectionDivider subtitle="Your Browsing History" title="Recently Viewed" />
+//       <div className="products-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
+//         {viewed.slice(0, 6).map(p => (
+//           <ProductCard key={p._id || p.id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
+//         ))}
+//       </div>
+//     </section>
+//   );
+// }
 
 // ─────────────────────────────────────────────
 // BESTSELLERS SECTION — horizontal scroll
@@ -1194,7 +1194,7 @@ function ReviewsSection() {
   useEffect(() => {
     const t = setInterval(() => goTo(activeIdx + 1), 4500);
     return () => clearInterval(t);
-  }, [activeIdx]);
+  }, [activeIdx, goTo]);
 
   const stars = (n) => "★".repeat(n) + "☆".repeat(5 - n);
 
