@@ -1799,6 +1799,7 @@ function Terms() {
 // FOOTER
 // ─────────────────────────────────────────────
 function Footer() {
+  const navigate = useNavigate();
   return (
     <footer className="footer">
       <div className="footer-grid">
@@ -1810,6 +1811,15 @@ function Footer() {
             <a href="https://www.instagram.com/rayfineornates/" target="_blank" rel="noreferrer">Instagram</a>
             <a href="https://www.facebook.com/rayfineornatesjewellery" target="_blank" rel="noreferrer">Facebook</a>
             <a href="https://in.pinterest.com/rayfineornates/" target="_blank" rel="noreferrer">Pinterest</a>
+          </div>
+          <div style={{ marginTop: "14px", display: "flex", flexWrap: "wrap", gap: "8px" }}>
+            {["Etsy", "eBay", "Alibaba", "Amazon"].map(p => (
+              <span key={p} style={{
+                fontSize: "10px", padding: "4px 12px", borderRadius: "2px",
+                border: "1px solid var(--border-light)", color: "var(--text-light)",
+                fontFamily: "DM Sans, sans-serif", letterSpacing: "1px",
+              }}>{p}</span>
+            ))}
           </div>
         </div>
         <div>
@@ -1835,13 +1845,16 @@ function Footer() {
           <div style={{ marginTop: "8px", color: "var(--text-muted)", fontSize: "12px" }}>Mon–Sat · 10:30 AM – 8:30 PM</div>
         </div>
       </div>
-      <div className="footer-bottom">
+      <div
+        className="footer-bottom"
+        onClick={e => { if (e.detail === 3) navigate("/rfo-panel"); }}
+        style={{ cursor: "default" }}
+      >
         © 2021 Ray Fine Ornates. All rights reserved. &nbsp;|&nbsp; Designed with ❤️ in Jaipur
       </div>
     </footer>
   );
 }
-
 // ─────────────────────────────────────────────
 // WHATSAPP FLOAT
 // ─────────────────────────────────────────────
@@ -2013,26 +2026,16 @@ function CustomerAccount({ userAuth }) {
 // ─────────────────────────────────────────────
 // APP INNER
 // ─────────────────────────────────────────────
-function AppInner() {
-  const [cart, setCart] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
-  const [cartOpen, setCartOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [currency, setCurrency] = useState(CURRENCIES[0]);
-  const [viewed, setViewed] = useState([]);
-  const [toasts, setToasts] = useState([]);
-  const userAuth = useUserAuth();
-  const loc = useLocation();
-  const isAdminPage = loc.pathname === "/rfo-panel" || loc.pathname === "/login";
-
-  const addViewed = useCallback((product) => {
-    setViewed(prev => {
-      const id = product._id || product.id;
-      const filtered = prev.filter(p => (p._id || p.id) !== id);
-      return [product, ...filtered].slice(0, 10);
-    });
-  }, []);
-
+useEffect(() => {
+  const keys = [];
+  const handler = (e) => {
+    keys.push(e.key);
+    if (keys.length > 3) keys.shift();
+    if (keys.join("") === "rfo") window.location.href = "/rfo-panel";
+  };
+  window.addEventListener("keydown", handler);
+  return () => window.removeEventListener("keydown", handler);
+}, []);
   const showToast = useCallback((message, type = "success") => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type }]);
