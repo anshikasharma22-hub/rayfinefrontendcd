@@ -2026,20 +2026,43 @@ function CustomerAccount({ userAuth }) {
 // ─────────────────────────────────────────────
 // APP INNER
 // ─────────────────────────────────────────────
-useEffect(() => {
-  const keys = [];
-  const handler = (e) => {
-    keys.push(e.key);
-    if (keys.length > 3) keys.shift();
-    if (keys.join("") === "rfo") window.location.href = "/rfo-panel";
-  };
-  window.addEventListener("keydown", handler);
-  return () => window.removeEventListener("keydown", handler);
-}, []);
+// ─────────────────────────────────────────────
+// APP INNER
+// ─────────────────────────────────────────────
+function AppInner() {
+  const loc = useLocation();
+  const [cart, setCart] = useState([]);
+  const [wishlist, setWishlist] = useState([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [toasts, setToasts] = useState([]);
+  const [currency, setCurrency] = useState(CURRENCIES[0]);
+  const [viewed, setViewed] = useState([]);
+  const userAuth = useUserAuth();
+  const isAdminPage = loc.pathname === "/rfo-panel" || loc.pathname === "/login";
+
+  const addViewed = useCallback((product) => {
+    setViewed(prev => {
+      const filtered = prev.filter(p => (p._id || p.id) !== (product._id || product.id));
+      return [product, ...filtered].slice(0, 10);
+    });
+  }, []);
+
   const showToast = useCallback((message, type = "success") => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+  }, []);
+
+  useEffect(() => {
+    const keys = [];
+    const handler = (e) => {
+      keys.push(e.key);
+      if (keys.length > 3) keys.shift();
+      if (keys.join("") === "rfo") window.location.href = "/rfo-panel";
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, []);
 
   useEffect(() => { window.scrollTo(0, 0); }, [loc.pathname]);
@@ -2053,15 +2076,15 @@ useEffect(() => {
           {!isAdminPage && <CartDrawer cart={cart} setCart={setCart} open={cartOpen} onClose={() => setCartOpen(false)} />}
 
           <Routes>
-            <Route path="/"         element={<Home     cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />} />
-            <Route path="/shop"     element={<Shop     cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />} />
-            <Route path="/wishlist" element={<Wishlist wishlist={wishlist} setWishlist={setWishlist} cart={cart} setCart={setCart} />} />
-            <Route path="/account"  element={<CustomerAccount userAuth={userAuth} />} />
-            <Route path="/about"    element={<About />} />
-            <Route path="/contact"  element={<Contact />} />
-            <Route path="/track"    element={<TrackOrderPage />} />
-            <Route path="/terms"    element={<Terms />} />
-            <Route path="/login"    element={<Login />} />
+            <Route path="/"          element={<Home     cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />} />
+            <Route path="/shop"      element={<Shop     cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />} />
+            <Route path="/wishlist"  element={<Wishlist wishlist={wishlist} setWishlist={setWishlist} cart={cart} setCart={setCart} />} />
+            <Route path="/account"   element={<CustomerAccount userAuth={userAuth} />} />
+            <Route path="/about"     element={<About />} />
+            <Route path="/contact"   element={<Contact />} />
+            <Route path="/track"     element={<TrackOrderPage />} />
+            <Route path="/terms"     element={<Terms />} />
+            <Route path="/login"     element={<Login />} />
             <Route path="/rfo-panel" element={<RFOPanel />} />
           </Routes>
 
@@ -2074,7 +2097,6 @@ useEffect(() => {
     </CurrencyContext.Provider>
   );
 }
-
 // ─────────────────────────────────────────────
 // APP ROOT
 // ─────────────────────────────────────────────
