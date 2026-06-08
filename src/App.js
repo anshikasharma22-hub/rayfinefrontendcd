@@ -2023,7 +2023,7 @@ function AppInner() {
   const [toasts, setToasts] = useState([]);
   const userAuth = useUserAuth();
   const loc = useLocation();
-  const isAdminPage = loc.pathname === "/Admin" || loc.pathname === "/login";
+  const isAdminPage = loc.pathname === "/rfo-panel" || loc.pathname === "/login";
 
   const addViewed = useCallback((product) => {
     setViewed(prev => {
