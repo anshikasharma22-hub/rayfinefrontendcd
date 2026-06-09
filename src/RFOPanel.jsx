@@ -633,51 +633,214 @@ function AddProductPage({ S, showToast, onSave }) {
 // ═══════════════════════════════════════════════
 // BULK CSV IMPORT — main feature
 // ═══════════════════════════════════════════════
-function BulkImportPage({ S, showToast, onImport }) {
-  const fileRef  = useRef();
-  const [preview, setPreview]   = useState([]);
-  const [dragging, setDragging] = useState(false);
+const SUPABASE_URL       = "https://ajqqaeejotlghgilgajy.supabase.co";
+const SUPABASE_ANON_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqcXFhZWVqb3RsZ2hnaWxnYWp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNjU2MTUsImV4cCI6MjA5NTY0MTYxNX0.fZ1MmCpMiQnwu7HsaK3zP4HXjxrLK6JseEZSUvIkreY";
+const SUPABASE_TABLE     = "products";
+const USD_TO_INR         = 83.5; // update as needed
+
+async function supabaseQuery(path, method = "GET", body = null) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": method === "POST" ? "return=representation" : "",
+    },
+    body: body ? JSON.stringify(body) : null,
+  });
+  if (!res.ok) { const err = await res.text(); throw new Error(err); }
+  return res.json().catch(() => null);
+}
+
+// ── Etsy → RFO mapping logic ─────────────────────
+
+const TAG_TO_CATEGORY = {
+  earring: "Earring", jhumka: "Earring", stud_earring: "Earring", dangle_earring: "Earring",
+  ear_stud: "Earring", hoop: "Earring", chandbali: "Earring",
+  necklace: "Necklace", choker: "Necklace", locket: "Necklace", pendant: "Pendants",
+  pendent: "Pendants", haar: "Necklace",
+  anklet: "Anklet", payal: "Anklet",
+  bangle: "Bangles", bangle_set: "Bangles", kangan: "Bangles",
+  bracelet: "Bracelet", kada: "Bracelet",
+  ring: "Ring", adjustable_ring: "Ring",
+  gemstone: "Gemstone Charm", charm: "Gemstone Charm",
+};
+
+const TAG_TO_OCCASION = {
+  bridal: "Bridal", wedding: "Bridal", bride: "Bridal",
+  festive: "Festive", diwali: "Festive", navratri: "Festive", eid: "Festive", festival: "Festive",
+  gift: "Gifting", gifting: "Gifting", gift_for_her: "Gifting", return_gift: "Gifting",
+  party: "Party", party_wear: "Party",
+  everyday: "Everyday", daily_wear: "Everyday", office: "Everyday",
+  vacation: "Vacation", travel: "Vacation", boho: "Vacation",
+  traditional: "Traditional", ethnic: "Traditional", saree: "Traditional",
+};
+
+const BESTSELLER_TAGS = ["bestseller", "best_seller", "popular", "top_seller", "most_loved"];
+const TRENDING_TAGS   = ["trending", "new_arrival", "new_launch", "viral", "hot"];
+const NEW_TAGS        = ["new", "new_arrival", "new_launch", "just_arrived", "newly_listed"];
+
+function detectFromTags(tagsStr = "") {
+  const tags = tagsStr.toLowerCase().replace(/\s/g, "_").split(",").map(t => t.trim());
+
+  let category = "";
+  let occasion  = "";
+  let isBestseller = false;
+  let isTrending   = false;
+  let isNew        = false;
+
+  for (const tag of tags) {
+    if (!category) {
+      for (const [key, val] of Object.entries(TAG_TO_CATEGORY)) {
+        if (tag.includes(key)) { category = val; break; }
+      }
+    }
+    if (!occasion) {
+      for (const [key, val] of Object.entries(TAG_TO_OCCASION)) {
+        if (tag.includes(key)) { occasion = val; break; }
+      }
+    }
+    if (!isBestseller && BESTSELLER_TAGS.some(k => tag.includes(k))) isBestseller = true;
+    if (!isTrending   && TRENDING_TAGS.some(k => tag.includes(k)))   isTrending   = true;
+    if (!isNew        && NEW_TAGS.some(k => tag.includes(k)))         isNew        = true;
+  }
+
+  // Fallback: guess category from title keywords if tags didn't resolve
+  return { category, occasion, isBestseller, isTrending, isNew };
+}
+
+function guessCategoryFromTitle(title = "") {
+  const t = title.toLowerCase();
+  if (t.includes("earring") || t.includes("jhumka") || t.includes("stud") || t.includes("chandbali")) return "Earring";
+  if (t.includes("necklace") || t.includes("haar") || t.includes("choker")) return "Necklace";
+  if (t.includes("bracelet") || t.includes("kada")) return "Bracelet";
+  if (t.includes("bangle")) return "Bangles";
+  if (t.includes("ring")) return "Ring";
+  if (t.includes("anklet") || t.includes("payal")) return "Anklet";
+  if (t.includes("pendant") || t.includes("pendent") || t.includes("locket")) return "Pendants";
+  return "Earring"; // default
+}
+
+function isEtsyCSV(headers) {
+  return headers.includes("TITLE") || headers.includes("title");
+}
+
+function convertEtsyRow(row, index) {
+  const title     = (row.TITLE || row.title || "").trim();
+  const desc      = (row.DESCRIPTION || row.description || "").replace(/\n/g, " ").trim();
+  const priceUSD  = parseFloat(row.PRICE || row.price) || 0;
+  const qty       = parseInt(row.QUANTITY || row.quantity) || 0;
+  const tags      = row.TAGS || row.tags || "";
+  const materials = row.MATERIALS || row.materials || "";
+  const image     = (row.IMAGE1 || row.image1 || "").trim();
+  const sku       = (row.SKU || row.sku || "").trim();
+
+  const { category, occasion, isBestseller, isTrending, isNew } = detectFromTags(tags);
+  const finalCategory = category || guessCategoryFromTitle(title);
+
+  const priceINR = Math.round(priceUSD * USD_TO_INR);
+
+  return {
+    name:          title,
+    description:   desc.slice(0, 500),
+    price:         priceINR,
+    originalPrice: null,
+    category:      finalCategory,
+    occasion:      occasion || "Festive",
+    stock:         qty,
+    inStock:       qty > 0,
+    material:      materials,
+    image:         image,
+    isBestseller,
+    isTrending,
+    isNew,
+    onSale:        false,
+    sku,
+    _rowNum:       index + 2,
+    _source:       "etsy",
+  };
+}
+
+// ── Standard RFO CSV row converter ───────────────
+function convertRFORow(row, index) {
+  return {
+    ...row,
+    _rowNum: index + 2,
+    price: Number(row.price) || 0,
+    originalPrice: Number(row.originalPrice) || null,
+    stock: Number(row.stock) || 0,
+    inStock: Number(row.stock) > 0,
+    isBestseller: row.isBestseller === "true" || row.isBestseller === "1",
+    isTrending:   row.isTrending   === "true" || row.isTrending   === "1",
+    isNew:        row.isNew        === "true" || row.isNew        === "1",
+    onSale:       row.onSale       === "true" || row.onSale       === "1",
+  };
+}
+
+// ── CSV parser (handles quoted multiline fields) ──
+function parseCSV(text) {
+  const lines = [];
+  let cur = "", inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"') { inQ = !inQ; cur += ch; }
+    else if (ch === "\n" && !inQ) { lines.push(cur); cur = ""; }
+    else { cur += ch; }
+  }
+  if (cur) lines.push(cur);
+
+  const parseRow = (line) => {
+    const vals = [];
+    let field = "", inQField = false;
+    for (const ch of line) {
+      if (ch === '"') inQField = !inQField;
+      else if (ch === "," && !inQField) { vals.push(field.replace(/^"|"$/g, "").trim()); field = ""; }
+      else field += ch;
+    }
+    vals.push(field.replace(/^"|"$/g, "").trim());
+    return vals;
+  };
+
+  const headers = parseRow(lines[0]).map(h => h.replace(/^"|"$/g, "").trim());
+  const rows = lines.slice(1).filter(l => l.trim()).map((line, i) => {
+    const vals = parseRow(line);
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = (vals[idx] || "").replace(/^"|"$/g, "").trim(); });
+    return obj;
+  });
+
+  return { headers, rows };
+}
+
+// ═══════════════════════════════════════════════
+// COMPONENT
+// ═══════════════════════════════════════════════
+import { useRef, useState } from "react";
+
+function formatINR(n) {
+  return "₹" + Number(n || 0).toLocaleString("en-IN");
+}
+
+export default function BulkImportPage({ S, showToast, onImport }) {
+  const fileRef    = useRef();
+  const [preview, setPreview]     = useState([]);
+  const [dragging, setDragging]   = useState(false);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress]   = useState(0);
   const [errors, setErrors]       = useState([]);
+  const [mode, setMode]           = useState(null); // "etsy" | "rfo"
 
-  const parseCSV = (text) => {
-    const lines = text.trim().split(/\r?\n/);
-    const headers = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
-    return lines.slice(1).filter(l => l.trim()).map((line, i) => {
-      // Handle quoted commas
-      const vals = [];
-      let cur = "", inQ = false;
-      for (const ch of line) {
-        if (ch === '"') inQ = !inQ;
-        else if (ch === "," && !inQ) { vals.push(cur.trim()); cur = ""; }
-        else cur += ch;
-      }
-      vals.push(cur.trim());
-      const obj = {};
-      headers.forEach((h, idx) => { obj[h] = (vals[idx] || "").replace(/^"|"$/g, "").trim(); });
-      return {
-        ...obj,
-        _rowNum: i + 2,
-        price: Number(obj.price) || 0,
-        originalPrice: Number(obj.originalPrice) || null,
-        stock: Number(obj.stock) || 0,
-        inStock: Number(obj.stock) > 0,
-        isBestseller: obj.isBestseller === "true" || obj.isBestseller === "1",
-        isTrending:   obj.isTrending   === "true" || obj.isTrending   === "1",
-        isNew:        obj.isNew        === "true" || obj.isNew        === "1",
-        onSale:       obj.onSale       === "true" || obj.onSale       === "1",
-      };
-    });
-  };
+  // ── Category / occasion override controls ────────
+  const [overrideCategory, setOverrideCategory] = useState("");
+  const [overrideOccasion,  setOverrideOccasion]  = useState("");
+  const [flagBestseller, setFlagBestseller] = useState(false);
+  const [flagTrending,   setFlagTrending]   = useState(false);
+  const [flagNew,        setFlagNew]        = useState(false);
+  const [usdRate,        setUsdRate]        = useState(83.5);
 
-  const validateRow = (row) => {
-    const errs = [];
-    if (!row.name)     errs.push("name missing");
-    if (!row.price)    errs.push("price missing");
-    if (!row.category) errs.push("category missing");
-    return errs;
-  };
+  const CATEGORIES = ["Earring","Necklace","Anklet","Gemstone Charm","Bangles","Bracelet","Pendants","Ring"];
+  const OCCASIONS  = ["Festive","Gifting","Bridal","Everyday","Vacation","Party","Traditional"];
 
   const handleFile = (f) => {
     if (!f) return;
@@ -685,15 +848,24 @@ function BulkImportPage({ S, showToast, onImport }) {
     const reader = new FileReader();
     reader.onload = e => {
       try {
-        const parsed = parseCSV(e.target.result);
+        const { headers, rows } = parseCSV(e.target.result);
+        const isEtsy = isEtsyCSV(headers);
+        setMode(isEtsy ? "etsy" : "rfo");
+
+        const parsed = rows.map((row, i) =>
+          isEtsy ? convertEtsyRow(row, i) : convertRFORow(row, i)
+        );
+
         const rowErrors = [];
         parsed.forEach(row => {
-          const errs = validateRow(row);
-          if (errs.length) rowErrors.push(`Row ${row._rowNum}: ${errs.join(", ")}`);
+          if (!row.name)  rowErrors.push(`Row ${row._rowNum}: name missing`);
+          if (!row.price) rowErrors.push(`Row ${row._rowNum}: price missing`);
         });
         setErrors(rowErrors);
         setPreview(parsed);
-        showToast(`${parsed.length} rows parsed${rowErrors.length ? `, ${rowErrors.length} with warnings` : " — looks good!"}`);
+        showToast(
+          `${parsed.length} rows parsed (${isEtsy ? "Etsy CSV detected 🛍️" : "RFO format"})${rowErrors.length ? `, ${rowErrors.length} warnings` : " — ready to import!"}`
+        );
       } catch (err) {
         showToast("CSV parse error: " + err.message, "error");
       }
@@ -701,31 +873,38 @@ function BulkImportPage({ S, showToast, onImport }) {
     reader.readAsText(f);
   };
 
+  // Apply overrides & flags to all preview rows
+  const getReadyRows = () =>
+    preview.map(({ _rowNum, _source, ...row }) => ({
+      ...row,
+      price:    mode === "etsy" ? Math.round(row.price * (usdRate / USD_TO_INR)) : row.price,
+      category: overrideCategory || row.category,
+      occasion: overrideOccasion  || row.occasion,
+      isBestseller: flagBestseller || row.isBestseller,
+      isTrending:   flagTrending   || row.isTrending,
+      isNew:        flagNew        || row.isNew,
+    }));
+
   const importToSupabase = async () => {
     if (!preview.length) return;
     setImporting(true);
     setProgress(0);
+    const rows = getReadyRows();
     const BATCH = 50;
-    const successful = [];
-    const failed = [];
+    const successful = [], failed = [];
 
-    for (let i = 0; i < preview.length; i += BATCH) {
-      const batch = preview.slice(i, i + BATCH).map(({ _rowNum, ...rest }) => rest);
+    for (let i = 0; i < rows.length; i += BATCH) {
+      const batch = rows.slice(i, i + BATCH);
       try {
         await supabaseQuery(SUPABASE_TABLE, "POST", batch);
         successful.push(...batch);
-      } catch (err) {
-        // Try one by one on batch fail
+      } catch {
         for (const row of batch) {
-          try {
-            await supabaseQuery(SUPABASE_TABLE, "POST", [row]);
-            successful.push(row);
-          } catch {
-            failed.push(row.name || "unknown");
-          }
+          try { await supabaseQuery(SUPABASE_TABLE, "POST", [row]); successful.push(row); }
+          catch { failed.push(row.name || "unknown"); }
         }
       }
-      setProgress(Math.round(((i + BATCH) / preview.length) * 100));
+      setProgress(Math.min(100, Math.round(((i + BATCH) / rows.length) * 100)));
     }
 
     setImporting(false);
@@ -733,29 +912,34 @@ function BulkImportPage({ S, showToast, onImport }) {
     else onImport(successful);
   };
 
-  const downloadTemplate = () => {
-    const sample = `${CSV_HEADERS}\nKundan Jhumka,1499,1999,Earring,Festive,20,Gold plated,Beautiful festive earrings,https://example.com/img.jpg,true,false,true,false\nPearl Necklace,2299,,Necklace,Bridal,15,Pearl,Elegant pearl necklace,https://example.com/necklace.jpg,false,true,false,false`;
-    const blob = new Blob([sample], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "rfo_products_template.csv";
-    a.click();
+  const categoryBadgeColor = {
+    Earring: "#e8b84b", Necklace: "#b07a5a", Bangles: "#22c55e",
+    Bracelet: "#60a5fa", Ring: "#f97316", Anklet: "#c084fc",
+    Pendants: "#f472b6", "Gemstone Charm": "#34d399",
   };
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", animation: "fadeIn 0.4s ease" }}>
+    <div style={{ maxWidth: 960, margin: "0 auto", animation: "fadeIn 0.4s ease" }}>
       <div style={S.card}>
-        <h3 style={{ fontFamily: "Cormorant Garamond,serif", fontSize: 20, fontWeight: 400, color: "#f5f0eb", marginBottom: 6 }}>
-          Bulk CSV Import → Supabase
-        </h3>
-        <p style={{ fontSize: 13, color: "#555", marginBottom: 20, lineHeight: 1.6 }}>
-          CSV upload karo, preview dekho, phir directly Supabase mein import karo.
-          Agar Supabase keys set nahi hain, tab bhi local state mein import ho jaayega.
-        </p>
-
-        <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
-          <button onClick={downloadTemplate} style={S.btn("ghost")}>↓ Download CSV Template</button>
-          <button onClick={() => fileRef.current?.click()} style={S.btn("primary")}>📂 Choose CSV File</button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+          <div>
+            <h3 style={{ fontFamily: "Cormorant Garamond,serif", fontSize: 22, fontWeight: 400, color: "#f5f0eb", marginBottom: 4 }}>
+              Bulk Import → Supabase
+            </h3>
+            <p style={{ fontSize: 12, color: "#555" }}>
+              Etsy CSV ya RFO CSV — dono automatically detect hoga. Categories, occasions, tags sab auto-map honge.
+            </p>
+          </div>
+          {mode && (
+            <span style={{
+              fontSize: 11, fontWeight: 700, padding: "5px 14px", borderRadius: 20,
+              background: mode === "etsy" ? "#1e3a5f44" : "#14532d44",
+              color: mode === "etsy" ? "#60a5fa" : "#22c55e",
+              letterSpacing: "1px", textTransform: "uppercase", border: `1px solid ${mode === "etsy" ? "#60a5fa44" : "#22c55e44"}`,
+            }}>
+              {mode === "etsy" ? "🛍️ Etsy CSV" : "✓ RFO CSV"}
+            </span>
+          )}
         </div>
 
         {/* Drop zone */}
@@ -766,40 +950,87 @@ function BulkImportPage({ S, showToast, onImport }) {
           onClick={() => fileRef.current?.click()}
           style={{
             border: `2px dashed ${dragging ? "#b07a5a" : "#2a2a2e"}`,
-            borderRadius: 10, padding: "36px 24px", textAlign: "center", cursor: "pointer",
+            borderRadius: 10, padding: "40px 24px", textAlign: "center", cursor: "pointer",
             background: dragging ? "#1e1612" : "transparent", transition: "all .2s",
-            marginBottom: 16,
+            marginBottom: 20,
           }}
         >
           <input ref={fileRef} type="file" accept=".csv" style={{ display: "none" }}
             onChange={e => handleFile(e.target.files[0])} />
-          <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
-          <p style={{ fontSize: 14, color: "#555" }}>
-            Drop CSV here or <strong style={{ color: "#b07a5a" }}>click to browse</strong>
+          <div style={{ fontSize: 36, marginBottom: 10 }}>📄</div>
+          <p style={{ fontSize: 14, color: "#888" }}>
+            Etsy CSV ya RFO CSV drop karo, ya <strong style={{ color: "#b07a5a" }}>click karo browse karne ke liye</strong>
           </p>
-          <p style={{ fontSize: 11, color: "#333", marginTop: 4 }}>Supports quoted values, special characters</p>
+          <p style={{ fontSize: 11, color: "#444", marginTop: 6 }}>
+            Etsy ka TITLE, PRICE, TAGS, IMAGE1 automatically map hoga • USD → INR auto-convert
+          </p>
         </div>
 
-        {/* Column reference */}
-        <div style={{ background: "#0d0d0f", padding: "12px 16px", borderRadius: 7, fontSize: 11, color: "#555", marginBottom: 16, lineHeight: 1.8, border: "1px solid #1e1e22" }}>
-          <strong style={{ color: "#b07a5a" }}>Required CSV columns:</strong><br />
-          <code style={{ color: "#888" }}>{CSV_HEADERS}</code>
-        </div>
+        {/* ── Override Controls ── */}
+        {preview.length > 0 && (
+          <div style={{ background: "#0d0d0f", border: "1px solid #1e1e22", borderRadius: 8, padding: "16px 18px", marginBottom: 20 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: "#b07a5a", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 12 }}>
+              ⚙ Bulk Override — sab rows pe apply hoga
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+              <div>
+                <label style={{ fontSize: 11, color: "#555", fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
+                  Category Override
+                </label>
+                <select value={overrideCategory} onChange={e => setOverrideCategory(e.target.value)} style={{ ...S.input, padding: "8px 10px" }}>
+                  <option value="">Auto-detect (rakhne do)</option>
+                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: "#555", fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
+                  Occasion Override
+                </label>
+                <select value={overrideOccasion} onChange={e => setOverrideOccasion(e.target.value)} style={{ ...S.input, padding: "8px 10px" }}>
+                  <option value="">Auto-detect (rakhne do)</option>
+                  {OCCASIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+              {mode === "etsy" && (
+                <div>
+                  <label style={{ fontSize: 11, color: "#555", fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
+                    USD → INR Rate
+                  </label>
+                  <input type="number" value={usdRate} onChange={e => setUsdRate(Number(e.target.value))}
+                    style={{ ...S.input, padding: "8px 10px" }} placeholder="83.5" />
+                </div>
+              )}
+            </div>
+            <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+              {[
+                [flagBestseller, setFlagBestseller, "⭐ Sab Bestseller mark karo"],
+                [flagTrending,   setFlagTrending,   "🔥 Sab Trending mark karo"],
+                [flagNew,        setFlagNew,        "✨ Sab New mark karo"],
+              ].map(([val, setter, label]) => (
+                <label key={label} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, cursor: "pointer", color: "#888" }}>
+                  <input type="checkbox" checked={val} onChange={e => setter(e.target.checked)}
+                    style={{ accentColor: "#b07a5a", width: 14, height: 14 }} />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Validation errors */}
         {errors.length > 0 && (
-          <div style={{ background: "#7f1d1d22", border: "1px solid #7f1d1d", borderRadius: 7, padding: "12px 16px", marginBottom: 16 }}>
-            <p style={{ color: "#ef4444", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>⚠ Validation Warnings ({errors.length})</p>
+          <div style={{ background: "#7f1d1d22", border: "1px solid #7f1d1d44", borderRadius: 7, padding: "12px 16px", marginBottom: 16 }}>
+            <p style={{ color: "#ef4444", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>⚠ Warnings ({errors.length})</p>
             {errors.slice(0, 5).map((e, i) => <p key={i} style={{ color: "#fca5a5", fontSize: 11 }}>{e}</p>)}
             {errors.length > 5 && <p style={{ color: "#888", fontSize: 11 }}>+{errors.length - 5} more…</p>}
           </div>
         )}
 
-        {/* Progress */}
+        {/* Progress bar */}
         {importing && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#888", marginBottom: 6 }}>
-              <span>Importing to Supabase…</span>
+              <span>Supabase mein import ho raha hai…</span>
               <span>{progress}%</span>
             </div>
             <div style={{ height: 6, background: "#1e1e22", borderRadius: 4 }}>
@@ -808,155 +1039,97 @@ function BulkImportPage({ S, showToast, onImport }) {
           </div>
         )}
 
-        {/* Preview */}
+        {/* Preview table */}
         {preview.length > 0 && (
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: "#ccc" }}>
-                {preview.length} rows parsed · {errors.length} warnings
+                {preview.length} products ready · {errors.length} warnings
               </span>
-              <button onClick={importToSupabase} disabled={importing} style={S.btn("primary")}>
-                {importing ? `Importing… ${progress}%` : `Import ${preview.length} Products →`}
+              <button onClick={importToSupabase} disabled={importing}
+                style={{ padding: "10px 22px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", fontFamily: "inherit", background: "linear-gradient(135deg,#b07a5a,#c4956a)", color: "#fff" }}>
+                {importing ? `Importing… ${progress}%` : `🚀 Import ${preview.length} Products → Supabase`}
               </button>
             </div>
 
-            <div style={{ overflowX: "auto", borderRadius: 7, border: "1px solid #1e1e22" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div style={{ overflowX: "auto", borderRadius: 8, border: "1px solid #1e1e22" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
                 <thead>
                   <tr style={{ background: "#0d0d0f" }}>
-                    {["#","Name","Category","Price","Stock","Occasion","Flags"].map(h => (
-                      <th key={h} style={{ fontSize: 10, color: "#555", fontWeight: 700, textAlign: "left", padding: "9px 12px", borderBottom: "1px solid #1e1e22", textTransform: "uppercase" }}>{h}</th>
+                    {["#", "Image", "Name", "Category", "Occasion", "Price", "Stock", "Flags"].map(h => (
+                      <th key={h} style={{ fontSize: 10, color: "#555", fontWeight: 700, textAlign: "left", padding: "9px 12px", borderBottom: "1px solid #1e1e22", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {preview.slice(0, 10).map((p, i) => (
-                    <tr key={i} className="rfo-tr" style={{ borderBottom: "1px solid #1e1e22" }}>
-                      <td style={{ padding: "8px 12px", fontSize: 11, color: "#444" }}>{p._rowNum}</td>
-                      <td style={{ padding: "8px 12px", fontSize: 13, color: "#f5f0eb" }}>{p.name}</td>
-                      <td style={{ padding: "8px 12px", fontSize: 12, color: "#777" }}>{p.category}</td>
-                      <td style={{ padding: "8px 12px", fontSize: 13, color: "#b07a5a" }}>{formatINR(p.price)}</td>
-                      <td style={{ padding: "8px 12px", fontSize: 12, color: "#ccc" }}>{p.stock}</td>
-                      <td style={{ padding: "8px 12px", fontSize: 11, color: "#666" }}>{p.occasion}</td>
-                      <td style={{ padding: "8px 12px", fontSize: 11 }}>
-                        {p.isBestseller && <span style={{ color: "#e8b84b", marginRight: 4 }}>⭐</span>}
-                        {p.isTrending   && <span style={{ color: "#f97316", marginRight: 4 }}>🔥</span>}
-                        {p.isNew        && <span style={{ color: "#22c55e", marginRight: 4 }}>✨</span>}
-                        {p.onSale       && <span style={{ color: "#818cf8" }}>🏷</span>}
-                      </td>
-                    </tr>
-                  ))}
+                  {preview.slice(0, 15).map((p, i) => {
+                    const displayCat = overrideCategory || p.category;
+                    const displayOcc = overrideOccasion || p.occasion;
+                    const displayPrice = mode === "etsy"
+                      ? Math.round(p.price * (usdRate / USD_TO_INR))
+                      : p.price;
+                    return (
+                      <tr key={i} style={{ borderBottom: "1px solid #1e1e22" }}>
+                        <td style={{ padding: "8px 12px", fontSize: 11, color: "#444" }}>{p._rowNum}</td>
+                        <td style={{ padding: "8px 12px" }}>
+                          {p.image
+                            ? <img src={p.image} alt="" style={{ width: 38, height: 38, objectFit: "cover", borderRadius: 5, border: "1px solid #2a2a2e", background: "#1a1a1e" }} onError={e => { e.target.style.display = "none"; }} />
+                            : <div style={{ width: 38, height: 38, background: "#1a1a1e", borderRadius: 5, border: "1px solid #2a2a2e" }} />
+                          }
+                        </td>
+                        <td style={{ padding: "8px 12px", maxWidth: 240 }}>
+                          <div style={{ fontFamily: "Cormorant Garamond,serif", fontSize: 14, color: "#f5f0eb", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                          {p.material && <div style={{ fontSize: 10, color: "#555" }}>{p.material.slice(0, 40)}</div>}
+                        </td>
+                        <td style={{ padding: "8px 12px" }}>
+                          <span style={{
+                            fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 20,
+                            background: `${categoryBadgeColor[displayCat] || "#888"}22`,
+                            color: categoryBadgeColor[displayCat] || "#888",
+                          }}>{displayCat || "—"}</span>
+                        </td>
+                        <td style={{ padding: "8px 12px", fontSize: 11, color: "#777" }}>{displayOcc || "—"}</td>
+                        <td style={{ padding: "8px 12px", fontSize: 13, color: "#b07a5a", fontWeight: 600, whiteSpace: "nowrap" }}>
+                          {formatINR(displayPrice)}
+                        </td>
+                        <td style={{ padding: "8px 12px", fontSize: 12, color: p.stock > 0 ? "#22c55e" : "#ef4444" }}>{p.stock}</td>
+                        <td style={{ padding: "8px 12px", fontSize: 14 }}>
+                          {(flagBestseller || p.isBestseller) && <span title="Bestseller">⭐</span>}
+                          {(flagTrending   || p.isTrending)   && <span title="Trending">🔥</span>}
+                          {(flagNew        || p.isNew)        && <span title="New">✨</span>}
+                          {p.onSale && <span title="On Sale">🏷</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
-              {preview.length > 10 && (
-                <p style={{ padding: "8px 12px", fontSize: 11, color: "#555" }}>
-                  +{preview.length - 10} more rows not shown
+              {preview.length > 15 && (
+                <p style={{ padding: "8px 12px", fontSize: 11, color: "#555", textAlign: "center", borderTop: "1px solid #1e1e22" }}>
+                  +{preview.length - 15} more rows (sab import honge)
                 </p>
               )}
             </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
-// ═══════════════════════════════════════════════
-// ORDERS PAGE
-// ═══════════════════════════════════════════════
-function OrdersPage({ S, showToast }) {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter]   = useState("all");
-
-  useEffect(() => {
-    // Try fetching orders from Supabase
-    supabaseQuery("orders?order=created_at.desc&limit=100")
-      .then(data => { setOrders(Array.isArray(data) ? data : []); setLoading(false); })
-      .catch(() => {
-        // Fallback sample data
-        setOrders([
-          { id: "#1041", customer: "Priya Sharma",  items: "Bridal Set × 1",     amount: 8500, status: "new",       date: "Jun 5" },
-          { id: "#1040", customer: "Rahul Verma",   items: "Gold Anklet × 2",    amount: 1798, status: "processing", date: "Jun 5" },
-          { id: "#1039", customer: "Sunita Patel",  items: "Pearl Earrings × 1", amount: 2200, status: "delivered", date: "Jun 4" },
-        ]);
-        setLoading(false);
-      });
-  }, []);
-
-  const STATUS_COLORS = {
-    new:        { bg: "#1e3a5f22", color: "#60a5fa" },
-    processing: { bg: "#78350f22", color: "#f59e0b" },
-    shipped:    { bg: "#14532d22", color: "#22c55e" },
-    delivered:  { bg: "#14532d44", color: "#86efac" },
-    cancelled:  { bg: "#7f1d1d22", color: "#ef4444" },
-  };
-
-  const filtered = filter === "all" ? orders : orders.filter(o => o.status === filter);
-
-  const updateStatus = async (id, status) => {
-    try {
-      await supabaseQuery(`orders?id=eq.${id}`, "PATCH", { status });
-    } catch { /* fallback */ }
-    setOrders(prev => prev.map(o => (o.id === id || o._id === id) ? { ...o, status } : o));
-    showToast("Order updated");
-  };
-
-  return (
-    <div style={{ animation: "fadeIn 0.4s ease" }}>
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-        {["all","new","processing","shipped","delivered","cancelled"].map(s => (
-          <button key={s} onClick={() => setFilter(s)}
-            style={{ padding: "7px 14px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", fontFamily: "inherit",
-              background: filter === s ? "linear-gradient(135deg,#b07a5a,#c4956a)" : "#1a1a1e",
-              color: filter === s ? "#fff" : "#666",
-            }}>
-            {s === "all" ? `All (${orders.length})` : s}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ ...S.card, padding: 0, overflow: "hidden" }}>
-        {loading ? (
-          <p style={{ padding: 40, textAlign: "center", color: "#555", fontStyle: "italic" }}>Loading orders…</p>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
-              <thead>
-                <tr style={{ background: "#0d0d0f" }}>
-                  {["Order","Date","Customer","Items","Amount","Status","Update"].map(h => (
-                    <th key={h} style={{ fontSize: 10, color: "#555", fontWeight: 700, textAlign: "left", padding: "10px 14px", borderBottom: "1px solid #1e1e22", textTransform: "uppercase", letterSpacing: "0.8px", whiteSpace: "nowrap" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(o => {
-                  const statusStyle = STATUS_COLORS[o.status] || STATUS_COLORS.new;
-                  return (
-                    <tr key={o.id || o._id} className="rfo-tr" style={{ borderBottom: "1px solid #1e1e22" }}>
-                      <td style={{ padding: "10px 14px", fontSize: 13, color: "#b07a5a", fontWeight: 600 }}>{o.id || o._id}</td>
-                      <td style={{ padding: "10px 14px", fontSize: 12, color: "#555" }}>{o.date || o.created_at?.slice(0,10)}</td>
-                      <td style={{ padding: "10px 14px", fontSize: 13, color: "#f5f0eb" }}>{o.customer || o.customer_name}</td>
-                      <td style={{ padding: "10px 14px", fontSize: 12, color: "#777" }}>{o.items}</td>
-                      <td style={{ padding: "10px 14px", fontSize: 13, color: "#f5f0eb", fontWeight: 500 }}>{formatINR(o.amount)}</td>
-                      <td style={{ padding: "10px 14px" }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: statusStyle.bg, color: statusStyle.color }}>
-                          {o.status}
-                        </span>
-                      </td>
-                      <td style={{ padding: "10px 14px" }}>
-                        <select value={o.status}
-                          onChange={e => updateStatus(o.id || o._id, e.target.value)}
-                          style={{ ...S.input, width: "auto", padding: "5px 8px", fontSize: 12 }}>
-                          {["new","processing","shipped","delivered","cancelled"].map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            {filtered.length === 0 && <p style={{ padding: 30, textAlign: "center", color: "#555", fontSize: 13 }}>No orders found.</p>}
+            {/* Summary chips */}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
+              {Object.entries(
+                preview.reduce((acc, p) => {
+                  const k = overrideCategory || p.category || "Unknown";
+                  acc[k] = (acc[k] || 0) + 1;
+                  return acc;
+                }, {})
+              ).map(([cat, cnt]) => (
+                <span key={cat} style={{
+                  fontSize: 11, padding: "4px 12px", borderRadius: 20, fontWeight: 600,
+                  background: `${categoryBadgeColor[cat] || "#888"}22`,
+                  color: categoryBadgeColor[cat] || "#888",
+                  border: `1px solid ${categoryBadgeColor[cat] || "#888"}44`,
+                }}>
+                  {cat}: {cnt}
+                </span>
+              ))}
+            </div>
           </div>
         )}
       </div>
