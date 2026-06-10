@@ -444,40 +444,159 @@ function AddProductPage({showToast,onSave}){
   const[errors,setErrors]=useState({});
   const[saving,setSaving]=useState(false);
   const[preview,setPreview]=useState(null);
+  const[imageFile,setImageFile]=useState(null);
+  const fileInputRef=useRef();
+
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
-  const validate=()=>{const e={};if(!form.name.trim())e.name="Required";if(!form.price)e.price="Required";if(!form.category)e.category="Required";setErrors(e);return!Object.keys(e).length;};
+
+  const handleImageFile=async(file)=>{
+    if(!file)return;
+    console.log("File selected:", file.name, "Size:", file.size);
+    
+    // Check file size (max 5MB)
+    if(file.size>5*1024*1024){
+      showToast("Image too large (max 5MB)","error");
+      return;
+    }
+    
+    setImageFile(file);
+    
+    // Create preview
+    const reader=new FileReader();
+    reader.onload=(e)=>{
+      const base64=e.target.result;
+      setPreview(base64);
+      set("image",base64);
+      console.log("Image converted to base64, length:", base64.length);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const validate=()=>{
+    const e={};
+    if(!form.name.trim())e.name="Required";
+    if(!form.price)e.price="Required";
+    if(!form.category)e.category="Required";
+    if(!form.image)e.image="Image required";
+    setErrors(e);
+    return!Object.keys(e).length;
+  };
+
+  const testSupabase=async()=>{
+    try{
+      console.log("Testing Supabase connection...");
+      console.log("SUPABASE_URL:", SUPABASE_URL);
+      console.log("SUPABASE_TABLE:", SUPABASE_TABLE);
+      
+      const res=await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?limit=1`, {
+        method:"GET",
+        headers:{
+          apikey:SUPABASE_ANON_KEY,
+          Authorization:`Bearer ${SUPABASE_ANON_KEY}`,
+        }
+      });
+      
+      console.log("Supabase response status:", res.status);
+      const data=await res.json();
+      console.log("Supabase response:", data);
+      
+      if(res.ok){
+        showToast("✓ Supabase connected!","success");
+        return true;
+      }else{
+        showToast(`✗ Supabase error: ${res.status}`,"error");
+        console.error("Error:", data);
+        return false;
+      }
+    }catch(err){
+      console.error("Connection error:", err);
+      showToast(`Connection error: ${err.message}`,"error");
+      return false;
+    }
+  };
+
   const save=async()=>{
     if(!validate())return;
+    
+    // Check Supabase first
+    const connected=await testSupabase();
+    if(!connected)return;
+    
     setSaving(true);
-    const product={...form,price:Number(form.price),originalPrice:Number(form.originalPrice)||null,stock:Number(form.stock)||0,variants:form.variants?form.variants.split(",").map(v=>v.trim()):[]};
-    try{const[saved]=await supabaseQuery(SUPABASE_TABLE,"POST",[product]);onSave({...product,id:saved?.id||Date.now()});}
-    catch{onSave({...product,id:Date.now()});}
-    setSaving(false);
+    const product={
+      ...form,
+      price:Number(form.price),
+      originalPrice:Number(form.originalPrice)||null,
+      stock:Number(form.stock)||0,
+      variants:form.variants?form.variants.split(",").map(v=>v.trim()):[]
+    };
+    
+    try{
+      console.log("Sending product to Supabase...");
+      const res=await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`, {
+        method:"POST",
+        headers:{
+          apikey:SUPABASE_ANON_KEY,
+          Authorization:`Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type":"application/json",
+          Prefer:"return=representation"
+        },
+        body:JSON.stringify([product])
+      });
+      
+      console.log("Save response status:", res.status);
+      const savedData=await res.json();
+      console.log("Saved data:", savedData);
+      
+      if(!res.ok){
+        throw new Error(`${res.status}: ${JSON.stringify(savedData)}`);
+      }
+      
+      const saved=savedData[0];
+      showToast("✓ Product saved!");
+      onSave({...product,id:saved?.id||Date.now()});
+      setSaving(false);
+    }catch(err){
+      console.error("Save error:", err);
+      showToast(`Save failed: ${err.message}`,"error");
+      setSaving(false);
+    }
   };
+
   const inp=(label,key,props={})=>(
     <div>
-      <label style={{fontSize:11,fontWeight:700,color:"#b8a898",textTransform:"uppercase",letterSpacing:"0.8px",display:"block",marginBottom:5}}>{label}{errors[key]&&<span style={{color:"#e07070",marginLeft:6,fontWeight:400}}>{errors[key]}</span>}</label>
+      <label style={{fontSize:11,fontWeight:700,color:"#b8a898",textTransform:"uppercase",letterSpacing:"0.8px",display:"block",marginBottom:5}}>
+        {label}
+        {errors[key]&&<span style={{color:"#e07070",marginLeft:6,fontWeight:400}}>{errors[key]}</span>}
+      </label>
       <input className="am-inp" {...props} value={form[key]} onChange={e=>set(key,e.target.value)}
         style={{width:"100%",padding:"11px 13px",border:`1.5px solid ${errors[key]?"#e07070":"#e8e0d8"}`,borderRadius:10,fontSize:13,background:"#faf7f4",color:"#2d2018",...(props.style||{})}}/>
     </div>
   );
+
   return(
     <div style={{maxWidth:800,margin:"0 auto",animation:"fadeIn .3s ease"}}>
       <div className="am-card">
         <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:400,color:"#2d2018",marginBottom:20}}>Add New Product</h3>
-        <div className="grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+        
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
           {inp("Product Name","name",{placeholder:"e.g. Kundan Jhumka Set"})}
           {inp("Price (₹)","price",{type:"number",placeholder:"1499"})}
           {inp("Original Price (₹)","originalPrice",{type:"number",placeholder:"Leave blank if no discount"})}
           {inp("Stock Quantity","stock",{type:"number",placeholder:"0"})}
+          
           <div>
-            <label style={{fontSize:11,fontWeight:700,color:"#b8a898",textTransform:"uppercase",letterSpacing:"0.8px",display:"block",marginBottom:5}}>Category{errors.category&&<span style={{color:"#e07070",marginLeft:6,fontWeight:400}}>{errors.category}</span>}</label>
+            <label style={{fontSize:11,fontWeight:700,color:"#b8a898",textTransform:"uppercase",letterSpacing:"0.8px",display:"block",marginBottom:5}}>
+              Category
+              {errors.category&&<span style={{color:"#e07070",marginLeft:6,fontWeight:400}}>{errors.category}</span>}
+            </label>
             <select className="am-inp" value={form.category} onChange={e=>set("category",e.target.value)}
               style={{width:"100%",padding:"11px 13px",border:`1.5px solid ${errors.category?"#e07070":"#e8e0d8"}`,borderRadius:10,fontSize:13,background:"#faf7f4",color:"#2d2018"}}>
               <option value="">Select category</option>
               {CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
             </select>
           </div>
+          
           <div>
             <label style={{fontSize:11,fontWeight:700,color:"#b8a898",textTransform:"uppercase",letterSpacing:"0.8px",display:"block",marginBottom:5}}>Occasion</label>
             <select className="am-inp" value={form.occasion} onChange={e=>set("occasion",e.target.value)}
@@ -486,23 +605,41 @@ function AddProductPage({showToast,onSave}){
               {OCCASIONS.map(o=><option key={o} value={o}>{o}</option>)}
             </select>
           </div>
+          
           {inp("Material","material",{placeholder:"e.g. Gold plated, Pearl"})}
           {inp("Variants (comma separated)","variants",{placeholder:"Gold, Silver, Rose Gold"})}
         </div>
+
+        {/* IMAGE UPLOAD */}
+        <div style={{marginBottom:14}}>
+          <label style={{fontSize:11,fontWeight:700,color:"#b8a898",textTransform:"uppercase",letterSpacing:"0.8px",display:"block",marginBottom:8}}>
+            Product Image
+            {errors.image&&<span style={{color:"#e07070",marginLeft:6,fontWeight:400}}>{errors.image}</span>}
+          </label>
+          <div
+            onClick={()=>fileInputRef.current?.click()}
+            style={{border:"2px dashed #e8e0d8",borderRadius:10,padding:"24px 16px",textAlign:"center",cursor:"pointer",background:"#faf7f4",transition:"all .2s"}}
+            onMouseEnter={e=>e.currentTarget.style.borderColor="#d4a574"}
+            onMouseLeave={e=>e.currentTarget.style.borderColor="#e8e0d8"}>
+            <input ref={fileInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImageFile(e.target.files[0])}/>
+            <div style={{fontSize:32,marginBottom:8}}>📸</div>
+            <p style={{fontSize:13,color:"#5a4a3e",marginBottom:4}}>Click to select image or drag & drop</p>
+            <p style={{fontSize:11,color:"#b8a898"}}>JPG, PNG, WebP (max 5MB)</p>
+            {imageFile&&<p style={{fontSize:12,color:"#4a8f4a",marginTop:8,fontWeight:600}}>✓ {imageFile.name}</p>}
+          </div>
+          {preview&&<img src={preview} alt="Preview" style={{width:100,height:100,objectFit:"cover",borderRadius:10,border:"1px solid #ede8e3",marginTop:12}} onError={()=>setPreview(null)}/>}
+        </div>
+
         <div style={{marginBottom:14}}>
           <label style={{fontSize:11,fontWeight:700,color:"#b8a898",textTransform:"uppercase",letterSpacing:"0.8px",display:"block",marginBottom:5}}>Description</label>
           <textarea className="am-inp" rows={3} placeholder="Describe the product…" value={form.description} onChange={e=>set("description",e.target.value)}
             style={{width:"100%",padding:"11px 13px",border:"1.5px solid #e8e0d8",borderRadius:10,fontSize:13,background:"#faf7f4",color:"#2d2018",resize:"vertical"}}/>
         </div>
+
         <div style={{marginBottom:14}}>
           {inp("Care Instructions","careInstructions",{placeholder:"e.g. Avoid water, store in dry pouch"})}
         </div>
-        <div style={{marginBottom:14}}>
-          <label style={{fontSize:11,fontWeight:700,color:"#b8a898",textTransform:"uppercase",letterSpacing:"0.8px",display:"block",marginBottom:5}}>Image URL</label>
-          <input className="am-inp" value={form.image} onChange={e=>{set("image",e.target.value);setPreview(e.target.value||null);}} placeholder="https://…"
-            style={{width:"100%",padding:"11px 13px",border:"1.5px solid #e8e0d8",borderRadius:10,fontSize:13,background:"#faf7f4",color:"#2d2018"}}/>
-          {preview&&<img src={preview} alt="Preview" style={{width:80,height:80,objectFit:"cover",borderRadius:10,border:"1px solid #ede8e3",marginTop:8}} onError={()=>setPreview(null)}/>}
-        </div>
+
         <div style={{marginBottom:20}}>
           <label style={{fontSize:11,fontWeight:700,color:"#b8a898",textTransform:"uppercase",letterSpacing:"0.8px",display:"block",marginBottom:8}}>Tags</label>
           <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
@@ -513,11 +650,13 @@ function AddProductPage({showToast,onSave}){
             ))}
           </div>
         </div>
+
         <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
           <button onClick={save} disabled={saving} className="am-btn-pri" style={{padding:"12px 24px",borderRadius:10,border:"none",cursor:"pointer",fontSize:12,fontWeight:600,letterSpacing:"0.8px",fontFamily:"inherit"}}>
             {saving?"Saving…":"Save Product →"}
           </button>
-          <button onClick={()=>{setForm(blank);setPreview(null);setErrors({});}} style={{padding:"12px 20px",borderRadius:10,border:"1px solid #e8e0d8",background:"none",cursor:"pointer",fontSize:12,color:"#b8a898",fontFamily:"inherit"}}>Clear</button>
+          <button onClick={()=>{setForm(blank);setPreview(null);setImageFile(null);setErrors({});}} style={{padding:"12px 20px",borderRadius:10,border:"1px solid #e8e0d8",background:"none",cursor:"pointer",fontSize:12,color:"#b8a898",fontFamily:"inherit"}}>Clear</button>
+          <button onClick={testSupabase} style={{padding:"12px 20px",borderRadius:10,border:"1px solid #d4a574",background:"#d4a574",color:"#fff",cursor:"pointer",fontSize:12,color:"#fff",fontFamily:"inherit",fontWeight:600}}>🔗 Test DB</button>
         </div>
       </div>
     </div>
