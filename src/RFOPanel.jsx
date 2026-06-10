@@ -1200,6 +1200,265 @@ function BulkImportPage({showToast,onImport}){
     </div>
   );
 }
+function BulkImportPage({showToast,onImport}){
+  const fileRef=useRef();
+  const[preview,setPreview]=useState([]);
+  const[dragging,setDragging]=useState(false);
+  const[importing,setImporting]=useState(false);
+  const[progress,setProgress]=useState(0);
+  const[errors,setErrors]=useState([]);
+  const[mode,setMode]=useState(null);
+  const[overrideCat,setOverrideCat]=useState("");
+  const[overrideOcc,setOverrideOcc]=useState("");
+  const[flagBest,setFlagBest]=useState(false);
+  const[flagTrend,setFlagTrend]=useState(false);
+  const[flagNew,setFlagNew]=useState(false);
+  const[usdRate,setUsdRate]=useState(83.5);
+  const[uploadLog,setUploadLog]=useState([]);
+
+  const log=(msg)=>{
+    console.log("[BulkImport]",msg);
+    setUploadLog(prev=>[...prev,msg].slice(-10));
+  };
+
+  const handleFile=(f)=>{
+    if(!f)return;
+    log(`File selected: ${f.name}`);
+    if(!f.name.toLowerCase().endsWith(".csv")){
+      showToast("Only .csv files allowed","error");
+      log("Error: File is not CSV");
+      return;
+    }
+    
+    const reader=new FileReader();
+    reader.onerror=()=>{
+      log("Error: Could not read file");
+      showToast("Could not read file","error");
+    };
+    reader.onload=e=>{
+      try{
+        log(`File size: ${e.target.result.length} bytes`);
+        const{headers,rows}=parseCSV(e.target.result);
+        log(`Headers: ${headers.join(", ")}`);
+        log(`Rows parsed: ${rows.length}`);
+        
+        const etsy=isEtsyCSV(headers);
+        log(`Format detected: ${etsy?"Etsy CSV":"RFO CSV"}`);
+        setMode(etsy?"etsy":"rfo");
+        
+        const parsed=rows.map((row,i)=>{
+          try{
+            return etsy?convertEtsyRow(row,i):convertRFORow(row,i);
+          }catch(err){
+            log(`Error parsing row ${i+2}: ${err.message}`);
+            return null;
+          }
+        }).filter(Boolean);
+        
+        log(`Products parsed successfully: ${parsed.length}`);
+        
+        const rowErrors=[];
+        parsed.forEach(row=>{
+          if(!row.name)rowErrors.push(`Row ${row._rowNum}: name missing`);
+          if(!row.price)rowErrors.push(`Row ${row._rowNum}: price missing`);
+          if(!row.category)rowErrors.push(`Row ${row._rowNum}: category missing`);
+        });
+        
+        setErrors(rowErrors);
+        setPreview(parsed);
+        showToast(`✓ ${parsed.length} rows parsed (${etsy?"Etsy CSV":"RFO format"})${rowErrors.length?` · ${rowErrors.length} warnings`:" — ready to upload!"}`);
+        log(`Ready: ${parsed.length} products, ${rowErrors.length} warnings`);
+      }catch(err){
+        log(`CSV parse error: ${err.message}`);
+        showToast("CSV parse error: "+err.message,"error");
+      }
+    };
+    reader.readAsText(f);
+  };
+
+  const getReadyRows=()=>preview.map(({_rowNum,_source,...row})=>({
+    ...row,
+    price:mode==="etsy"?Math.round(row.price*(usdRate/USD_TO_INR)):row.price,
+    category:overrideCat||row.category,
+    occasion:overrideOcc||row.occasion,
+    isBestseller:flagBest||row.isBestseller,
+    isTrending:flagTrend||row.isTrending,
+    isNew:flagNew||row.isNew,
+  }));
+
+  const doImport=async()=>{
+    if(!preview.length){
+      showToast("No products to upload","error");
+      return;
+    }
+    
+    log("Starting upload...");
+    setImporting(true);
+    setProgress(0);
+    setUploadLog([]);
+    
+    const rows=getReadyRows();
+    const BATCH=25;
+    let successful=0,failed=0;
+    
+    for(let i=0;i<rows.length;i+=BATCH){
+      const batch=rows.slice(i,i+BATCH);
+      const batchNum=Math.floor(i/BATCH)+1;
+      const totalBatches=Math.ceil(rows.length/BATCH);
+      
+      log(`Batch ${batchNum}/${totalBatches}: Uploading ${batch.length} items...`);
+      
+      try{
+        const result=await supabaseQuery(SUPABASE_TABLE,"POST",batch);
+        log(`Batch ${batchNum}: Success`);
+        successful+=batch.length;
+      }catch(err){
+        log(`Batch ${batchNum}: Error - ${err.message}`);
+        // Retry individual items
+        for(const row of batch){
+          try{
+            await supabaseQuery(SUPABASE_TABLE,"POST",[row]);
+            successful++;
+            log(`  • ${row.name}: ✓`);
+          }catch(itemErr){
+            failed++;
+            log(`  • ${row.name}: ✗ ${itemErr.message}`);
+          }
+        }
+      }
+      
+      const newProgress=Math.min(100,Math.round(((i+BATCH)/rows.length)*100));
+      setProgress(newProgress);
+      log(`Progress: ${newProgress}%`);
+    }
+    
+    setImporting(false);
+    log(`Upload complete: ${successful} successful, ${failed} failed`);
+    
+    if(failed>0){
+      showToast(`✓ ${successful} uploaded · ✕ ${failed} failed`,"error");
+    }else{
+      showToast(`✓ All ${successful} products uploaded!`,"success");
+      onImport(rows.slice(0,successful));
+    }
+  };
+
+  return(
+    <div style={{maxWidth:920,margin:"0 auto",animation:"fadeIn .3s ease"}}>
+      <div className="am-card">
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12,marginBottom:20}}>
+          <div>
+            <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:400,color:"#2d2018",marginBottom:4}}>Bulk Upload</h3>
+            <p style={{fontSize:12,color:"#b8a898"}}>Drop CSV file — auto-detects Etsy or RFO format</p>
+          </div>
+          {mode&&<span style={{fontSize:11,fontWeight:700,padding:"5px 14px",borderRadius:20,background:mode==="etsy"?"#e8f0fd":"#e8f5e8",color:mode==="etsy"?"#5a7fc4":"#4a8f4a",letterSpacing:"0.8px",textTransform:"uppercase",border:`1px solid ${mode==="etsy"?"#c4d4f0":"#b0d4b0"}`}}>{mode==="etsy"?"🛍 Etsy CSV":"✓ RFO CSV"}</span>}
+        </div>
+
+        {/* Drop zone */}
+        <div
+          onDragOver={e=>{e.preventDefault();setDragging(true);}}
+          onDragLeave={()=>setDragging(false)}
+          onDrop={e=>{e.preventDefault();setDragging(false);handleFile(e.dataTransfer.files[0]);}}
+          onClick={()=>fileRef.current?.click()}
+          style={{border:`2px dashed ${dragging?"#d4a574":"#e8e0d8"}`,borderRadius:14,padding:"36px 20px",textAlign:"center",cursor:"pointer",background:dragging?"#fdf5ee":"#faf7f4",transition:"all .2s",marginBottom:20}}>
+          <input ref={fileRef} type="file" accept=".csv" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
+          <div style={{fontSize:40,marginBottom:10}}>📄</div>
+          <p style={{fontSize:14,color:"#8a7a6e"}}>Drop CSV here or <strong style={{color:"#d4a574"}}>click to browse</strong></p>
+          <p style={{fontSize:11,color:"#c8b8a8",marginTop:6}}>Supports: Etsy CSV (TITLE, PRICE, TAGS) or RFO format</p>
+        </div>
+
+        {/* Upload log */}
+        {uploadLog.length>0&&(
+          <div style={{background:"#faf7f4",border:"1px solid #ede8e3",borderRadius:10,padding:12,marginBottom:16,maxHeight:120,overflowY:"auto",fontSize:11,color:"#8a7a6e",fontFamily:"'Courier New',monospace",lineHeight:1.6}}>
+            {uploadLog.map((l,i)=><div key={i}>{l}</div>)}
+          </div>
+        )}
+
+        {/* Overrides */}
+        {preview.length>0&&(
+          <div style={{background:"#faf7f4",border:"1px solid #ede8e3",borderRadius:12,padding:"16px",marginBottom:16}}>
+            <p style={{fontSize:11,fontWeight:700,color:"#d4a574",letterSpacing:"1px",textTransform:"uppercase",marginBottom:12}}>⚙ Override Options</p>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:12}}>
+              <div>
+                <label style={{fontSize:11,color:"#b8a898",fontWeight:700,letterSpacing:"0.8px",textTransform:"uppercase",display:"block",marginBottom:4}}>Category</label>
+                <select className="am-inp" value={overrideCat} onChange={e=>setOverrideCat(e.target.value)} style={{width:"100%",padding:"9px 10px",border:"1.5px solid #e8e0d8",borderRadius:8,fontSize:12,background:"#fff",color:"#2d2018"}}>
+                  <option value="">Auto-detect</option>
+                  {CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{fontSize:11,color:"#b8a898",fontWeight:700,letterSpacing:"0.8px",textTransform:"uppercase",display:"block",marginBottom:4}}>Occasion</label>
+                <select className="am-inp" value={overrideOcc} onChange={e=>setOverrideOcc(e.target.value)} style={{width:"100%",padding:"9px 10px",border:"1.5px solid #e8e0d8",borderRadius:8,fontSize:12,background:"#fff",color:"#2d2018"}}>
+                  <option value="">Auto-detect</option>
+                  {OCCASIONS.map(o=><option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+              {mode==="etsy"&&<div>
+                <label style={{fontSize:11,color:"#b8a898",fontWeight:700,letterSpacing:"0.8px",textTransform:"uppercase",display:"block",marginBottom:4}}>USD → INR</label>
+                <input type="number" className="am-inp" value={usdRate} onChange={e=>setUsdRate(Number(e.target.value))} style={{width:"100%",padding:"9px 10px",border:"1.5px solid #e8e0d8",borderRadius:8,fontSize:12,background:"#fff",color:"#2d2018"}}/>
+              </div>}
+            </div>
+            <div style={{display:"flex",gap:18,flexWrap:"wrap"}}>
+              {[[flagBest,setFlagBest,"⭐ All Bestseller"],[flagTrend,setFlagTrend,"🔥 All Trending"],[flagNew,setFlagNew,"✨ All New"]].map(([val,setter,lbl])=>(
+                <label key={lbl} style={{display:"flex",alignItems:"center",gap:7,fontSize:13,cursor:"pointer",color:"#5a4a3e"}}>
+                  <input type="checkbox" checked={val} onChange={e=>setter(e.target.checked)} style={{accentColor:"#d4a574",width:14,height:14}}/>{lbl}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {errors.length>0&&(
+          <div style={{background:"#fde8e8",border:"1px solid #f0c0c0",borderRadius:10,padding:"12px 14px",marginBottom:14}}>
+            <p style={{color:"#c44a4a",fontSize:12,fontWeight:700,marginBottom:6}}>⚠ Validation ({errors.length})</p>
+            {errors.slice(0,5).map((e,i)=><p key={i} style={{color:"#d07070",fontSize:11}}>{e}</p>)}
+            {errors.length>5&&<p style={{color:"#c8b8a8",fontSize:11,marginTop:4}}>+{errors.length-5} more</p>}
+          </div>
+        )}
+
+        {importing&&(
+          <div style={{marginBottom:14}}>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#b8a898",marginBottom:6}}><span>Uploading to Supabase…</span><span>{progress}%</span></div>
+            <div style={{height:6,background:"#f0ebe5",borderRadius:4}}><div style={{height:"100%",background:"linear-gradient(90deg,#d4a574,#b07a5a)",width:`${progress}%`,borderRadius:4,transition:"width .3s"}}/></div>
+          </div>
+        )}
+
+        {preview.length>0&&(
+          <>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:10}}>
+              <span style={{fontSize:13,color:"#5a4a3e",fontWeight:600}}>{preview.length} products ready</span>
+              <button onClick={doImport} disabled={importing} className="am-btn-pri"
+                style={{padding:"11px 22px",borderRadius:10,border:"none",cursor:importing?"not-allowed":"pointer",fontSize:12,fontWeight:600,letterSpacing:"0.8px",fontFamily:"inherit",opacity:importing?0.6:1}}>
+                {importing?`Uploading… ${progress}%`:`🚀 Upload ${preview.length} Products`}
+              </button>
+            </div>
+            <div style={{overflowX:"auto",borderRadius:10,border:"1px solid #ede8e3"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",minWidth:700}}>
+                <thead><tr style={{background:"#faf7f4"}}>
+                  {["#","Name","Category","Price","Stock"].map(h=>(
+                    <th key={h} style={{fontSize:10,color:"#c8b8a8",fontWeight:700,textAlign:"left",padding:"9px 12px",borderBottom:"1px solid #ede8e3",textTransform:"uppercase",whiteSpace:"nowrap"}}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {preview.slice(0,20).map((p,i)=>(
+                    <tr key={i} style={{borderBottom:"1px solid #f5f0ea"}}>
+                      <td style={{padding:"8px 12px",fontSize:11,color:"#c8b8a8"}}>{p._rowNum}</td>
+                      <td style={{padding:"8px 12px",fontSize:12,color:"#2d2018"}}>{p.name}</td>
+                      <td style={{padding:"8px 12px"}}><span style={{fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:20,background:`${CAT_COLORS[p.category]||"#d4a574"}18`,color:CAT_COLORS[p.category]||"#d4a574"}}>{p.category}</span></td>
+                      <td style={{padding:"8px 12px",fontSize:12,color:"#b07a5a",fontWeight:600}}>{formatINR(p.price)}</td>
+                      <td style={{padding:"8px 12px",fontSize:12,color:p.stock>0?"#4a8f4a":"#c44a4a"}}>{p.stock}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {preview.length>20&&<p style={{padding:"8px 12px",fontSize:11,color:"#c8b8a8",textAlign:"center",borderTop:"1px solid #ede8e3"}}>+{preview.length-20} more products</p>}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ── Orders Page ───────────────────────────────
 function OrdersPage({showToast}){
@@ -1211,11 +1470,7 @@ function OrdersPage({showToast}){
     supabaseQuery("orders?order=created_at.desc&limit=100")
       .then(data=>{setOrders(Array.isArray(data)?data:[]);setLoading(false);})
       .catch(()=>{
-        setOrders([
-          {id:"#1041",customer:"Priya Sharma",items:"Bridal Kundan Set × 1",amount:8500,status:"new",date:"Jun 5"},
-          {id:"#1040",customer:"Meera Kapoor",items:"Gold Payal × 2",amount:1798,status:"processing",date:"Jun 5"},
-          {id:"#1039",customer:"Sunita Patel",items:"Pearl Jhumka × 1",amount:2200,status:"delivered",date:"Jun 4"},
-        ]);
+       setOrders([]);
         setLoading(false);
       });
   },[]);
