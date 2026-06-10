@@ -636,10 +636,7 @@ function AddProductPage({showToast,onSave}){
             style={{width:"100%",padding:"11px 13px",border:"1.5px solid #e8e0d8",borderRadius:10,fontSize:13,background:"#faf7f4",color:"#2d2018",resize:"vertical"}}/>
         </div>
 
-        <div style={{marginBottom:14}}>
-          {inp("Care Instructions","careInstructions",{placeholder:"e.g. Avoid water, store in dry pouch"})}
-        </div>
-
+      
         <div style={{marginBottom:20}}>
           <label style={{fontSize:11,fontWeight:700,color:"#b8a898",textTransform:"uppercase",letterSpacing:"0.8px",display:"block",marginBottom:8}}>Tags</label>
           <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
