@@ -439,7 +439,7 @@ function ProductsPage({products,loading,showToast,setProducts}){
 
 // ── Add Product Page ──────────────────────────
 function AddProductPage({showToast,onSave}){
-  const blank={name:"",price:"",originalPrice:"",category:"",occasion:"",stock:"",material:"",description:"",careInstructions:"",image:"",variants:"",inStock:true,isBestseller:false,isTrending:false,isNew:false,onSale:false};
+  const blank={name:"",price:"",originalPrice:"",category:"",occasion:"",stock:"",material:"",description:"",image:"",variants:"",inStock:true,isBestseller:false,isTrending:false,isNew:false,onSale:false};
   const[form,setForm]=useState(blank);
   const[errors,setErrors]=useState({});
   const[saving,setSaving]=useState(false);
