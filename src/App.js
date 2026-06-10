@@ -193,21 +193,21 @@ const PRODUCTS = [
 /* ─────────────────────────────────────────
    CART STATE
    ───────────────────────────────────────── */
-let cart = JSON.parse(localStorage.getItem('luxCart') || '[]');
-let wishlist = JSON.parse(localStorage.getItem('luxWishlist') || '[]');
+let cart = [];
+let wishlist = [];
 
-function saveCart() { localStorage.setItem('luxCart', JSON.stringify(cart)); }
-function saveWishlist() { localStorage.setItem('luxWishlist', JSON.stringify(wishlist)); }
+// Safe localStorage access (SSR / build safe)
+function loadFromStorage(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key) || 'null') || fallback; } catch { return fallback; }
+}
+function saveCart() { try { localStorage.setItem('luxCart', JSON.stringify(cart)); } catch {} }
+function saveWishlist() { try { localStorage.setItem('luxWishlist', JSON.stringify(wishlist)); } catch {} }
 
 function addToCart(productId) {
   const product = PRODUCTS.find(p => p.id === productId);
   if (!product) return;
   const existing = cart.find(i => i.id === productId);
-  if (existing) {
-    existing.qty += 1;
-  } else {
-    cart.push({ ...product, qty: 1 });
-  }
+  if (existing) { existing.qty += 1; } else { cart.push({ ...product, qty: 1 }); }
   saveCart();
   updateCartUI();
   showToast(`${product.name} added to cart`);
@@ -224,10 +224,7 @@ function updateQty(productId, delta) {
   const item = cart.find(i => i.id === productId);
   if (!item) return;
   item.qty += delta;
-  if (item.qty < 1) {
-    removeFromCart(productId);
-    return;
-  }
+  if (item.qty < 1) { removeFromCart(productId); return; }
   saveCart();
   updateCartUI();
   renderCartItems();
@@ -235,11 +232,7 @@ function updateQty(productId, delta) {
 
 function toggleWishlist(productId) {
   const idx = wishlist.indexOf(productId);
-  if (idx === -1) {
-    wishlist.push(productId);
-  } else {
-    wishlist.splice(idx, 1);
-  }
+  if (idx === -1) { wishlist.push(productId); } else { wishlist.splice(idx, 1); }
   saveWishlist();
   document.querySelectorAll(`.wishlist-btn[data-id="${productId}"]`).forEach(btn => {
     btn.classList.toggle('active', wishlist.includes(productId));
@@ -266,7 +259,6 @@ function updateCartUI() {
 function showToast(message, type = 'success') {
   const existing = document.querySelector('.lux-toast');
   if (existing) existing.remove();
-
   const toast = document.createElement('div');
   toast.className = 'lux-toast';
   toast.innerHTML = `<span>${type === 'success' ? '✓' : 'ℹ'}</span> ${message}`;
@@ -361,17 +353,14 @@ let heroInterval;
 function renderHeroSlides() {
   const hero = document.querySelector('.hero');
   if (!hero) return;
-
   HERO_SLIDES.forEach((slide, i) => {
     const bg = document.createElement('div');
     bg.className = `hero-bg ${i === 0 ? 'active' : 'inactive'}`;
     bg.style.backgroundImage = `url('${slide.bg}')`;
     hero.insertBefore(bg, hero.firstChild);
   });
-
   const overlay = hero.querySelector('.hero-overlay');
   if (overlay) updateHeroOverlay(overlay, HERO_SLIDES[0]);
-
   const dotsWrap = hero.querySelector('.hero-dots');
   if (dotsWrap) {
     dotsWrap.innerHTML = HERO_SLIDES.map((_, i) =>
@@ -399,9 +388,7 @@ function goToSlide(idx) {
   const bgs = document.querySelectorAll('.hero-bg');
   const dots = document.querySelectorAll('.hero-dots .dot');
   const overlay = document.querySelector('.hero-overlay');
-  bgs.forEach((bg, i) => {
-    bg.className = `hero-bg ${i === idx ? 'active' : 'inactive'}`;
-  });
+  bgs.forEach((bg, i) => { bg.className = `hero-bg ${i === idx ? 'active' : 'inactive'}`; });
   dots.forEach((d, i) => d.classList.toggle('active', i === idx));
   if (overlay) updateHeroOverlay(overlay, HERO_SLIDES[idx]);
   heroIndex = idx;
@@ -414,21 +401,18 @@ function nextSlide() {
 }
 
 /* ─────────────────────────────────────────
-   CURRENCY SELECTOR (injected into navbar)
+   CURRENCY SELECTOR
    ───────────────────────────────────────── */
 function initCurrencySelector() {
   const actions = document.querySelector('.nav-actions');
   if (!actions) return;
-
   const wrapper = document.createElement('div');
   wrapper.className = 'currency-wrapper';
   wrapper.style.cssText = `position:relative;`;
-
   const btn = document.createElement('button');
   btn.className = 'nav-icon currency-btn';
   btn.innerHTML = `<span class="currency-label">${currentCurrency}</span> <span style="font-size:9px;opacity:0.6">▾</span>`;
   btn.title = 'Select currency';
-
   const dropdown = document.createElement('div');
   dropdown.className = 'currency-dropdown';
   dropdown.style.cssText = `
@@ -438,15 +422,13 @@ function initCurrencySelector() {
     box-shadow:var(--shadow-3d); padding:6px 0;
     max-height:320px; overflow-y:auto;
   `;
-
-  Object.entries(CURRENCIES).forEach(([code, { symbol, label }]) => {
+  Object.entries(CURRENCIES).forEach(([code, { symbol }]) => {
     const item = document.createElement('button');
     item.style.cssText = `
       display:flex; align-items:center; justify-content:space-between;
       width:100%; padding:9px 16px; background:none; border:none;
       font-family:'DM Sans',sans-serif; font-size:12px; cursor:pointer;
-      color:var(--text-muted); letter-spacing:1px; transition:all 0.15s;
-      gap:10px;
+      color:var(--text-muted); letter-spacing:1px; transition:all 0.15s; gap:10px;
     `;
     item.innerHTML = `<span style="font-weight:600;color:var(--text)">${code}</span><span style="opacity:0.6">${symbol}</span>`;
     item.addEventListener('mouseenter', () => item.style.background = 'var(--cream)');
@@ -460,13 +442,11 @@ function initCurrencySelector() {
     });
     dropdown.appendChild(item);
   });
-
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
     dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
   });
   document.addEventListener('click', () => { dropdown.style.display = 'none'; });
-
   wrapper.appendChild(btn);
   wrapper.appendChild(dropdown);
   actions.insertBefore(wrapper, actions.firstChild);
@@ -486,11 +466,9 @@ function refreshPrices() {
 function buildProductCard(product) {
   const isWished = wishlist.includes(product.id);
   const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
-
   const card = document.createElement('div');
   card.className = 'product-card';
   card.dataset.id = product.id;
-
   card.innerHTML = `
     <div class="product-img-wrap">
       <img src="${product.img}" alt="${product.name}" loading="lazy">
@@ -509,7 +487,6 @@ function buildProductCard(product) {
       <button class="btn-add-cart" data-id="${product.id}">Add to Cart</button>
     </div>
   `;
-
   card.querySelector('.wishlist-btn').addEventListener('click', (e) => {
     e.stopPropagation();
     toggleWishlist(product.id);
@@ -522,7 +499,6 @@ function buildProductCard(product) {
     addToCart(product.id);
     setTimeout(() => { btn.classList.remove('added'); btn.textContent = 'Add to Cart'; }, 1800);
   });
-
   return card;
 }
 
@@ -533,20 +509,18 @@ function renderTrending() {
   const grid = document.getElementById('trending-grid');
   if (!grid) return;
   grid.innerHTML = '';
-  PRODUCTS.filter(p => p.section === 'trending')
-    .forEach(p => grid.appendChild(buildProductCard(p)));
+  PRODUCTS.filter(p => p.section === 'trending').forEach(p => grid.appendChild(buildProductCard(p)));
 }
 
 function renderBestsellers() {
   const grid = document.getElementById('bestsellers-grid');
   if (!grid) return;
   grid.innerHTML = '';
-  PRODUCTS.filter(p => p.section === 'bestseller')
-    .forEach(p => grid.appendChild(buildProductCard(p)));
+  PRODUCTS.filter(p => p.section === 'bestseller').forEach(p => grid.appendChild(buildProductCard(p)));
 }
 
 /* ─────────────────────────────────────────
-   SHOP BY OCCASION SECTION (inject)
+   SHOP BY OCCASION SECTION
    ───────────────────────────────────────── */
 const OCCASIONS = [
   { name: 'Bridal',      emoji: '💍', img: 'https://images.unsplash.com/photo-1601121141461-9d6647bef0e3?w=500&q=80' },
@@ -564,7 +538,6 @@ function buildOccasionSection() {
   section.className = 'categories-section occasion-section';
   section.id = 'occasion';
   section.style.background = 'var(--bg2)';
-
   section.innerHTML = `
     <p class="section-subtitle">Dressed for Every Moment</p>
     <h2 class="section-title">Shop by Occasion</h2>
@@ -574,15 +547,10 @@ function buildOccasionSection() {
       <div class="section-divider-line"></div>
     </div>
     <div class="occasion-grid" style="
-      display:grid;
-      grid-template-columns:repeat(8,1fr);
-      gap:14px;
-      max-width:1240px;
-      margin:0 auto;
-      padding:0 24px;
+      display:grid; grid-template-columns:repeat(8,1fr);
+      gap:14px; max-width:1240px; margin:0 auto; padding:0 24px;
     "></div>
   `;
-
   const grid = section.querySelector('.occasion-grid');
   OCCASIONS.forEach(occ => {
     const card = document.createElement('a');
@@ -590,7 +558,8 @@ function buildOccasionSection() {
     card.className = 'occasion-card';
     card.style.cssText = `
       display:flex; flex-direction:column; align-items:center; gap:12px;
-      cursor:pointer; text-decoration:none; transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      cursor:pointer; text-decoration:none;
+      transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
     `;
     card.innerHTML = `
       <div style="
@@ -608,8 +577,7 @@ function buildOccasionSection() {
         <div style="
           position:absolute; inset:0; background:rgba(176,122,90,0);
           display:flex; align-items:center; justify-content:center;
-          transition:background 0.3s;
-          font-size:24px; opacity:0;
+          transition:background 0.3s; font-size:24px; opacity:0;
         " class="occ-emoji">${occ.emoji}</div>
       </div>
       <span style="
@@ -645,7 +613,6 @@ function buildOccasionSection() {
     });
     grid.appendChild(card);
   });
-
   return section;
 }
 
@@ -665,13 +632,13 @@ function filterByOccasion(occasion) {
 }
 
 /* ─────────────────────────────────────────
-   CATEGORIES SECTION DATA (inject img cards)
+   CATEGORIES SECTION
    ───────────────────────────────────────── */
 const CATEGORY_DATA = [
-  { name: 'Necklaces',  img: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&q=80' },
-  { name: 'Earrings',   img: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=500&q=80' },
-  { name: 'Bangles',    img: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=500&q=80' },
-  { name: 'Rings',      img: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500&q=80' },
+  { name: 'Necklaces', img: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&q=80' },
+  { name: 'Earrings',  img: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=500&q=80' },
+  { name: 'Bangles',   img: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=500&q=80' },
+  { name: 'Rings',     img: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500&q=80' },
 ];
 
 function populateCategoriesGrid() {
@@ -708,10 +675,8 @@ function populateCategoriesGrid() {
 function renderCartItems() {
   const drawer = document.querySelector('.cart-drawer');
   if (!drawer) return;
-
-  let body = drawer.querySelector('.cart-items-body');
+  const body = drawer.querySelector('.cart-items-body');
   if (!body) return;
-
   if (cart.length === 0) {
     body.innerHTML = `
       <div class="cart-empty" style="padding:80px 24px;text-align:center;color:var(--text-muted);">
@@ -722,7 +687,6 @@ function renderCartItems() {
     updateCartFooter(drawer);
     return;
   }
-
   body.innerHTML = cart.map(item => `
     <div class="cart-item" data-id="${item.id}">
       <img src="${item.img}" alt="${item.name}">
@@ -739,26 +703,19 @@ function renderCartItems() {
       <button class="cart-item-remove" data-id="${item.id}" title="Remove">×</button>
     </div>
   `).join('');
-
   body.querySelectorAll('.qty-inc').forEach(b => b.addEventListener('click', () => updateQty(+b.dataset.id, 1)));
   body.querySelectorAll('.qty-dec').forEach(b => b.addEventListener('click', () => updateQty(+b.dataset.id, -1)));
   body.querySelectorAll('.cart-item-remove').forEach(b => b.addEventListener('click', () => removeFromCart(+b.dataset.id)));
-
   updateCartFooter(drawer);
 }
 
 function updateCartFooter(drawer) {
-  let footer = drawer.querySelector('.cart-footer');
+  const footer = drawer.querySelector('.cart-footer');
   if (!footer) return;
-
   const totalINR = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const totalOrigINR = cart.reduce((s, i) => s + i.originalPrice * i.qty, 0);
   const savings = totalOrigINR - totalINR;
-
-  if (cart.length === 0) {
-    footer.style.display = 'none';
-    return;
-  }
+  if (cart.length === 0) { footer.style.display = 'none'; return; }
   footer.style.display = 'block';
   footer.innerHTML = `
     ${savings > 0 ? `<div class="cart-savings">🎉 You're saving ${formatINR(savings)} on this order!</div>` : ''}
@@ -766,8 +723,8 @@ function updateCartFooter(drawer) {
       <span>Total</span>
       <strong data-inr-price="${totalINR}">${convertPrice(totalINR)}</strong>
     </div>
-    <button class="btn-checkout" onclick="showCheckoutForm()">Proceed to Checkout</button>
-    <button class="btn-ghost" onclick="closeCart()">Continue Shopping</button>
+    <button class="btn-checkout" onclick="window.showCheckoutForm()">Proceed to Checkout</button>
+    <button class="btn-ghost" onclick="window.closeCart()">Continue Shopping</button>
   `;
 }
 
@@ -778,7 +735,7 @@ function buildCartDrawer() {
       existing.innerHTML = `
         <div class="cart-header">
           <h3>Your Cart</h3>
-          <button class="cart-close" onclick="closeCart()">×</button>
+          <button class="cart-close" onclick="window.closeCart()">×</button>
         </div>
         <div class="cart-items-body" style="overflow-y:auto;flex:1;"></div>
         <div class="cart-footer" style="display:none;padding:20px 24px;border-top:1px solid var(--border-light);background:linear-gradient(135deg,var(--cream) 0%,#f9f4eb 100%);"></div>
@@ -787,22 +744,19 @@ function buildCartDrawer() {
     renderCartItems();
     return;
   }
-
   const overlay = document.createElement('div');
   overlay.className = 'cart-overlay';
   overlay.addEventListener('click', closeCart);
-
   const drawer = document.createElement('div');
   drawer.className = 'cart-drawer';
   drawer.innerHTML = `
     <div class="cart-header">
       <h3>Your Cart</h3>
-      <button class="cart-close" onclick="closeCart()">×</button>
+      <button class="cart-close" onclick="window.closeCart()">×</button>
     </div>
     <div class="cart-items-body" style="overflow-y:auto;flex:1;"></div>
     <div class="cart-footer" style="display:none;padding:20px 24px;border-top:1px solid var(--border-light);background:linear-gradient(135deg,var(--cream) 0%,#f9f4eb 100%);"></div>
   `;
-
   document.body.appendChild(overlay);
   document.body.appendChild(drawer);
   renderCartItems();
@@ -830,7 +784,7 @@ function showCheckoutForm() {
   drawer.innerHTML = `
     <div class="cart-header">
       <h3>Checkout</h3>
-      <button class="cart-close" onclick="closeCart()">×</button>
+      <button class="cart-close" onclick="window.closeCart()">×</button>
     </div>
     <div class="checkout-form" style="padding:22px 24px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:12px;">
       <div class="order-summary">
@@ -852,7 +806,7 @@ function showCheckoutForm() {
       <input type="text" placeholder="Complete Address" autocomplete="street-address">
       <input type="text" placeholder="City" autocomplete="address-level2">
       <input type="text" placeholder="PIN Code" autocomplete="postal-code">
-      <button class="btn-checkout" onclick="placeOrder()">Place Order</button>
+      <button class="btn-checkout" onclick="window.placeOrder()">Place Order</button>
       <button class="btn-ghost" onclick="buildCartDrawer();openCart()">← Back to Cart</button>
     </div>
   `;
@@ -876,7 +830,7 @@ function placeOrder() {
         <p style="color:var(--text-muted);font-size:13px;line-height:1.8;margin-bottom:8px;">Thank you for your order.</p>
         <p style="color:var(--primary);font-size:14px;font-weight:600;margin-bottom:24px;">Total: ${total}</p>
         <p style="color:var(--text-light);font-size:11px;letter-spacing:2px;text-transform:uppercase;">You'll receive a confirmation shortly</p>
-        <button class="btn-checkout" style="margin-top:28px;max-width:200px;" onclick="closeCart()">Continue Shopping</button>
+        <button class="btn-checkout" style="margin-top:28px;max-width:200px;" onclick="window.closeCart()">Continue Shopping</button>
       </div>
     `;
   }
@@ -884,7 +838,7 @@ function placeOrder() {
 }
 
 /* ─────────────────────────────────────────
-   NAVBAR INTERACTIONS
+   NAVBAR
    ───────────────────────────────────────── */
 function initNavbar() {
   const hamburger = document.querySelector('.hamburger');
@@ -901,41 +855,31 @@ function initNavbar() {
       });
     });
   }
-
-  // Cart icon
   document.querySelectorAll('.cart-icon, .nav-icon[data-action="cart"]').forEach(btn => {
     btn.addEventListener('click', openCart);
   });
-
-  // Active nav highlight on scroll
   const sections = ['home', 'occasion', 'categories', 'trending', 'bestsellers', 'about', 'contact'];
   window.addEventListener('scroll', () => {
     const scrollY = window.scrollY + 120;
-    const links = document.querySelectorAll('.nav-links a[href]');
-    links.forEach(link => {
-      const href = link.getAttribute('href');
-      const id = href?.replace('#', '');
+    document.querySelectorAll('.nav-links a[href]').forEach(link => {
+      const id = link.getAttribute('href')?.replace('#', '');
       const el = document.getElementById(id);
       if (el) {
-        const top = el.offsetTop;
-        const bottom = top + el.offsetHeight;
-        link.classList.toggle('active', scrollY >= top && scrollY < bottom);
+        link.classList.toggle('active', scrollY >= el.offsetTop && scrollY < el.offsetTop + el.offsetHeight);
       }
     });
   }, { passive: true });
 }
 
 /* ─────────────────────────────────────────
-   SHOP PAGE LOGIC (if rendered)
+   SHOP PAGE
    ───────────────────────────────────────── */
 function initShopPage() {
   const searchEl = document.querySelector('.shop-search');
   const sortEl = document.querySelector('.shop-sort');
   const shopGrid = document.getElementById('shop-grid');
   if (!shopGrid) return;
-
   let activeCategory = 'All';
-
   function renderShopGrid(products) {
     shopGrid.innerHTML = '';
     products.forEach(p => shopGrid.appendChild(buildProductCard(p)));
@@ -943,7 +887,6 @@ function initShopPage() {
       shopGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text-muted);font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic;">No jewels found</div>`;
     }
   }
-
   function getFilteredProducts() {
     let list = [...PRODUCTS];
     if (activeCategory !== 'All') list = list.filter(p => p.category === activeCategory);
@@ -955,7 +898,6 @@ function initShopPage() {
     else if (sort === 'discount') list.sort((a,b) => (b.originalPrice - b.price) - (a.originalPrice - a.price));
     return list;
   }
-
   document.querySelectorAll('.cat-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
@@ -964,7 +906,6 @@ function initShopPage() {
       renderShopGrid(getFilteredProducts());
     });
   });
-
   searchEl?.addEventListener('input', () => renderShopGrid(getFilteredProducts()));
   sortEl?.addEventListener('change', () => renderShopGrid(getFilteredProducts()));
   renderShopGrid(getFilteredProducts());
@@ -994,21 +935,13 @@ function getChatReply(input) {
 function initChatbot() {
   const chatBtn = document.querySelector('.chat-float-btn');
   if (!chatBtn) return;
-
   let chatOpen = false;
   let chatContainer = null;
-
   chatBtn.addEventListener('click', () => {
     if (chatOpen && chatContainer) {
-      chatContainer.remove();
-      chatContainer = null;
-      chatOpen = false;
-      chatBtn.textContent = '💬';
-      return;
+      chatContainer.remove(); chatContainer = null; chatOpen = false; chatBtn.textContent = '💬'; return;
     }
-    chatOpen = true;
-    chatBtn.textContent = '✕';
-
+    chatOpen = true; chatBtn.textContent = '✕';
     chatContainer = document.createElement('div');
     chatContainer.className = 'chatbot-container';
     chatContainer.innerHTML = `
@@ -1025,44 +958,33 @@ function initChatbot() {
       </div>
     `;
     document.body.appendChild(chatContainer);
-
     const body = chatContainer.querySelector('#chatBody');
     const input = chatContainer.querySelector('#chatInput');
     const send = chatContainer.querySelector('#chatSend');
-
     function sendMessage() {
       const text = input.value.trim();
       if (!text) return;
       input.value = '';
-
       const userMsg = document.createElement('div');
-      userMsg.className = 'msg user';
-      userMsg.textContent = text;
+      userMsg.className = 'msg user'; userMsg.textContent = text;
       body.appendChild(userMsg);
-
       const typing = document.createElement('div');
-      typing.className = 'msg bot typing';
-      typing.textContent = '…';
-      body.appendChild(typing);
-      body.scrollTop = body.scrollHeight;
-
+      typing.className = 'msg bot typing'; typing.textContent = '…';
+      body.appendChild(typing); body.scrollTop = body.scrollHeight;
       setTimeout(() => {
         typing.remove();
         const botMsg = document.createElement('div');
-        botMsg.className = 'msg bot';
-        botMsg.textContent = getChatReply(text);
-        body.appendChild(botMsg);
-        body.scrollTop = body.scrollHeight;
+        botMsg.className = 'msg bot'; botMsg.textContent = getChatReply(text);
+        body.appendChild(botMsg); body.scrollTop = body.scrollHeight;
       }, 800 + Math.random() * 400);
     }
-
     send.addEventListener('click', sendMessage);
     input.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
   });
 }
 
 /* ─────────────────────────────────────────
-   SCROLL-REVEAL (Intersection Observer)
+   SCROLL REVEAL
    ───────────────────────────────────────── */
 function initScrollReveal() {
   if (!('IntersectionObserver' in window)) return;
@@ -1078,7 +1000,6 @@ function initScrollReveal() {
       }
     });
   }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-
   targets.forEach(el => {
     el.style.opacity = '0';
     el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
@@ -1087,7 +1008,7 @@ function initScrollReveal() {
 }
 
 /* ─────────────────────────────────────────
-   3D TILT EFFECT (premium touch)
+   3D TILT EFFECT
    ───────────────────────────────────────── */
 function initTiltEffect() {
   const cards = document.querySelectorAll('.product-card, .category-card, .cat-square-card, .testimonial-card');
@@ -1111,21 +1032,17 @@ function initTiltEffect() {
 }
 
 /* ─────────────────────────────────────────
-   INJECT BESTSELLERS SECTION into DOM
+   INJECT BESTSELLERS SECTION
    ───────────────────────────────────────── */
 function injectBestsellersSection() {
   if (document.getElementById('bestsellers')) return;
-
-  // Find trending section to insert after
   const trendingSection = document.getElementById('trending')
     || document.querySelector('.featured-section')
     || document.querySelector('[id*="trend"]');
-
   const section = document.createElement('section');
   section.id = 'bestsellers';
   section.className = 'featured-section bestsellers-main-section';
   section.style.background = 'var(--bg)';
-
   section.innerHTML = `
     <p class="section-subtitle">Loved by Thousands</p>
     <h2 class="section-title">Our Bestsellers</h2>
@@ -1134,30 +1051,21 @@ function injectBestsellersSection() {
       <div class="section-divider-diamond"></div>
       <div class="section-divider-line"></div>
     </div>
-
-    <!-- Rank bar -->
-    <div style="
-      display:flex; align-items:center; justify-content:center; gap:8px;
-      margin-bottom:36px; flex-wrap:wrap;
-    ">
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:36px;flex-wrap:wrap;">
       <span style="font-family:'DM Sans',sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-muted);">Sorted by</span>
       <span style="background:var(--primary);color:#fff;padding:4px 14px;border-radius:2px;font-size:9px;letter-spacing:2px;text-transform:uppercase;font-family:'DM Sans',sans-serif;font-weight:600;">Customer Orders</span>
     </div>
-
     <div class="products-grid" id="bestsellers-grid" style="padding:0 40px 56px;"></div>
   `;
-
   if (trendingSection && trendingSection.nextSibling) {
     trendingSection.parentNode.insertBefore(section, trendingSection.nextSibling);
   } else if (trendingSection) {
     trendingSection.parentNode.appendChild(section);
   } else {
-    // fallback: append before footer
     const footer = document.querySelector('.footer');
     if (footer) footer.parentNode.insertBefore(section, footer);
     else document.body.appendChild(section);
   }
-
   renderBestsellers();
 }
 
@@ -1166,12 +1074,9 @@ function injectBestsellersSection() {
    ───────────────────────────────────────── */
 function injectOccasionSection() {
   if (document.getElementById('occasion')) return;
-
   const categoriesSection = document.querySelector('.categories-section')
     || document.querySelector('[id*="categor"]');
-
   const occasionSection = buildOccasionSection();
-
   if (categoriesSection) {
     categoriesSection.parentNode.insertBefore(occasionSection, categoriesSection);
   } else {
@@ -1185,45 +1090,30 @@ function injectOccasionSection() {
 }
 
 /* ─────────────────────────────────────────
-   DISCOUNT PILL STYLE
+   EXTRA STYLES
    ───────────────────────────────────────── */
 function injectExtraStyles() {
   const style = document.createElement('style');
   style.textContent = `
     .discount-pill {
       background: linear-gradient(135deg, #e8f5e9, #c8e6c9) !important;
-      color: #2e7d32 !important;
-      border: none !important;
-      font-weight: 700 !important;
-      font-size: 10px !important;
-      padding: 2px 8px !important;
-      border-radius: 20px !important;
+      color: #2e7d32 !important; border: none !important;
+      font-weight: 700 !important; font-size: 10px !important;
+      padding: 2px 8px !important; border-radius: 20px !important;
       letter-spacing: 0.5px !important;
     }
     .currency-btn .currency-label {
-      font-size: 10px;
-      letter-spacing: 2px;
-      font-weight: 600;
-      color: var(--text-muted);
-      font-family: 'DM Sans', sans-serif;
-    }
-    .occasion-section .occasion-grid {
-      padding: 0 24px;
+      font-size: 10px; letter-spacing: 2px; font-weight: 600;
+      color: var(--text-muted); font-family: 'DM Sans', sans-serif;
     }
     @media (max-width: 900px) {
-      .occasion-section .occasion-grid {
-        grid-template-columns: repeat(4, 1fr) !important;
-      }
+      .occasion-section .occasion-grid { grid-template-columns: repeat(4, 1fr) !important; }
     }
     @media (max-width: 480px) {
       .occasion-section .occasion-grid {
         grid-template-columns: repeat(4, 1fr) !important;
-        gap: 10px !important;
-        padding: 0 12px !important;
+        gap: 10px !important; padding: 0 12px !important;
       }
-    }
-    .bestsellers-main-section .products-grid {
-      background: transparent;
     }
     .cart-items-body { scrollbar-width: thin; scrollbar-color: var(--primary) var(--cream); }
     .wishlist-count, .cart-count {
@@ -1242,10 +1132,9 @@ function injectExtraStyles() {
 }
 
 /* ─────────────────────────────────────────
-   BIND STATIC CART ICON (nav)
+   BIND CART ICON
    ───────────────────────────────────────── */
 function bindCartIcon() {
-  // mark cart buttons
   document.querySelectorAll('.nav-icon').forEach(btn => {
     if (btn.querySelector('.badge') || btn.innerHTML.includes('🛍') || btn.innerHTML.includes('bag') || btn.innerHTML.includes('cart')) {
       btn.addEventListener('click', openCart);
@@ -1254,14 +1143,11 @@ function bindCartIcon() {
 }
 
 /* ─────────────────────────────────────────
-   SALE BANNER — REMOVE "available on us"
+   CLEAN SALE BANNER
    ───────────────────────────────────────── */
 function cleanSaleBanner() {
   document.querySelectorAll('.sale-banner, .announcement-bar, .footer-top, .worldwide-strip, [class*="strip"]').forEach(el => {
-    if (el.innerHTML.toLowerCase().includes('available on us') ||
-        el.innerHTML.toLowerCase().includes('available on the us') ||
-        el.innerHTML.toLowerCase().includes('available in us')) {
-      // Remove just that text node / phrase
+    if (/available\s+(on|in)\s+the?\s+us/i.test(el.innerHTML)) {
       el.innerHTML = el.innerHTML.replace(/available\s+(on|in)\s+the?\s+us/gi, '').replace(/\s{2,}/g, ' ');
     }
   });
@@ -1271,31 +1157,30 @@ function cleanSaleBanner() {
    MAIN INIT
    ───────────────────────────────────────── */
 function init() {
+  // Load persisted cart/wishlist safely
+  cart = loadFromStorage('luxCart', []);
+  wishlist = loadFromStorage('luxWishlist', []);
+
   injectExtraStyles();
   cleanSaleBanner();
   initAnnouncement();
   initMarquee();
   renderHeroSlides();
   heroInterval = setInterval(nextSlide, 5000);
-
   injectOccasionSection();
   populateCategoriesGrid();
   renderTrending();
-
   injectBestsellersSection();
-
   buildCartDrawer();
   initCurrencySelector();
   bindCartIcon();
   initNavbar();
   initShopPage();
   initChatbot();
-
   setTimeout(() => {
     initScrollReveal();
     initTiltEffect();
   }, 200);
-
   updateCartUI();
 }
 
@@ -1306,11 +1191,22 @@ if (document.readyState === 'loading') {
 }
 
 /* ─────────────────────────────────────────
-   EXPOSE GLOBALS (for inline onclick attrs)
+   EXPOSE GLOBALS
    ───────────────────────────────────────── */
-window.openCart = openCart;
-window.closeCart = closeCart;
-window.addToCart = addToCart;
-window.showCheckoutForm = showCheckoutForm;
-window.placeOrder = placeOrder;
-window.toggleWishlist = toggleWishlist;
+if (typeof window !== 'undefined') {
+  window.openCart = openCart;
+  window.closeCart = closeCart;
+  window.addToCart = addToCart;
+  window.showCheckoutForm = showCheckoutForm;
+  window.placeOrder = placeOrder;
+  window.toggleWishlist = toggleWishlist;
+}
+
+/* ─────────────────────────────────────────
+   REACT EXPORT — keeps React build happy
+   This file is vanilla JS injected via
+   index.html <script>, but React's build
+   system needs a default export from App.js
+   ───────────────────────────────────────── */
+function App() { return null; }
+export default App;
