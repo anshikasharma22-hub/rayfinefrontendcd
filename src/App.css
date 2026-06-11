@@ -1,3 +1,91 @@
+
+
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* Scrollbar width consistent rakhne ke liye */
+body {
+  overflow-y: scroll;
+}
+
+/* Images ke liye aspect ratio set kar */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Containers ke liye min-height */
+.hero,
+.featured-section,
+.shop-page {
+  min-height: auto;
+}
+
+/* Font loading - preload fonts */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap');
+
+/* Prevent font size shift */
+body {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Products grid - consistent height */
+.product-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.product-img-wrap {
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #f5f0ea;
+}
+
+/* Buttons - consistent size */
+button {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Forms - consistent height */
+input, select, textarea {
+  font-family: inherit;
+  font-size: 16px; /* Prevents mobile zoom */
+}
+
+/* Navigation - sticky without shift */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+}
+
+/* Loading placeholder */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
