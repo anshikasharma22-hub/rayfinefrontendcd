@@ -259,12 +259,16 @@ function ProductModal({ product, onClose, cart, setCart, wishlist, setWishlist }
     }
   };
 
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    addViewed(product);
-    return () => { document.body.style.overflow = "unset"; };
-  }, [addViewed, product]);
-
+ useEffect(() => {
+  const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+  document.body.style.overflow = "hidden";
+  document.body.style.paddingRight = scrollbarWidth + "px";
+  addViewed(product);
+  return () => { 
+    document.body.style.overflow = "unset"; 
+    document.body.style.paddingRight = "0";
+  };
+}, [addViewed, product]);
   return (
     <div
       onClick={onClose}
@@ -584,6 +588,20 @@ function CartDrawer({ cart, setCart, open, onClose }) {
       setCouponMsg("✕ Invalid coupon code");
     }
   };
+  useEffect(() => {
+  if (open) {
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = "hidden";
+    document.body.style.paddingRight = scrollbarWidth + "px";
+  } else {
+    document.body.style.overflow = "unset";
+    document.body.style.paddingRight = "0";
+  }
+  return () => {
+    document.body.style.overflow = "unset";
+    document.body.style.paddingRight = "0";
+  };
+}, [open]);
 
   // FIX: use item._id || item.id consistently
   const updateQty = (itemId, delta) => {
@@ -1213,43 +1231,76 @@ function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
 // SHOP BY OCCASION — horizontal scroll
 // ─────────────────────────────────────────────
 function OccasionSection() {
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    // Simulate image preloading
+    const timer = setTimeout(() => setLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <section style={{ padding: "60px 0", background: "#fff" }}>
+    <section style={{ padding: "60px 0", background: "#fff", minHeight: loading ? "400px" : "auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "0 40px 28px" }}>
         <div>
           <p style={{ fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--primary)", fontWeight: 600, marginBottom: 6 }}>Find Your Perfect Piece</p>
-          <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "clamp(24px,3vw,36px)", fontWeight: 400, color: "var(--text)" }}>Shop by Occasion</h2>
+          <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "clamp(24px,3vw,36px)", fontWeight: 400, color: "var(--text)", lineHeight: 1.2 }}>Shop by Occasion</h2>
         </div>
-        <Link to="/shop" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--primary)", textDecoration: "none", borderBottom: "1px solid var(--primary)", paddingBottom: 2 }}>View All</Link>
+        {!loading && (
+          <Link to="/shop" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--primary)", textDecoration: "none", borderBottom: "1px solid var(--primary)", paddingBottom: 2, whiteSpace: "nowrap" }}>View All</Link>
+        )}
       </div>
-      <div style={{ display: "flex", gap: 14, overflowX: "auto", padding: "0 40px 16px", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}>
-        {OCCASIONS.map(occ => (
-          <Link
-            key={occ.name}
-            to={occ.path}
-            style={{
-              minWidth: 160, maxWidth: 160, flexShrink: 0, scrollSnapAlign: "start",
-              position: "relative", borderRadius: "10px", overflow: "hidden",
-              textDecoration: "none", display: "block", aspectRatio: "3/4",
-              boxShadow: "0 4px 20px rgba(44,36,24,0.10)", transition: "all 0.3s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(44,36,24,0.18)"; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(44,36,24,0.10)"; }}
-          >
-            <img
-              src={occ.img}
-              alt={occ.name}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-              onError={e => { e.target.src = "https://placehold.co/160x213?text=Jewellery"; }}
-            />
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(44,36,24,0.80) 0%, rgba(44,36,24,0.08) 55%, transparent 100%)" }} />
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "18px 12px 14px", display: "flex", flexDirection: "column", alignItems: "center", gap: "5px" }}>
-              <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "16px", fontWeight: 500, color: "#fff", letterSpacing: "0.5px", textAlign: "center" }}>{occ.name}</span>
-              <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: "8px", fontWeight: 500, letterSpacing: "2px", textTransform: "uppercase", color: "rgba(255,255,255,0.75)" }}>Shop Now →</span>
+      
+      <div style={{ display: "flex", gap: 14, overflowX: "auto", padding: "0 40px 16px", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch", minHeight: loading ? "280px" : "auto" }}>
+        {loading ? (
+          [...Array(4)].map((_, i) => (
+            <div key={`skeleton-${i}`} style={{ minWidth: 160, maxWidth: 160, flexShrink: 0, scrollSnapAlign: "start" }}>
+              <div style={{
+                background: "linear-gradient(90deg, #e8dfd5 25%, #f0e8df 50%, #e8dfd5 75%)",
+                backgroundSize: "200% 100%",
+                animation: "loading 1.5s infinite",
+                aspectRatio: "3/4",
+                borderRadius: "10px"
+              }} />
             </div>
-          </Link>
-        ))}
+          ))
+        ) : (
+          OCCASIONS.map(occ => (
+            <Link
+              key={occ.name}
+              to={occ.path}
+              style={{
+                minWidth: 160, maxWidth: 160, flexShrink: 0, scrollSnapAlign: "start",
+                position: "relative", borderRadius: "10px", overflow: "hidden",
+                textDecoration: "none", display: "block", aspectRatio: "3/4",
+                boxShadow: "0 4px 20px rgba(44,36,24,0.10)", transition: "all 0.3s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(44,36,24,0.18)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(44,36,24,0.10)"; }}
+            >
+              <img
+                src={occ.img}
+                alt={occ.name}
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                loading="lazy"
+                onError={e => { e.target.src = "https://placehold.co/160x213?text=Jewellery"; }}
+              />
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(44,36,24,0.80) 0%, rgba(44,36,24,0.08) 55%, transparent 100%)" }} />
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "18px 12px 14px", display: "flex", flexDirection: "column", alignItems: "center", gap: "5px" }}>
+                <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "16px", fontWeight: 500, color: "#fff", letterSpacing: "0.5px", textAlign: "center" }}>{occ.name}</span>
+                <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: "8px", fontWeight: 500, letterSpacing: "2px", textTransform: "uppercase", color: "rgba(255,255,255,0.75)" }}>Shop Now →</span>
+              </div>
+            </Link>
+          ))
+        )}
       </div>
+      
+      <style>{`
+        @keyframes loading {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
     </section>
   );
 }
@@ -1502,28 +1553,49 @@ function TrendingSection({ cart, setCart, wishlist, setWishlist }) {
   }, []);
 
   return (
-    <section className="featured-section">
+    <section className="featured-section" style={{ minHeight: loading ? "600px" : "auto" }}>
       <SectionDivider subtitle="Curated For You" title="Trending Now" />
+      
       {loading ? (
-        <p style={{ textAlign: "center", padding: "60px", color: "var(--text-muted)", fontFamily: "Cormorant Garamond, serif", fontSize: "22px", fontStyle: "italic" }}>
-          Loading collection...
-        </p>
+        <div className="products-grid" style={{ padding: "0 40px 80px" }}>
+          {[...Array(8)].map((_, i) => (
+            <div key={i} style={{ display: "flex", flexDirection: "column" }}>
+              <div style={{
+                background: "linear-gradient(90deg, #e8dfd5 25%, #f0e8df 50%, #e8dfd5 75%)",
+                backgroundSize: "200% 100%",
+                animation: "loading 1.5s infinite",
+                aspectRatio: "1",
+                borderRadius: "8px",
+                marginBottom: "12px"
+              }} />
+              <div style={{ background: "#e8dfd5", height: "20px", borderRadius: "4px", marginBottom: "8px" }} />
+              <div style={{ background: "#e8dfd5", height: "16px", borderRadius: "4px", marginBottom: "12px", width: "80%" }} />
+              <div style={{ background: "#e8dfd5", height: "36px", borderRadius: "4px" }} />
+            </div>
+          ))}
+        </div>
       ) : (
         <>
-          <div className="products-grid">
+          <div className="products-grid" style={{ padding: "0 40px 80px" }}>
             {featured.map(p => (
               <ProductCard key={p._id || p.id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
             ))}
           </div>
-          <div style={{ textAlign: "center", marginTop: "52px" }}>
+          <div style={{ textAlign: "center", marginBottom: "52px" }}>
             <Link to="/shop" className="btn-primary">View All Products</Link>
           </div>
         </>
       )}
+      
+      <style>{`
+        @keyframes loading {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
     </section>
   );
 }
-
 // ─────────────────────────────────────────────
 // HOME PAGE
 // ─────────────────────────────────────────────
