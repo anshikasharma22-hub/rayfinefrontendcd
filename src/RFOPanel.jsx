@@ -1,15 +1,50 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 
 // ── Config ────────────────────────────────────
 const SUPABASE_URL = "https://ajqqaeejotlghgilgajy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqcXFhZWVqb3RsZ2hnaWxnYWp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNjU2MTUsImV4cCI6MjA5NTY0MTYxNX0.fZ1MmCpMiQnwu7HsaK3zP4HXjxrLK6JseEZSUvIkreY";
-const SUPABASE_TABLE = "products";
-// Columns that actually exist on public.products (after running fix_products_table.sql)
-const PRODUCT_COLUMNS = ["name","price","originalPrice","image","description","category","inStock","stock","occasion","material","variants","isBestseller","isTrending","isNew","onSale"];
+const SUPABASE_TABLE = "rayfinedatabase";
+// Columns that actually exist on public.rayfinedatabase
+const PRODUCT_COLUMNS = ["name","price","original_price","image","description","category","in_stock","variants","material","care_instructions"];
 function sanitizeProduct(p){
   const out = {};
   for(const k of PRODUCT_COLUMNS){ if(p[k] !== undefined) out[k] = p[k]; }
   return out;
+}
+// Map our internal camelCase product shape -> rayfinedatabase snake_case columns
+function toDbRow(p){
+  let originalPrice = p.originalPrice ?? null;
+  if (p.onSale && !originalPrice && p.price) originalPrice = Math.round(p.price * 1.25);
+  if (!p.onSale) originalPrice = p.originalPrice || null;
+  return sanitizeProduct({
+    name: p.name,
+    price: p.price,
+    original_price: originalPrice,
+    image: p.image,
+    description: p.description,
+    category: p.category,
+    in_stock: p.inStock,
+    variants: Array.isArray(p.variants) ? p.variants.join(", ") : (p.variants || ""),
+    material: p.material || "",
+    care_instructions: p.careInstructions || "",
+  });
+}
+// Map a row coming back from rayfinedatabase -> our internal camelCase shape (for display)
+function fromDbRow(r){
+  return {
+    ...r,
+    id: r.id,
+    originalPrice: r.original_price,
+    inStock: r.in_stock,
+    careInstructions: r.care_instructions,
+    // fields not present in this table — default so UI doesn't break
+    stock: r.in_stock ? 1 : 0,
+    occasion: r.occasion || "",
+    isBestseller: false,
+    isTrending: false,
+    isNew: false,
+    onSale: !!r.original_price,
+  };
 }
 const USD_TO_INR_DEFAULT = 83.5;
 const API = "https://rayfinesite-3.onrender.com/api";
@@ -145,6 +180,7 @@ const PRODUCT_FIELDS = [
   { key: "occasion", label: "Occasion", required: false, type: "occasion" },
   { key: "material", label: "Material", required: false, type: "text" },
   { key: "image", label: "Image URL", required: false, type: "text" },
+  { key: "careInstructions", label: "Care Instructions", required: false, type: "text" },
   { key: "tags", label: "Tags (for auto-detect)", required: false, type: "text" },
 ];
 
@@ -202,14 +238,20 @@ export default function RFOAdmin() {
     supabaseQuery(`${SUPABASE_TABLE}?select=*&order=id.desc`)
       .then(data => {
         const list = Array.isArray(data) ? data : [];
-        setProducts(list.map(p => ({ ...p, image: p.image?.replace(/^http:\/\//i, "https://")?.split(",")[0]?.trim() })));
+        setProducts(list.map(r => {
+          const p = fromDbRow(r);
+          return { ...p, image: p.image?.replace(/^http:\/\//i, "https://")?.split(",")[0]?.trim() };
+        }));
         setLoading(false);
       })
       .catch(() => {
         // fallback to API if supabase select fails for any reason
         fetch(`${API}/products`).then(r => r.json()).then(data => {
           const list = Array.isArray(data?.data) ? data.data : [];
-          setProducts(list.map(p => ({ ...p, id: p._id || p.id, image: p.image?.replace(/^http:\/\//i, "https://")?.split(",")[0]?.trim() })));
+          setProducts(list.map(r => {
+            const p = fromDbRow(r);
+            return { ...p, id: p._id || p.id, image: p.image?.replace(/^http:\/\//i, "https://")?.split(",")[0]?.trim() };
+          }));
           setLoading(false);
         }).catch(() => { setLoading(false); showToast("Could not load products", "error"); });
       });
@@ -440,15 +482,6 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
       showToast("Delete failed: " + err.message, "error");
     }
   };
-  const toggleFlag = async (p, key) => {
-    const newVal = !p[key];
-    try {
-      await supabaseQuery(`${SUPABASE_TABLE}?id=eq.${p.id}`, "PATCH", { [key]: newVal });
-      setProducts(prev => prev.map(x => x.id === p.id ? { ...x, [key]: newVal } : x));
-    } catch (err) {
-      showToast("Update failed: " + err.message, "error");
-    }
-  };
   return (
     <div style={{ animation: "fadeIn .3s ease" }}>
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
@@ -466,7 +499,7 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 680 }}>
               <thead><tr style={{ background: "#faf7f4" }}>
-                {["Image", "Product", "Category", "Price", "Stock", "Status", "Flags", ""].map(h => (
+                {["Image", "Product", "Category", "Price", "Stock", "Status", ""].map(h => (
                   <th key={h} style={{ fontSize: 10, color: "#c8b8a8", fontWeight: 700, textAlign: "left", padding: "10px 14px", borderBottom: "1px solid #ede8e3", textTransform: "uppercase", letterSpacing: "0.8px", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr></thead>
@@ -495,14 +528,6 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
                         ? <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "#fdf3e3", color: "#c47a2a" }}>Low</span>
                         : <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "#fde8e8", color: "#c44a4a" }}>Out</span>}
                     </td>
-                    <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
-                      {[["isBestseller", "⭐"], ["isTrending", "🔥"], ["isNew", "✨"]].map(([k, icon]) => (
-                        <button key={k} onClick={() => toggleFlag(p, k)} title={k}
-                          style={{ border: "none", background: "none", cursor: "pointer", fontSize: 14, opacity: p[k] ? 1 : 0.25, padding: "2px 3px" }}>
-                          {icon}
-                        </button>
-                      ))}
-                    </td>
                     <td style={{ padding: "10px 14px" }}>
                       <button onClick={() => del(p.id)} style={{ padding: "5px 12px", border: "1px solid #e8d8d8", borderRadius: 6, background: "none", cursor: "pointer", fontSize: 11, color: "#c44a4a", fontFamily: "inherit" }}>Delete</button>
                     </td>
@@ -520,7 +545,7 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
 
 // ── Add Product Page ──────────────────────────
 function AddProductPage({ showToast, onSave }) {
-  const blank = { name: "", price: "", originalPrice: "", category: "", occasion: "", stock: "", material: "", description: "", image: "", variants: "", inStock: true, isBestseller: false, isTrending: false, isNew: false, onSale: false };
+  const blank = { name: "", price: "", originalPrice: "", category: "", occasion: "", stock: "", material: "", careInstructions: "", description: "", image: "", variants: "", inStock: true, isBestseller: false, isTrending: false, isNew: false, onSale: false };
   const [form, setForm] = useState(blank);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -562,7 +587,7 @@ function AddProductPage({ showToast, onSave }) {
     delete product.image; // re-add below after upload check — kept inline for simplicity
     product.image = form.image;
     try {
-      const savedData = await supabaseQuery(SUPABASE_TABLE, "POST", [sanitizeProduct(product)]);
+      const savedData = await supabaseQuery(SUPABASE_TABLE, "POST", [toDbRow(product)]);
       const saved = Array.isArray(savedData) ? savedData[0] : null;
       showToast("✓ Product saved!");
       onSave({ ...product, id: saved?.id || Date.now() });
@@ -640,6 +665,12 @@ function AddProductPage({ showToast, onSave }) {
         <div style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Description</label>
           <textarea className="am-inp" rows={3} placeholder="Describe the product…" value={form.description} onChange={e => set("description", e.target.value)}
+            style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018", resize: "vertical" }} />
+        </div>
+
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Care Instructions</label>
+          <textarea className="am-inp" rows={2} placeholder="e.g. Keep away from water and perfumes…" value={form.careInstructions} onChange={e => set("careInstructions", e.target.value)}
             style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018", resize: "vertical" }} />
         </div>
 
@@ -737,6 +768,7 @@ function BulkImportPage({ showToast, onImport }) {
         category: get("category") || detected.category || guessCategoryFromTitle(title) || "",
         occasion: get("occasion") || detected.occasion || "",
         material: get("material"),
+        careInstructions: get("careInstructions"),
         image,
         isBestseller: detected.isBestseller,
         isTrending: detected.isTrending,
@@ -772,7 +804,7 @@ function BulkImportPage({ showToast, onImport }) {
 
   const totalRows = useMemo(() => batches.reduce((s, b) => s + b.rows.length, 0), [batches]);
 
-  const getReadyRows = (batch) => batch.rows.map(({ _rowNum, ...row }) => sanitizeProduct({
+  const getReadyRows = (batch) => batch.rows.map(({ _rowNum, ...row }) => toDbRow({
     ...row,
     category: batch.overrideCat || row.category,
     occasion: batch.overrideOcc || row.occasion,
@@ -789,10 +821,11 @@ function BulkImportPage({ showToast, onImport }) {
       try {
         await supabaseQuery(SUPABASE_TABLE, "POST", chunk);
         ok += chunk.length;
-      } catch {
+      } catch (err) {
+        console.error("Batch insert failed:", err.message);
         for (const row of chunk) {
           try { await supabaseQuery(SUPABASE_TABLE, "POST", [row]); ok++; }
-          catch { fail++; }
+          catch (err2) { console.error("Row failed:", row.name, err2.message); fail++; }
         }
       }
       setProgress(Math.min(100, Math.round(((i + BATCH) / allRows.length) * 100)));
@@ -933,7 +966,7 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
       <div style={{ overflowX: "auto", borderRadius: 10, border: "1px solid #ede8e3" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
           <thead><tr style={{ background: "#faf7f4" }}>
-            {["#", "Image", "Name", "Category", "Occasion", "Price (₹)", "Stock", "⭐", "🔥", "✨", "🏷"].map(h => (
+            {["#", "Image", "Name", "Category", "Occasion", "Price (₹)", "Stock", "🏷 Sale"].map(h => (
               <th key={h} style={{ fontSize: 10, color: "#c8b8a8", fontWeight: 700, textAlign: "left", padding: "9px 10px", borderBottom: "1px solid #ede8e3", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
             ))}
           </tr></thead>
@@ -974,11 +1007,9 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
                     <input type="number" value={row.stock} onChange={e => onUpdateRow(batch.id, i, { stock: Number(e.target.value) || 0, inStock: (Number(e.target.value) || 0) > 0 })}
                       style={{ width: 56, border: "1px solid #ede8e3", borderRadius: 6, padding: "5px 7px", fontSize: 12, color: "#5a4a3e", background: "#fff" }} />
                   </td>
-                  {["isBestseller", "isTrending", "isNew", "onSale"].map(k => (
-                    <td key={k} style={{ padding: "8px 10px", textAlign: "center" }}>
-                      <input type="checkbox" checked={!!row[k]} onChange={e => onUpdateRow(batch.id, i, { [k]: e.target.checked })} style={{ accentColor: "#d4a574", width: 15, height: 15, cursor: "pointer" }} />
-                    </td>
-                  ))}
+                  <td style={{ padding: "8px 10px", textAlign: "center" }}>
+                    <input type="checkbox" checked={!!row.onSale} onChange={e => onUpdateRow(batch.id, i, { onSale: e.target.checked })} style={{ accentColor: "#d4a574", width: 15, height: 15, cursor: "pointer" }} />
+                  </td>
                 </tr>
               );
             })}
