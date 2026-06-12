@@ -1062,7 +1062,210 @@ function BulkImportPage({ showToast, onImport }) {
   );
 }
 
-// ── Per-batch column mapper + editable preview table ──
+function BulkImportPage({ showToast, onImport }) {
+  const fileRef = useRef();
+  const [dragging, setDragging] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  // Each batch: { id, fileName, headers, rawRows, mapping, rows: [enriched products], usdRate, isUSD }
+  const [batches, setBatches] = useState([]);
+  const [activeBatch, setActiveBatch] = useState(null);
+
+  const handleFiles = (fileList) => {
+    const files = Array.from(fileList || []).filter(f => f.name.toLowerCase().endsWith(".csv"));
+    if (!files.length) { showToast("Only .csv files please", "error"); return; }
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const { headers, rows } = parseCSV(e.target.result);
+          if (!headers.length || !rows.length) { showToast(`${file.name}: empty or unreadable CSV`, "error"); return; }
+          const mapping = autoMapHeaders(headers);
+          const isUSD = isUSDPriceCSV(headers);
+          const batchId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          const built = buildRows(rows, mapping, isUSD ? USD_TO_INR_DEFAULT : 1);
+          const newBatch = {
+            id: batchId,
+            fileName: file.name,
+            headers,
+            rawRows: rows,
+            mapping,
+            isUSD,
+            usdRate: USD_TO_INR_DEFAULT,
+            overrideCat: "",
+            overrideOcc: "",
+            defaultQuantity: 1, // NEW: manual quantity multiplier
+            rows: built,
+          };
+          setBatches(prev => [...prev, newBatch]);
+          setActiveBatch(batchId);
+          showToast(`${file.name}: ${rows.length} rows loaded`);
+        } catch (err) {
+          showToast(`${file.name}: parse error — ${err.message}`, "error");
+        }
+      };
+      reader.readAsText(file);
+    });
+  };
+
+  // Build enriched product rows from raw CSV rows + a column mapping
+  function buildRows(rawRows, mapping, usdRate, defaultQty = 1) {
+    return rawRows.map((raw, i) => {
+      const get = (key) => mapping[key] ? (raw[mapping[key]] ?? "") : "";
+      const tags = get("tags");
+      const detected = detectFromTags(tags);
+      const title = get("name").trim();
+      const priceRaw = parseFloat(get("price")) || 0;
+      const price = usdRate !== 1 ? Math.round(priceRaw * usdRate) : Math.round(priceRaw);
+      const origRaw = parseFloat(get("originalPrice")) || 0;
+      const originalPrice = origRaw ? (usdRate !== 1 ? Math.round(origRaw * usdRate) : Math.round(origRaw)) : null;
+      
+      // FIX: Handle stock with fallback logic
+      let stock = parseInt(get("stock")) || 0;
+      if (stock === 0) stock = defaultQty; // Use default if stock is 0
+      
+      const imageField = get("image");
+      const image = imageField.split(",")[0]?.trim().replace(/^http:\/\//i, "https://")?.split("?")[0] || "";
+      
+      return {
+        _rowNum: i + 2,
+        name: title,
+        description: get("description").replace(/\n/g, " ").trim().slice(0, 1000),
+        price,
+        originalPrice,
+        stock,
+        inStock: stock > 0,
+        category: get("category") || detected.category || guessCategoryFromTitle(title) || "",
+        occasion: get("occasion") || detected.occasion || "",
+        material: get("material"),
+        careInstructions: get("careInstructions"),
+        image,
+        isBestseller: detected.isBestseller,
+        isTrending: detected.isTrending,
+        isNew: detected.isNew,
+        onSale: !!originalPrice,
+      };
+    });
+  }
+
+  const updateBatch = (id, patch) => {
+    setBatches(prev => prev.map(b => {
+      if (b.id !== id) return b;
+      const next = { ...b, ...patch };
+      if (patch.mapping || patch.usdRate !== undefined || patch.defaultQuantity !== undefined) {
+        next.rows = buildRows(next.rawRows, next.mapping, next.usdRate, next.defaultQuantity);
+      }
+      return next;
+    }));
+  };
+
+  const updateRow = (batchId, rowIdx, patch) => {
+    setBatches(prev => prev.map(b => {
+      if (b.id !== batchId) return b;
+      const rows = b.rows.map((r, i) => i === rowIdx ? { ...r, ...patch } : r);
+      return { ...b, rows };
+    }));
+  };
+
+  const removeBatch = (id) => {
+    setBatches(prev => prev.filter(b => b.id !== id));
+    if (activeBatch === id) setActiveBatch(null);
+  };
+
+  const totalRows = useMemo(() => batches.reduce((s, b) => s + b.rows.length, 0), [batches]);
+
+  const getReadyRows = (batch) => batch.rows.map(({ _rowNum, ...row }) => toDbRow({
+    ...row,
+    category: batch.overrideCat || row.category,
+    occasion: batch.overrideOcc || row.occasion,
+  })).filter(r => r.name && r.price);
+
+  const doImport = async () => {
+    const allRows = batches.flatMap(b => getReadyRows(b));
+    if (!allRows.length) { showToast("No valid rows to import", "error"); return; }
+    setImporting(true); setProgress(0);
+    const BATCH = 50;
+    let ok = 0, fail = 0;
+    for (let i = 0; i < allRows.length; i += BATCH) {
+      const chunk = allRows.slice(i, i + BATCH);
+      try {
+        await supabaseQuery(SUPABASE_TABLE, "POST", chunk);
+        ok += chunk.length;
+      } catch (err) {
+        console.error("Batch insert failed:", err.message);
+        for (const row of chunk) {
+          try { await supabaseQuery(SUPABASE_TABLE, "POST", [row]); ok++; }
+          catch (err2) { console.error("Row failed:", row.name, err2.message); fail++; }
+        }
+      }
+      setProgress(Math.min(100, Math.round(((i + BATCH) / allRows.length) * 100)));
+    }
+    setImporting(false);
+    if (fail) showToast(`${ok} imported, ${fail} failed`, fail === allRows.length ? "error" : "success");
+    else showToast(`${ok} products imported!`);
+    if (ok) { setBatches([]); setActiveBatch(null); onImport(); }
+  };
+
+  const active = batches.find(b => b.id === activeBatch);
+
+  return (
+    <div style={{ maxWidth: 1000, margin: "0 auto", animation: "fadeIn .3s ease" }}>
+      <div className="am-card" style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 16 }}>
+          <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 400, color: "#2d2018", marginBottom: 4 }}>Bulk Upload</h3>
+          <p style={{ fontSize: 12, color: "#b8a898" }}>Drop any CSV — Etsy export or your own format. Map columns per file, then fine-tune stock & flags per row before uploading. You can load multiple CSVs at once.</p>
+        </div>
+
+        <div
+          onDragOver={e => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={e => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
+          onClick={() => fileRef.current?.click()}
+          style={{ border: `2px dashed ${dragging ? "#d4a574" : "#e8e0d8"}`, borderRadius: 14, padding: "32px 20px", textAlign: "center", cursor: "pointer", background: dragging ? "#fdf5ee" : "#faf7f4", transition: "all .2s" }}>
+          <input ref={fileRef} type="file" accept=".csv" multiple style={{ display: "none" }} onChange={e => handleFiles(e.target.files)} />
+          <div style={{ fontSize: 36, marginBottom: 8 }}>📄</div>
+          <p style={{ fontSize: 14, color: "#8a7a6e" }}>Drop CSV file(s) here or <strong style={{ color: "#d4a574" }}>tap to browse</strong></p>
+          <p style={{ fontSize: 11, color: "#c8b8a8", marginTop: 6 }}>Multiple files supported — columns auto-detected, fully adjustable</p>
+        </div>
+      </div>
+
+      {batches.length > 0 && (
+        <>
+          {/* Batch tabs */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+            {batches.map(b => (
+              <button key={b.id} onClick={() => setActiveBatch(b.id)}
+                style={{ padding: "8px 14px", borderRadius: 10, border: activeBatch === b.id ? "1.5px solid #d4a574" : "1px solid #e8e0d8", background: activeBatch === b.id ? "#fdf5ee" : "#fff", cursor: "pointer", fontSize: 12, fontWeight: 600, color: activeBatch === b.id ? "#b07a5a" : "#8a7a6e", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
+                📄 {b.fileName} <span style={{ color: "#c8b8a8", fontWeight: 400 }}>({b.rows.length})</span>
+                <span onClick={e => { e.stopPropagation(); removeBatch(b.id); }} style={{ color: "#e07070", fontWeight: 700, marginLeft: 4 }}>✕</span>
+              </button>
+            ))}
+          </div>
+
+          {active && <BatchEditor batch={active} onUpdateBatch={updateBatch} onUpdateRow={updateRow} />}
+
+          {importing && (
+            <div style={{ margin: "14px 0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#b8a898", marginBottom: 6 }}><span>Uploading to Supabase…</span><span>{progress}%</span></div>
+              <div style={{ height: 6, background: "#f0ebe5", borderRadius: 4 }}><div style={{ height: "100%", background: "linear-gradient(90deg,#d4a574,#b07a5a)", width: `${progress}%`, borderRadius: 4, transition: "width .3s" }} /></div>
+            </div>
+          )}
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16, flexWrap: "wrap", gap: 10 }}>
+            <span style={{ fontSize: 13, color: "#5a4a3e", fontWeight: 600 }}>{totalRows} total rows across {batches.length} file{batches.length > 1 ? "s" : ""}</span>
+            <button onClick={doImport} disabled={importing} className="am-btn-pri"
+              style={{ padding: "12px 24px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, letterSpacing: "0.8px", fontFamily: "inherit" }}>
+              {importing ? `Uploading… ${progress}%` : `🚀 Upload All (${totalRows})`}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Per-batch column mapper + editable preview table (Fixed) ──
 function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
   const [showMapper, setShowMapper] = useState(false);
 
@@ -1072,13 +1275,16 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
 
   const validRows = batch.rows.filter(r => r.name && r.price).length;
   const invalidRows = batch.rows.length - validRows;
+  const inStockCount = batch.rows.filter(r => r.inStock).length;
 
   return (
     <div className="am-card" style={{ marginBottom: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
         <div>
           <p style={{ fontSize: 13, fontWeight: 700, color: "#2d2018" }}>{batch.fileName}</p>
-          <p style={{ fontSize: 11, color: "#c8b8a8" }}>{validRows} ready{invalidRows ? `, ${invalidRows} missing name/price (skipped)` : ""}</p>
+          <p style={{ fontSize: 11, color: "#c8b8a8" }}>
+            {validRows} ready {invalidRows ? `, ${invalidRows} missing name/price (skipped)` : ""} • {inStockCount} with stock
+          </p>
         </div>
         <button onClick={() => setShowMapper(s => !s)} style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #d4a574", background: showMapper ? "#d4a574" : "#fff", color: showMapper ? "#fff" : "#d4a574", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "inherit", letterSpacing: "0.6px" }}>
           ⚙ {showMapper ? "Hide" : "Edit"} Column Mapping
@@ -1102,6 +1308,7 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
               </div>
             ))}
           </div>
+
           <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
             <div>
               <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Override Category (all rows)</label>
@@ -1121,11 +1328,20 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
             </div>
             <div>
               <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
-                Price multiplier {batch.isUSD ? "(USD → INR detected)" : ""}
+                {batch.isUSD ? "USD → INR" : "Price Multiplier"}
               </label>
               <input type="number" step="0.1" value={batch.usdRate} onChange={e => onUpdateBatch(batch.id, { usdRate: Number(e.target.value) || 1 })}
                 className="am-inp" style={{ width: "100%", padding: "9px 10px", border: "1.5px solid #e8e0d8", borderRadius: 8, fontSize: 12, background: "#fff", color: "#2d2018" }} />
             </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
+              📦 Default Stock (if CSV has 0 or blank)
+            </label>
+            <input type="number" value={batch.defaultQuantity || 1} onChange={e => onUpdateBatch(batch.id, { defaultQuantity: Math.max(1, Number(e.target.value) || 1) })}
+              className="am-inp" style={{ width: "100%", padding: "9px 10px", border: "1.5px solid #e8e0d8", borderRadius: 8, fontSize: 12, background: "#fff", color: "#2d2018" }} />
+            <p style={{ fontSize: 10, color: "#c8b8a8", marginTop: 4 }}>Products with 0 stock will use this value instead</p>
           </div>
         </div>
       )}
@@ -1173,7 +1389,7 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
                   </td>
                   <td style={{ padding: "8px 10px" }}>
                     <input type="number" value={row.stock} onChange={e => onUpdateRow(batch.id, i, { stock: Number(e.target.value) || 0, inStock: (Number(e.target.value) || 0) > 0 })}
-                      style={{ width: 56, border: "1px solid #ede8e3", borderRadius: 6, padding: "5px 7px", fontSize: 12, color: "#5a4a3e", background: "#fff" }} />
+                      style={{ width: 56, border: "1px solid #ede8e3", borderRadius: 6, padding: "5px 7px", fontSize: 12, color: row.stock > 0 ? "#4a8f4a" : "#c44a4a", fontWeight: 600, background: "#fff" }} />
                   </td>
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
                     <input type="checkbox" checked={!!row.onSale} onChange={e => onUpdateRow(batch.id, i, { onSale: e.target.checked })} style={{ accentColor: "#d4a574", width: 15, height: 15, cursor: "pointer" }} />
@@ -1187,6 +1403,7 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
     </div>
   );
 }
+
 
 // ── Orders Page ───────────────────────────────
 function OrdersPage({ showToast }) {
