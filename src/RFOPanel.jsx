@@ -4,6 +4,13 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 const SUPABASE_URL = "https://ajqqaeejotlghgilgajy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqcXFhZWVqb3RsZ2hnaWxnYWp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNjU2MTUsImV4cCI6MjA5NTY0MTYxNX0.fZ1MmCpMiQnwu7HsaK3zP4HXjxrLK6JseEZSUvIkreY";
 const SUPABASE_TABLE = "products";
+// Columns that actually exist on public.products (after running fix_products_table.sql)
+const PRODUCT_COLUMNS = ["name","price","originalPrice","image","description","category","inStock","stock","occasion","material","variants","isBestseller","isTrending","isNew","onSale"];
+function sanitizeProduct(p){
+  const out = {};
+  for(const k of PRODUCT_COLUMNS){ if(p[k] !== undefined) out[k] = p[k]; }
+  return out;
+}
 const USD_TO_INR_DEFAULT = 83.5;
 const API = "https://rayfinesite-3.onrender.com/api";
 const ADMIN_PASSWORD = "rayfine@20";
@@ -192,7 +199,7 @@ export default function RFOAdmin() {
 
   const loadProducts = useCallback(() => {
     setLoading(true);
-    supabaseQuery(`${SUPABASE_TABLE}?select=*&order=created_at.desc`)
+    supabaseQuery(`${SUPABASE_TABLE}?select=*&order=id.desc`)
       .then(data => {
         const list = Array.isArray(data) ? data : [];
         setProducts(list.map(p => ({ ...p, image: p.image?.replace(/^http:\/\//i, "https://")?.split(",")[0]?.trim() })));
@@ -555,7 +562,7 @@ function AddProductPage({ showToast, onSave }) {
     delete product.image; // re-add below after upload check — kept inline for simplicity
     product.image = form.image;
     try {
-      const savedData = await supabaseQuery(SUPABASE_TABLE, "POST", [product]);
+      const savedData = await supabaseQuery(SUPABASE_TABLE, "POST", [sanitizeProduct(product)]);
       const saved = Array.isArray(savedData) ? savedData[0] : null;
       showToast("✓ Product saved!");
       onSave({ ...product, id: saved?.id || Date.now() });
@@ -765,7 +772,7 @@ function BulkImportPage({ showToast, onImport }) {
 
   const totalRows = useMemo(() => batches.reduce((s, b) => s + b.rows.length, 0), [batches]);
 
-  const getReadyRows = (batch) => batch.rows.map(({ _rowNum, ...row }) => ({
+  const getReadyRows = (batch) => batch.rows.map(({ _rowNum, ...row }) => sanitizeProduct({
     ...row,
     category: batch.overrideCat || row.category,
     occasion: batch.overrideOcc || row.occasion,
