@@ -38,13 +38,13 @@ const HERO_SLIDES = [
 ];
 
 const OCCASIONS = [
-  { name: "Festive",        img: "https://rayfinesite-3.onrender.com/images/festive.jpg",     path: "/shop?cat=Necklace" },
-  { name: "Gifting",        img: "https://rayfinesite-3.onrender.com/images/gifting.jpg",     path: "/shop?cat=Bracelet" },
-  { name: "Party",          img: "https://rayfinesite-3.onrender.com/images/party.jpg",       path: "/shop?cat=Earring" },
-  { name: "Traditional",    img: "https://rayfinesite-3.onrender.com/images/traditional.jpg", path: "/shop?cat=Necklace" },
-  { name: "Vacation Ready", img: "https://images.unsplash.com/photo-1506619216599-9d16d0903dfd?w=400&q=80", path: "/shop?cat=Ring" },
-  { name: "Bridal",         img: "https://rayfinesite-3.onrender.com/images/1000128664.jpg",  path: "/shop?cat=Necklace" },
-  { name: "Everyday",       img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",    path: "/shop?cat=Bracelet" },
+  { name: "Festive",        img: "https://rayfinesite-3.onrender.com/images/festive.jpg",     path: "/shop?occasion=Festive" },
+  { name: "Gifting",        img: "https://rayfinesite-3.onrender.com/images/gifting.jpg",     path: "/shop?occasion=Gifting" },
+  { name: "Party",          img: "https://rayfinesite-3.onrender.com/images/party.jpg",       path: "/shop?occasion=Party" },
+  { name: "Traditional",    img: "https://rayfinesite-3.onrender.com/images/traditional.jpg", path: "/shop?occasion=Traditional" },
+  { name: "Vacation Ready", img: "https://images.unsplash.com/photo-1506619216599-9d16d0903dfd?w=400&q=80", path: "/shop?occasion=Vacation" },
+  { name: "Bridal",         img: "https://rayfinesite-3.onrender.com/images/1000128664.jpg",  path: "/shop?occasion=Bridal" },
+  { name: "Everyday",       img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",    path: "/shop?occasion=Everyday" },
 ];
 
 const CATEGORIES = [
@@ -1640,6 +1640,7 @@ function Shop({ cart, setCart, wishlist, setWishlist }) {
   const [searchParams] = useSearchParams();
   const [category, setCategory] = useState(searchParams.get("cat") || "All");
   const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [occasion, setOccasion] = useState(searchParams.get("occasion") || "All");
   const [sort, setSort] = useState("default");
   const [products, setProducts] = useState([]);
   const [showInStock, setShowInStock] = useState(false);
@@ -1647,13 +1648,14 @@ function Shop({ cart, setCart, wishlist, setWishlist }) {
   const [priceRange, setPriceRange] = useState([0, 50000]);
   const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => {
+ useEffect(() => {
     const cat = searchParams.get("cat");
+    const occ = searchParams.get("occasion");
     const q = searchParams.get("search");
     if (cat) setCategory(cat);
+    if (occ) setOccasion(occ); else if (cat) setOccasion("All");
     if (q) setSearch(q);
   }, [searchParams]);
-
   useEffect(() => {
     fetch("https://rayfinesite-3.onrender.com/api/products")
       .then(res => res.json())
@@ -1676,12 +1678,14 @@ function Shop({ cart, setCart, wishlist, setWishlist }) {
       : category === "sale"
       ? p.originalPrice
       : (p.category || "").toLowerCase().trim() === category.toLowerCase().trim();
+    const matchOccasion = occasion === "All"
+      ? true
+      : (p.occasion || "").toLowerCase().trim() === occasion.toLowerCase().trim();
     const matchSearch = (p.name || "").toLowerCase().includes(search.toLowerCase());
     const matchStock = showInStock ? p.inStock : true;
     const matchPrice = p.price >= priceRange[0] && p.price <= priceRange[1];
-    return matchCat && matchSearch && matchStock && matchPrice;
+    return matchCat && matchOccasion && matchSearch && matchStock && matchPrice;
   });
-
   if (sort === "low")    filtered = [...filtered].sort((a, b) => a.price - b.price);
   if (sort === "high")   filtered = [...filtered].sort((a, b) => b.price - a.price);
   if (sort === "newest") filtered = [...filtered].reverse();
