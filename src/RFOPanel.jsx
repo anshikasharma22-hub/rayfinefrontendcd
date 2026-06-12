@@ -467,21 +467,88 @@ function DashboardPage({ products, loading, setPage }) {
 function ProductsPage({ products, loading, showToast, setProducts }) {
   const [search, setSearch] = useState("");
   const [catF, setCatF] = useState("All");
+  const [selected, setSelected] = useState(new Set());
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [editForm, setEditForm] = useState(null);
+
   const filtered = products.filter(p => {
     const q = search.toLowerCase();
     return (!q || p.name?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q))
       && (catF === "All" || p.category?.toLowerCase() === catF.toLowerCase());
   });
+
+  // Toggle select
+  const toggleSelect = (id) => {
+    const newSelected = new Set(selected);
+    if (newSelected.has(id)) newSelected.delete(id);
+    else newSelected.add(id);
+    setSelected(newSelected);
+  };
+
+  // Select all visible
+  const toggleSelectAll = () => {
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map(p => p.id)));
+  };
+
+  // Delete single
   const del = async (id) => {
     if (!window.confirm("Delete this product?")) return;
     try {
       await supabaseQuery(`${SUPABASE_TABLE}?id=eq.${id}`, "DELETE");
       setProducts(prev => prev.filter(p => p.id !== id));
+      setSelected(prev => { const s = new Set(prev); s.delete(id); return s; });
       showToast("Product deleted");
     } catch (err) {
       showToast("Delete failed: " + err.message, "error");
     }
   };
+
+  // Bulk delete
+  const bulkDelete = async () => {
+    if (!selected.size) { showToast("No products selected", "error"); return; }
+    if (!window.confirm(`Delete ${selected.size} product(s)?`)) return;
+    
+    let ok = 0, fail = 0;
+    for (const id of selected) {
+      try {
+        await supabaseQuery(`${SUPABASE_TABLE}?id=eq.${id}`, "DELETE");
+        ok++;
+      } catch (err) {
+        console.error("Delete failed for", id, err.message);
+        fail++;
+      }
+    }
+    
+    setProducts(prev => prev.filter(p => !selected.has(p.id)));
+    setSelected(new Set());
+    if (fail) showToast(`${ok} deleted, ${fail} failed`, fail === selected.size ? "error" : "success");
+    else showToast(`${ok} product(s) deleted!`);
+  };
+
+  // Open edit form
+  const openEdit = (product) => {
+    setEditingProduct(product.id);
+    setEditForm({ ...product });
+  };
+
+  // Save edit
+  const saveEdit = async () => {
+    if (!editForm.name.trim()) { showToast("Name required", "error"); return; }
+    if (!editForm.price) { showToast("Price required", "error"); return; }
+
+    try {
+      const row = toDbRow(editForm);
+      await supabaseQuery(`${SUPABASE_TABLE}?id=eq.${editForm.id}`, "PATCH", row);
+      setProducts(prev => prev.map(p => p.id === editForm.id ? { ...editForm } : p));
+      setEditingProduct(null);
+      setEditForm(null);
+      showToast("Product updated!");
+    } catch (err) {
+      showToast("Update failed: " + err.message, "error");
+    }
+  };
+
   return (
     <div style={{ animation: "fadeIn .3s ease" }}>
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
@@ -494,18 +561,37 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
         </select>
         <span style={{ alignSelf: "center", fontSize: 12, color: "#c8b8a8", whiteSpace: "nowrap" }}>{filtered.length} items</span>
       </div>
+
+      {selected.size > 0 && (
+        <div className="am-card" style={{ marginBottom: 14, background: "#fdf5ee", border: "1.5px solid #d4a574", padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "#b07a5a" }}>{selected.size} selected</span>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={() => setSelected(new Set())} style={{ padding: "7px 14px", borderRadius: 8, border: "1px solid #d4a574", background: "#fff", cursor: "pointer", fontSize: 12, color: "#b07a5a", fontFamily: "inherit", fontWeight: 600 }}>Deselect All</button>
+            <button onClick={bulkDelete} style={{ padding: "7px 14px", borderRadius: 8, border: "none", background: "#e07070", cursor: "pointer", fontSize: 12, color: "#fff", fontFamily: "inherit", fontWeight: 600 }}>🗑 Delete Selected</button>
+          </div>
+        </div>
+      )}
+
       <div className="am-card table-wrap" style={{ padding: 0, overflow: "hidden" }}>
         {loading ? <p style={{ padding: 40, textAlign: "center", color: "#c8b8a8", fontFamily: "'Playfair Display',serif", fontSize: 16, fontStyle: "italic" }}>Loading collection…</p> : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 680 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 720 }}>
               <thead><tr style={{ background: "#faf7f4" }}>
+                <th style={{ fontSize: 10, color: "#c8b8a8", fontWeight: 700, textAlign: "center", padding: "10px 10px", borderBottom: "1px solid #ede8e3", width: 40 }}>
+                  <input type="checkbox" checked={filtered.length > 0 && selected.size === filtered.length} 
+                    onChange={toggleSelectAll} style={{ accentColor: "#d4a574", width: 16, height: 16, cursor: "pointer" }} />
+                </th>
                 {["Image", "Product", "Category", "Price", "Stock", "Status", ""].map(h => (
                   <th key={h} style={{ fontSize: 10, color: "#c8b8a8", fontWeight: 700, textAlign: "left", padding: "10px 14px", borderBottom: "1px solid #ede8e3", textTransform: "uppercase", letterSpacing: "0.8px", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr></thead>
               <tbody>
                 {filtered.map(p => (
-                  <tr key={p.id} className="am-tr" style={{ borderBottom: "1px solid #f5f0ea" }}>
+                  <tr key={p.id} className="am-tr" style={{ borderBottom: "1px solid #f5f0ea", background: selected.has(p.id) ? "#fdf5ee" : "transparent" }}>
+                    <td style={{ padding: "10px", textAlign: "center" }}>
+                      <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)} 
+                        style={{ accentColor: "#d4a574", width: 16, height: 16, cursor: "pointer" }} />
+                    </td>
                     <td style={{ padding: "10px 14px" }}>
                       <img src={p.image || "https://placehold.co/44x44/f5f0ea/c8b8a8?text=%E2%9C%A6"} alt={p.name} style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 8, border: "1px solid #ede8e3", background: "#f5f0ea" }} onError={e => { e.target.src = "https://placehold.co/44x44/f5f0ea/c8b8a8?text=%E2%9C%A6"; }} />
                     </td>
@@ -528,8 +614,9 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
                         ? <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "#fdf3e3", color: "#c47a2a" }}>Low</span>
                         : <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "#fde8e8", color: "#c44a4a" }}>Out</span>}
                     </td>
-                    <td style={{ padding: "10px 14px" }}>
-                      <button onClick={() => del(p.id)} style={{ padding: "5px 12px", border: "1px solid #e8d8d8", borderRadius: 6, background: "none", cursor: "pointer", fontSize: 11, color: "#c44a4a", fontFamily: "inherit" }}>Delete</button>
+                    <td style={{ padding: "10px 14px", display: "flex", gap: 6 }}>
+                      <button onClick={() => openEdit(p)} style={{ padding: "5px 10px", border: "1px solid #d4a574", borderRadius: 6, background: "#fff", cursor: "pointer", fontSize: 11, color: "#b07a5a", fontFamily: "inherit", fontWeight: 600 }}>✏ Edit</button>
+                      <button onClick={() => del(p.id)} style={{ padding: "5px 10px", border: "1px solid #e8d8d8", borderRadius: 6, background: "none", cursor: "pointer", fontSize: 11, color: "#c44a4a", fontFamily: "inherit" }}>🗑</button>
                     </td>
                   </tr>
                 ))}
@@ -539,6 +626,87 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
           </div>
         )}
       </div>
+
+      {/* Edit Modal */}
+      {editingProduct && editForm && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: "32px", maxWidth: 600, width: "100%", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.15)", animation: "slideUp .3s ease" }}>
+            <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 400, color: "#2d2018", marginBottom: 20 }}>Edit Product</h2>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Product Name</label>
+                <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                  style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018" }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Price (₹)</label>
+                <input type="number" value={editForm.price} onChange={e => setEditForm({ ...editForm, price: Number(e.target.value) || 0 })}
+                  style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018" }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Original Price (₹)</label>
+                <input type="number" value={editForm.originalPrice || ""} onChange={e => setEditForm({ ...editForm, originalPrice: Number(e.target.value) || null })}
+                  style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018" }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Stock</label>
+                <input type="number" value={editForm.stock || 0} onChange={e => {
+                  const val = Number(e.target.value) || 0;
+                  setEditForm({ ...editForm, stock: val, inStock: val > 0 });
+                }} style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018" }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Category</label>
+                <select value={editForm.category || ""} onChange={e => setEditForm({ ...editForm, category: e.target.value })}
+                  style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018" }}>
+                  <option value="">Select category</option>
+                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Occasion</label>
+                <select value={editForm.occasion || ""} onChange={e => setEditForm({ ...editForm, occasion: e.target.value })}
+                  style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018" }}>
+                  <option value="">Select occasion</option>
+                  {OCCASIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Material</label>
+              <input value={editForm.material || ""} onChange={e => setEditForm({ ...editForm, material: e.target.value })}
+                style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018" }} />
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Description</label>
+              <textarea rows={3} value={editForm.description || ""} onChange={e => setEditForm({ ...editForm, description: e.target.value })}
+                style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018", resize: "vertical" }} />
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Care Instructions</label>
+              <textarea rows={2} value={editForm.careInstructions || ""} onChange={e => setEditForm({ ...editForm, careInstructions: e.target.value })}
+                style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018", resize: "vertical" }} />
+            </div>
+
+            <div style={{ marginBottom: 16, display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {[["inStock", "📦 In Stock"], ["isBestseller", "⭐ Bestseller"], ["isTrending", "🔥 Trending"], ["isNew", "✨ New"], ["onSale", "🏷 On Sale"]].map(([k, lbl]) => (
+                <label key={k} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer", color: "#5a4a3e" }}>
+                  <input type="checkbox" checked={!!editForm[k]} onChange={e => setEditForm({ ...editForm, [k]: e.target.checked })} style={{ accentColor: "#d4a574", width: 15, height: 15 }} />{lbl}
+                </label>
+              ))}
+            </div>
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button onClick={() => { setEditingProduct(null); setEditForm(null); }} style={{ padding: "11px 20px", borderRadius: 10, border: "1px solid #e8e0d8", background: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#b8a898", fontFamily: "inherit" }}>Cancel</button>
+              <button onClick={saveEdit} style={{ padding: "11px 20px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#d4a574,#b07a5a)", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#fff", fontFamily: "inherit" }}>Save Changes →</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
