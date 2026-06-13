@@ -1245,8 +1245,13 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
 }
 
 // ── Per-batch column mapper + editable preview table ──
-function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
+
+     function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
   const [showMapper, setShowMapper] = useState(false);
+  const [selected, setSelected] = useState(new Set());   // ← NEW
+
+  // Reset selection when batch changes
+  useEffect(() => { setSelected(new Set()); }, [batch.id]);
 
   const setMapping = (fieldKey, header) => {
     onUpdateBatch(batch.id, { mapping: { ...batch.mapping, [fieldKey]: header } });
@@ -1256,24 +1261,74 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
   const invalidRows = batch.rows.length - validRows;
   const inStockCount = batch.rows.filter(r => r.inStock).length;
 
+  // ── Selection helpers ────────────────────f──────────────────────────────
+  const toggleSelect = (idx) => {
+    const s = new Set(selected);
+    s.has(idx) ? s.delete(idx) : s.add(idx);
+    setSelected(s);
+  };
+  const toggleAll = () => {
+    setSelected(selected.size === batch.rows.length
+      ? new Set()
+      : new Set(batch.rows.map((_, i) => i))
+    );
+  };
+
+  // ── Bulk flag helper ───────────────────────────────────────────────────
+  const bulkSet = (patch) => {
+    selected.forEach(idx => onUpdateRow(batch.id, idx, patch));
+  };
+
+  const bulkBarStyle = (color) => ({
+    flex: 1,
+    padding: "7px 10px",
+    borderRadius: 8,
+    border: "none",
+    background: color,
+    color: "#fff",
+    cursor: "pointer",
+    fontSize: 11,
+    fontWeight: 700,
+    fontFamily: "inherit",
+    whiteSpace: "nowrap",
+  });
+  const bulkBarOutline = () => ({
+    flex: 1,
+    padding: "7px 10px",
+    borderRadius: 8,
+    border: "1px solid #e8e0d8",
+    background: "#fff",
+    color: "#8a7a6e",
+    cursor: "pointer",
+    fontSize: 11,
+    fontWeight: 700,
+    fontFamily: "inherit",
+    whiteSpace: "nowrap",
+  });
+
   return (
     <div className="am-card" style={{ marginBottom: 12 }}>
+      {/* ── Header ───────────────────────────────────────────────────── */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
         <div>
           <p style={{ fontSize: 13, fontWeight: 700, color: "#2d2018" }}>{batch.fileName}</p>
           <p style={{ fontSize: 11, color: "#c8b8a8" }}>
-            {validRows} ready {invalidRows ? `, ${invalidRows} missing name/price (skipped)` : ""} • {inStockCount} marked in stock
+            {validRows} ready{invalidRows ? `, ${invalidRows} missing name/price (skipped)` : ""} · {inStockCount} in stock
           </p>
         </div>
-        <button onClick={() => setShowMapper(s => !s)} style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #d4a574", background: showMapper ? "#d4a574" : "#fff", color: showMapper ? "#fff" : "#d4a574", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "inherit", letterSpacing: "0.6px" }}>
+        <button onClick={() => setShowMapper(s => !s)}
+          style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #d4a574", background: showMapper ? "#d4a574" : "#fff", color: showMapper ? "#fff" : "#d4a574", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "inherit", letterSpacing: "0.6px" }}>
           ⚙ {showMapper ? "Hide" : "Edit"} Column Mapping
         </button>
       </div>
 
+      {/* ── Column mapper (unchanged) ─────────────────────────────────── */}
       {showMapper && (
         <div style={{ background: "#faf7f4", border: "1px solid #ede8e3", borderRadius: 12, padding: 16, marginBottom: 16 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: "#d4a574", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 12 }}>Map CSV columns → product fields</p>
-          <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 14 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: "#d4a574", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 12 }}>
+            Map CSV columns → product fields
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 14 }}>
             {PRODUCT_FIELDS.map(f => (
               <div key={f.key}>
                 <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
@@ -1288,7 +1343,7 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
             ))}
           </div>
 
-          <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
             <div>
               <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Override Category (all rows)</label>
               <select value={batch.overrideCat} onChange={e => onUpdateBatch(batch.id, { overrideCat: e.target.value })}
@@ -1309,66 +1364,167 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
               <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
                 {batch.isUSD ? "USD → INR" : "Price Multiplier"}
               </label>
-              <input type="number" step="0.1" value={batch.usdRate} onChange={e => onUpdateBatch(batch.id, { usdRate: Number(e.target.value) || 1 })}
+              <input type="number" step="0.1" value={batch.usdRate}
+                onChange={e => onUpdateBatch(batch.id, { usdRate: Number(e.target.value) || 1 })}
                 className="am-inp" style={{ width: "100%", padding: "9px 10px", border: "1.5px solid #e8e0d8", borderRadius: 8, fontSize: 12, background: "#fff", color: "#2d2018" }} />
             </div>
           </div>
 
           <div style={{ marginTop: 10 }}>
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, cursor: "pointer", color: "#5a4a3e" }}>
-              <input type="checkbox" checked={!!batch.defaultInStock} onChange={e => onUpdateBatch(batch.id, { defaultInStock: e.target.checked })} style={{ accentColor: "#d4a574", width: 15, height: 15 }} />
-              📦 Mark all rows as In Stock by default (uncheck to import as Out of Stock)
+              <input type="checkbox" checked={!!batch.defaultInStock}
+                onChange={e => onUpdateBatch(batch.id, { defaultInStock: e.target.checked })}
+                style={{ accentColor: "#d4a574", width: 15, height: 15 }} />
+              📦 Mark all rows as In Stock by default
             </label>
           </div>
         </div>
       )}
 
-      {/* Editable preview table */}
+      {/* ── NEW: Bulk action bar ──────────────────────────────────────── */}
+      {selected.size > 0 && (
+        <div style={{
+          background: "#fdf5ee",
+          border: "1.5px solid #d4a574",
+          borderRadius: 10,
+          padding: "12px 14px",
+          marginBottom: 12,
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#b07a5a" }}>
+              {selected.size} row{selected.size > 1 ? "s" : ""} selected
+            </span>
+            <button onClick={() => setSelected(new Set())}
+              style={{ padding: "5px 12px", border: "1px solid #d4a574", borderRadius: 7, background: "#fff", cursor: "pointer", fontSize: 11, color: "#b07a5a", fontFamily: "inherit", fontWeight: 600 }}>
+              Deselect All
+            </button>
+          </div>
+
+          {/* Row 1: stock + bestseller + trending + new */}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+            <button onClick={() => bulkSet({ inStock: true })}  style={bulkBarStyle("#7dba7d")}>📦 In Stock</button>
+            <button onClick={() => bulkSet({ inStock: false })} style={bulkBarStyle("#e07070")}>🚫 Out of Stock</button>
+            <button onClick={() => bulkSet({ isBestseller: true })}  style={bulkBarStyle("#e0b070")}>⭐ Add Bestseller</button>
+            <button onClick={() => bulkSet({ isBestseller: false })} style={bulkBarOutline()}>⭐ Remove</button>
+            <button onClick={() => bulkSet({ isTrending: true })}  style={bulkBarStyle("#c4706a")}>🔥 Add Trending</button>
+            <button onClick={() => bulkSet({ isTrending: false })} style={bulkBarOutline()}>🔥 Remove</button>
+            <button onClick={() => bulkSet({ isNew: true })}  style={bulkBarStyle("#7fb3c8")}>✨ Add New</button>
+            <button onClick={() => bulkSet({ isNew: false })} style={bulkBarOutline()}>✨ Remove</button>
+            <button onClick={() => bulkSet({ onSale: true })}  style={bulkBarStyle("#d4a574")}>🏷 Sale On</button>
+            <button onClick={() => bulkSet({ onSale: false })} style={bulkBarOutline()}>🏷 Sale Off</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Preview table (now with checkbox column) ──────────────────── */}
       <div style={{ overflowX: "auto", borderRadius: 10, border: "1px solid #ede8e3" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
-          <thead><tr style={{ background: "#faf7f4" }}>
-            {["#", "Image", "Name", "Category", "Occasion", "Price (₹)", "📦 Stock", "🏷 Sale"].map(h => (
-              <th key={h} style={{ fontSize: 10, color: "#c8b8a8", fontWeight: 700, textAlign: "left", padding: "9px 10px", borderBottom: "1px solid #ede8e3", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
-            ))}
-          </tr></thead>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 960 }}>
+          <thead>
+            <tr style={{ background: "#faf7f4" }}>
+              {/* Select-all checkbox */}
+              <th style={{ padding: "9px 10px", borderBottom: "1px solid #ede8e3", textAlign: "center", width: 36 }}>
+                <input type="checkbox"
+                  checked={batch.rows.length > 0 && selected.size === batch.rows.length}
+                  onChange={toggleAll}
+                  style={{ accentColor: "#d4a574", width: 15, height: 15, cursor: "pointer" }} />
+              </th>
+              {["#", "Image", "Name", "Category", "Occasion", "Price (₹)", "📦 Stock", "⭐", "🔥", "✨", "🏷 Sale"].map(h => (
+                <th key={h} style={{ fontSize: 10, color: "#c8b8a8", fontWeight: 700, textAlign: "left", padding: "9px 10px", borderBottom: "1px solid #ede8e3", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
           <tbody>
             {batch.rows.map((row, i) => {
-              const dc = batch.overrideCat || row.category;
-              const docc = batch.overrideOcc || row.occasion;
+              const dc   = batch.overrideCat || row.category;
+              const docc = batch.overrideOcc  || row.occasion;
               const incomplete = !row.name || !row.price;
+              const isSelected = selected.has(i);
               return (
-                <tr key={i} style={{ borderBottom: "1px solid #f5f0ea", background: incomplete ? "#fdf3f0" : "transparent" }}>
-                  <td style={{ padding: "8px 10px", fontSize: 11, color: "#c8b8a8" }}>{row._rowNum}</td>
-                  <td style={{ padding: "8px 10px" }}>
-                    {row.image ? <img src={row.image} alt="" style={{ width: 34, height: 34, objectFit: "cover", borderRadius: 6, border: "1px solid #ede8e3" }} onError={e => { e.target.style.display = "none"; }} /> : <div style={{ width: 34, height: 34, background: "#f5f0ea", borderRadius: 6, border: "1px solid #ede8e3" }} />}
+                <tr key={i} style={{
+                  borderBottom: "1px solid #f5f0ea",
+                  background: isSelected ? "#fdf5ee" : incomplete ? "#fdf3f0" : "transparent",
+                }}>
+                  {/* Row checkbox */}
+                  <td style={{ padding: "8px 10px", textAlign: "center" }}>
+                    <input type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelect(i)}
+                      style={{ accentColor: "#d4a574", width: 15, height: 15, cursor: "pointer" }} />
                   </td>
-                  <td style={{ padding: "8px 10px", maxWidth: 240 }}>
-                    <input value={row.name} onChange={e => onUpdateRow(batch.id, i, { name: e.target.value })}
+
+                  <td style={{ padding: "8px 10px", fontSize: 11, color: "#c8b8a8" }}>{row._rowNum}</td>
+
+                  <td style={{ padding: "8px 10px" }}>
+                    {row.image
+                      ? <img src={row.image} alt="" style={{ width: 34, height: 34, objectFit: "cover", borderRadius: 6, border: "1px solid #ede8e3" }} onError={e => { e.target.style.display = "none"; }} />
+                      : <div style={{ width: 34, height: 34, background: "#f5f0ea", borderRadius: 6, border: "1px solid #ede8e3" }} />}
+                  </td>
+
+                  <td style={{ padding: "8px 10px", maxWidth: 220 }}>
+                    <input value={row.name}
+                      onChange={e => onUpdateRow(batch.id, i, { name: e.target.value })}
                       style={{ width: "100%", border: incomplete && !row.name ? "1.5px solid #e07070" : "1px solid #ede8e3", borderRadius: 6, padding: "5px 7px", fontSize: 12, fontFamily: "'Playfair Display',serif", color: "#2d2018", background: "#fff" }} />
                   </td>
+
                   <td style={{ padding: "8px 10px" }}>
-                    <select value={dc} onChange={e => onUpdateRow(batch.id, i, { category: e.target.value })} disabled={!!batch.overrideCat}
+                    <select value={dc}
+                      onChange={e => onUpdateRow(batch.id, i, { category: e.target.value })}
+                      disabled={!!batch.overrideCat}
                       style={{ fontSize: 11, fontWeight: 600, padding: "4px 6px", borderRadius: 6, border: "1px solid #ede8e3", background: batch.overrideCat ? "#f5f0ea" : "#fff", color: CAT_COLORS[dc] || "#5a4a3e" }}>
                       <option value="">—</option>
                       {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </td>
+
                   <td style={{ padding: "8px 10px" }}>
-                    <select value={docc} onChange={e => onUpdateRow(batch.id, i, { occasion: e.target.value })} disabled={!!batch.overrideOcc}
+                    <select value={docc}
+                      onChange={e => onUpdateRow(batch.id, i, { occasion: e.target.value })}
+                      disabled={!!batch.overrideOcc}
                       style={{ fontSize: 11, padding: "4px 6px", borderRadius: 6, border: "1px solid #ede8e3", background: batch.overrideOcc ? "#f5f0ea" : "#fff", color: "#5a4a3e" }}>
                       <option value="">—</option>
                       {OCCASIONS.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
                   </td>
+
                   <td style={{ padding: "8px 10px" }}>
-                    <input type="number" value={row.price} onChange={e => onUpdateRow(batch.id, i, { price: Number(e.target.value) || 0 })}
+                    <input type="number" value={row.price}
+                      onChange={e => onUpdateRow(batch.id, i, { price: Number(e.target.value) || 0 })}
                       style={{ width: 80, border: incomplete && !row.price ? "1.5px solid #e07070" : "1px solid #ede8e3", borderRadius: 6, padding: "5px 7px", fontSize: 12, color: "#b07a5a", fontWeight: 600, background: "#fff" }} />
                   </td>
+
+                  {/* In Stock */}
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                    <input type="checkbox" checked={!!row.inStock} onChange={e => onUpdateRow(batch.id, i, { inStock: e.target.checked })} style={{ accentColor: "#7dba7d", width: 16, height: 16, cursor: "pointer" }} />
+                    <input type="checkbox" checked={!!row.inStock}
+                      onChange={e => onUpdateRow(batch.id, i, { inStock: e.target.checked })}
+                      style={{ accentColor: "#7dba7d", width: 16, height: 16, cursor: "pointer" }} />
                   </td>
+
+                  {/* Bestseller ⭐ */}
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                    <input type="checkbox" checked={!!row.onSale} onChange={e => onUpdateRow(batch.id, i, { onSale: e.target.checked })} style={{ accentColor: "#d4a574", width: 15, height: 15, cursor: "pointer" }} />
+                    <input type="checkbox" checked={!!row.isBestseller}
+                      onChange={e => onUpdateRow(batch.id, i, { isBestseller: e.target.checked })}
+                      style={{ accentColor: "#e0b070", width: 15, height: 15, cursor: "pointer" }} />
+                  </td>
+
+                  {/* Trending 🔥 */}
+                  <td style={{ padding: "8px 10px", textAlign: "center" }}>
+                    <input type="checkbox" checked={!!row.isTrending}
+                      onChange={e => onUpdateRow(batch.id, i, { isTrending: e.target.checked })}
+                      style={{ accentColor: "#c4706a", width: 15, height: 15, cursor: "pointer" }} />
+                  </td>
+
+                  {/* New ✨ */}
+                  <td style={{ padding: "8px 10px", textAlign: "center" }}>
+                    <input type="checkbox" checked={!!row.isNew}
+                      onChange={e => onUpdateRow(batch.id, i, { isNew: e.target.checked })}
+                      style={{ accentColor: "#7fb3c8", width: 15, height: 15, cursor: "pointer" }} />
+                  </td>
+
+                  {/* Sale 🏷 */}
+                  <td style={{ padding: "8px 10px", textAlign: "center" }}>
+                    <input type="checkbox" checked={!!row.onSale}
+                      onChange={e => onUpdateRow(batch.id, i, { onSale: e.target.checked })}
+                      style={{ accentColor: "#d4a574", width: 15, height: 15, cursor: "pointer" }} />
                   </td>
                 </tr>
               );
@@ -1379,6 +1535,7 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
     </div>
   );
 }
+
 
 
 // ── Orders Page ───────────────────────────────
