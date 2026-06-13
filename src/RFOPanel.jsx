@@ -1,11 +1,11 @@
- import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 
 // ── Config ────────────────────────────────────
 const SUPABASE_URL = "https://ajqqaeejotlghgilgajy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqcXFhZWVqb3RsZ2hnaWxnYWp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNjU2MTUsImV4cCI6MjA5NTY0MTYxNX0.fZ1MmCpMiQnwu7HsaK3zP4HXjxrLK6JseEZSUvIkreY";
 const SUPABASE_TABLE = "rayfinedatabase";
 // Columns that actually exist on public.rayfinedatabase
-const PRODUCT_COLUMNS = ["name","price","original_price","image","description","category","in_stock","variants","material","care_instructions"];
+const PRODUCT_COLUMNS = ["name","price","original_price","image","description","category","in_stock","variants","material","care_instructions","occasion","is_bestseller","is_trending","is_new"];
 function sanitizeProduct(p){
   const out = {};
   for(const k of PRODUCT_COLUMNS){ if(p[k] !== undefined) out[k] = p[k]; }
@@ -27,6 +27,10 @@ function toDbRow(p){
     variants: Array.isArray(p.variants) ? p.variants.join(", ") : (p.variants || ""),
     material: p.material || "",
     care_instructions: p.careInstructions || "",
+    occasion: p.occasion || "",
+    is_bestseller: !!p.isBestseller,
+    is_trending: !!p.isTrending,
+    is_new: !!p.isNew,
   });
 }
 // Map a row coming back from rayfinedatabase -> our internal camelCase shape (for display)
@@ -35,14 +39,12 @@ function fromDbRow(r){
     ...r,
     id: r.id,
     originalPrice: r.original_price,
-    inStock: r.in_stock,
+    inStock: !!r.in_stock,
     careInstructions: r.care_instructions,
-    // fields not present in this table — default so UI doesn't break
-    stock: r.in_stock ? 1 : 0,
     occasion: r.occasion || "",
-    isBestseller: false,
-    isTrending: false,
-    isNew: false,
+    isBestseller: !!r.is_bestseller,
+    isTrending: !!r.is_trending,
+    isNew: !!r.is_new,
     onSale: !!r.original_price,
   };
 }
@@ -175,7 +177,6 @@ const PRODUCT_FIELDS = [
   { key: "description", label: "Description", required: false, type: "text" },
   { key: "price", label: "Price", required: true, type: "number" },
   { key: "originalPrice", label: "Original Price", required: false, type: "number" },
-  { key: "stock", label: "Stock / Quantity", required: false, type: "number" },
   { key: "category", label: "Category", required: false, type: "category" },
   { key: "occasion", label: "Occasion", required: false, type: "occasion" },
   { key: "material", label: "Material", required: false, type: "text" },
@@ -193,7 +194,6 @@ function autoMapHeaders(headers) {
     description: ["description", "desc"],
     price: ["price", "amount", "cost"],
     originalPrice: ["originalprice", "compareatprice", "mrp", "listprice"],
-    stock: ["quantity", "qty", "stock", "inventory"],
     category: ["category", "type", "producttype"],
     occasion: ["occasion"],
     material: ["materials", "material"],
@@ -321,6 +321,7 @@ export default function RFOAdmin() {
           .grid-2{grid-template-columns:1fr!important;}
           .topbar-actions{display:none!important;}
           .table-wrap{overflow-x:auto;}
+          .bulkbar-grid{grid-template-columns:1fr 1fr!important;}
         }
         @media(min-width:769px){
           .mobile-nav{display:none!important;}
@@ -385,7 +386,7 @@ export default function RFOAdmin() {
             {page === "dashboard" && <DashboardPage products={products} loading={loading} setPage={setPage} />}
             {page === "products" && <ProductsPage products={products} loading={loading} showToast={showToast} setProducts={setProducts} />}
             {page === "add" && <AddProductPage showToast={showToast} onSave={p => { setProducts(prev => [p, ...prev]); showToast("Product saved!"); setPage("products"); }} />}
-            {page === "bulk" && <BulkImportPage showToast={showToast} onImport={() => { showToast("Import complete!"); loadProducts(); setPage("products"); }} />}
+            {page === "bulk" && <BulkImportPage showToast={showToast} onImport={() => { showToast("Import complete!"); loadProducts(); setPage("products"); }} onDeleteAll={() => { setProducts([]); loadProducts(); }} />}
             {page === "orders" && <OrdersPage showToast={showToast} />}
           </main>
         </div>
@@ -398,10 +399,11 @@ export default function RFOAdmin() {
 
 // ── Dashboard ─────────────────────────────────
 function DashboardPage({ products, loading, setPage }) {
-  const inStock = products.filter(p => p.inStock && (p.stock || 0) > 5).length;
-  const lowStock = products.filter(p => p.inStock && (p.stock || 0) <= 5 && (p.stock || 0) > 0).length;
-  const outOfStock = products.filter(p => !p.inStock || (p.stock || 0) === 0).length;
+  const inStock = products.filter(p => p.inStock).length;
+  const outOfStock = products.filter(p => !p.inStock).length;
   const onSale = products.filter(p => p.onSale || p.originalPrice).length;
+  const bestsellers = products.filter(p => p.isBestseller).length;
+  const trending = products.filter(p => p.isTrending).length;
   const catCounts = {};
   products.forEach(p => { const k = p.category || "Other"; catCounts[k] = (catCounts[k] || 0) + 1; });
   const catArr = Object.entries(catCounts).sort((a, b) => b[1] - a[1]).slice(0, 7);
@@ -409,8 +411,10 @@ function DashboardPage({ products, loading, setPage }) {
   const stats = [
     { label: "Total Products", val: loading ? "…" : products.length, color: "#d4a574", icon: "✦" },
     { label: "In Stock", val: loading ? "…" : inStock, color: "#7dba7d", icon: "✓" },
-    { label: "Low / Out of Stock", val: loading ? "…" : lowStock + outOfStock, color: "#e07070", icon: "!" },
+    { label: "Out of Stock", val: loading ? "…" : outOfStock, color: "#e07070", icon: "!" },
     { label: "On Sale", val: loading ? "…" : onSale, color: "#b07a5a", icon: "🏷" },
+    { label: "Bestsellers", val: loading ? "…" : bestsellers, color: "#e0b070", icon: "⭐" },
+    { label: "Trending", val: loading ? "…" : trending, color: "#c4706a", icon: "🔥" },
   ];
   return (
     <div style={{ animation: "fadeIn .3s ease" }}>
@@ -467,14 +471,26 @@ function DashboardPage({ products, loading, setPage }) {
 function ProductsPage({ products, loading, showToast, setProducts }) {
   const [search, setSearch] = useState("");
   const [catF, setCatF] = useState("All");
+  const [statusF, setStatusF] = useState("All"); // All | InStock | OutOfStock | Bestseller | Trending | New | Sale
   const [selected, setSelected] = useState(new Set());
   const [editingProduct, setEditingProduct] = useState(null);
   const [editForm, setEditForm] = useState(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkCat, setBulkCat] = useState("");
+  const [bulkOcc, setBulkOcc] = useState("");
 
   const filtered = products.filter(p => {
     const q = search.toLowerCase();
-    return (!q || p.name?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q))
-      && (catF === "All" || p.category?.toLowerCase() === catF.toLowerCase());
+    const matchesSearch = !q || p.name?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q);
+    const matchesCat = catF === "All" || p.category?.toLowerCase() === catF.toLowerCase();
+    let matchesStatus = true;
+    if (statusF === "InStock") matchesStatus = !!p.inStock;
+    else if (statusF === "OutOfStock") matchesStatus = !p.inStock;
+    else if (statusF === "Bestseller") matchesStatus = !!p.isBestseller;
+    else if (statusF === "Trending") matchesStatus = !!p.isTrending;
+    else if (statusF === "New") matchesStatus = !!p.isNew;
+    else if (statusF === "Sale") matchesStatus = !!(p.onSale || p.originalPrice);
+    return matchesSearch && matchesCat && matchesStatus;
   });
 
   // Toggle select
@@ -508,7 +524,7 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
   const bulkDelete = async () => {
     if (!selected.size) { showToast("No products selected", "error"); return; }
     if (!window.confirm(`Delete ${selected.size} product(s)?`)) return;
-    
+    setBulkBusy(true);
     let ok = 0, fail = 0;
     for (const id of selected) {
       try {
@@ -519,11 +535,57 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
         fail++;
       }
     }
-    
     setProducts(prev => prev.filter(p => !selected.has(p.id)));
     setSelected(new Set());
+    setBulkBusy(false);
     if (fail) showToast(`${ok} deleted, ${fail} failed`, fail === selected.size ? "error" : "success");
     else showToast(`${ok} product(s) deleted!`);
+  };
+
+  // Generic bulk field update (patch applied to each selected product)
+  const bulkUpdateField = async (patchFn, successMsg) => {
+    if (!selected.size) { showToast("No products selected", "error"); return; }
+    setBulkBusy(true);
+    let ok = 0, fail = 0;
+    const updatedMap = new Map();
+    for (const id of selected) {
+      const prod = products.find(p => p.id === id);
+      if (!prod) continue;
+      const patch = patchFn(prod);
+      const merged = { ...prod, ...patch };
+      try {
+        await supabaseQuery(`${SUPABASE_TABLE}?id=eq.${id}`, "PATCH", toDbRow(merged));
+        updatedMap.set(id, merged);
+        ok++;
+      } catch (err) {
+        console.error("Update failed for", id, err.message);
+        fail++;
+      }
+    }
+    setProducts(prev => prev.map(p => updatedMap.has(p.id) ? updatedMap.get(p.id) : p));
+    setBulkBusy(false);
+    if (fail) showToast(`${ok} updated, ${fail} failed`, fail === selected.size ? "error" : "success");
+    else showToast(successMsg(ok));
+  };
+
+  const markInStock = (val) => bulkUpdateField(() => ({ inStock: val }), n => `${n} product(s) marked ${val ? "In Stock" : "Out of Stock"}`);
+  const markBestseller = (val) => bulkUpdateField(() => ({ isBestseller: val }), n => `${n} product(s) ${val ? "added to" : "removed from"} Bestsellers`);
+  const markTrending = (val) => bulkUpdateField(() => ({ isTrending: val }), n => `${n} product(s) ${val ? "marked Trending" : "unmarked Trending"}`);
+  const markSale = (val) => bulkUpdateField(p => {
+    if (val) {
+      const orig = p.originalPrice || Math.round((p.price || 0) * 1.25);
+      return { onSale: true, originalPrice: orig };
+    }
+    return { onSale: false, originalPrice: null };
+  }, n => `${n} product(s) ${val ? "marked On Sale" : "removed from Sale"}`);
+
+  const applyBulkCategory = () => {
+    if (!bulkCat) { showToast("Pick a category first", "error"); return; }
+    bulkUpdateField(() => ({ category: bulkCat }), n => `${n} product(s) moved to "${bulkCat}"`);
+  };
+  const applyBulkOccasion = () => {
+    if (!bulkOcc) { showToast("Pick an occasion first", "error"); return; }
+    bulkUpdateField(() => ({ occasion: bulkOcc }), n => `${n} product(s) set to "${bulkOcc}"`);
   };
 
   // Open edit form
@@ -549,9 +611,19 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
     }
   };
 
+  const STATUS_FILTERS = [
+    { id: "All", label: "All" },
+    { id: "InStock", label: "In Stock" },
+    { id: "OutOfStock", label: "Out of Stock" },
+    { id: "Bestseller", label: "⭐ Bestseller" },
+    { id: "Trending", label: "🔥 Trending" },
+    { id: "New", label: "✨ New" },
+    { id: "Sale", label: "🏷 On Sale" },
+  ];
+
   return (
     <div style={{ animation: "fadeIn .3s ease" }}>
-      <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
         <input className="am-inp" placeholder="Search products…" value={search} onChange={e => setSearch(e.target.value)}
           style={{ flex: 1, minWidth: 180, padding: "10px 14px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#fff", color: "#2d2018" }} />
         <select className="am-inp" value={catF} onChange={e => setCatF(e.target.value)}
@@ -562,26 +634,75 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
         <span style={{ alignSelf: "center", fontSize: 12, color: "#c8b8a8", whiteSpace: "nowrap" }}>{filtered.length} items</span>
       </div>
 
+      {/* Status filter pills */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+        {STATUS_FILTERS.map(s => (
+          <button key={s.id} onClick={() => setStatusF(s.id)}
+            style={{ padding: "7px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, letterSpacing: "0.6px", fontFamily: "inherit", background: statusF === s.id ? "linear-gradient(135deg,#d4a574,#b07a5a)" : "#fff", color: statusF === s.id ? "#fff" : "#b8a898", border: statusF === s.id ? "none" : "1px solid #e8e0d8" }}>
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       {selected.size > 0 && (
-        <div className="am-card" style={{ marginBottom: 14, background: "#fdf5ee", border: "1.5px solid #d4a574", padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#b07a5a" }}>{selected.size} selected</span>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={() => setSelected(new Set())} style={{ padding: "7px 14px", borderRadius: 8, border: "1px solid #d4a574", background: "#fff", cursor: "pointer", fontSize: 12, color: "#b07a5a", fontFamily: "inherit", fontWeight: 600 }}>Deselect All</button>
-            <button onClick={bulkDelete} style={{ padding: "7px 14px", borderRadius: 8, border: "none", background: "#e07070", cursor: "pointer", fontSize: 12, color: "#fff", fontFamily: "inherit", fontWeight: 600 }}>🗑 Delete Selected</button>
+        <div className="am-card" style={{ marginBottom: 14, background: "#fdf5ee", border: "1.5px solid #d4a574", padding: "14px 16px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#b07a5a" }}>{selected.size} selected</span>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setSelected(new Set())} disabled={bulkBusy} style={{ padding: "7px 14px", borderRadius: 8, border: "1px solid #d4a574", background: "#fff", cursor: "pointer", fontSize: 12, color: "#b07a5a", fontFamily: "inherit", fontWeight: 600 }}>Deselect All</button>
+              <button onClick={bulkDelete} disabled={bulkBusy} style={{ padding: "7px 14px", borderRadius: 8, border: "none", background: "#e07070", cursor: "pointer", fontSize: 12, color: "#fff", fontFamily: "inherit", fontWeight: 600 }}>🗑 Delete Selected</button>
+            </div>
           </div>
+
+          <div className="bulkbar-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button disabled={bulkBusy} onClick={() => markInStock(true)} style={bulkBtnStyle("#7dba7d")}>📦 In Stock</button>
+              <button disabled={bulkBusy} onClick={() => markInStock(false)} style={bulkBtnStyle("#e07070")}>🚫 Out</button>
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button disabled={bulkBusy} onClick={() => markBestseller(true)} style={bulkBtnStyle("#e0b070")}>⭐ Add</button>
+              <button disabled={bulkBusy} onClick={() => markBestseller(false)} style={bulkBtnStyleOutline()}>⭐ Remove</button>
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button disabled={bulkBusy} onClick={() => markTrending(true)} style={bulkBtnStyle("#c4706a")}>🔥 Add</button>
+              <button disabled={bulkBusy} onClick={() => markTrending(false)} style={bulkBtnStyleOutline()}>🔥 Remove</button>
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button disabled={bulkBusy} onClick={() => markSale(true)} style={bulkBtnStyle("#d4a574")}>🏷 Sale On</button>
+              <button disabled={bulkBusy} onClick={() => markSale(false)} style={bulkBtnStyleOutline()}>🏷 Sale Off</button>
+            </div>
+          </div>
+
+          <div className="bulkbar-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginTop: 8 }}>
+            <div style={{ display: "flex", gap: 6, gridColumn: "span 2" }}>
+              <select value={bulkCat} onChange={e => setBulkCat(e.target.value)} className="am-inp" style={{ flex: 1, padding: "7px 8px", border: "1.5px solid #e8e0d8", borderRadius: 8, fontSize: 12, background: "#fff", color: "#2d2018" }}>
+                <option value="">Set Category…</option>
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <button disabled={bulkBusy} onClick={applyBulkCategory} style={bulkBtnStyle("#b07a5a")}>Apply</button>
+            </div>
+            <div style={{ display: "flex", gap: 6, gridColumn: "span 2" }}>
+              <select value={bulkOcc} onChange={e => setBulkOcc(e.target.value)} className="am-inp" style={{ flex: 1, padding: "7px 8px", border: "1.5px solid #e8e0d8", borderRadius: 8, fontSize: 12, background: "#fff", color: "#2d2018" }}>
+                <option value="">Set Occasion…</option>
+                {OCCASIONS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+              <button disabled={bulkBusy} onClick={applyBulkOccasion} style={bulkBtnStyle("#b07a5a")}>Apply</button>
+            </div>
+          </div>
+          {bulkBusy && <p style={{ fontSize: 11, color: "#b07a5a", marginTop: 8, fontWeight: 600 }}>Working…</p>}
         </div>
       )}
 
       <div className="am-card table-wrap" style={{ padding: 0, overflow: "hidden" }}>
         {loading ? <p style={{ padding: 40, textAlign: "center", color: "#c8b8a8", fontFamily: "'Playfair Display',serif", fontSize: 16, fontStyle: "italic" }}>Loading collection…</p> : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 720 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 760 }}>
               <thead><tr style={{ background: "#faf7f4" }}>
                 <th style={{ fontSize: 10, color: "#c8b8a8", fontWeight: 700, textAlign: "center", padding: "10px 10px", borderBottom: "1px solid #ede8e3", width: 40 }}>
                   <input type="checkbox" checked={filtered.length > 0 && selected.size === filtered.length} 
                     onChange={toggleSelectAll} style={{ accentColor: "#d4a574", width: 16, height: 16, cursor: "pointer" }} />
                 </th>
-                {["Image", "Product", "Category", "Price", "Stock", "Status", ""].map(h => (
+                {["Image", "Product", "Category", "Price", "Tags", "Status", ""].map(h => (
                   <th key={h} style={{ fontSize: 10, color: "#c8b8a8", fontWeight: 700, textAlign: "left", padding: "10px 14px", borderBottom: "1px solid #ede8e3", textTransform: "uppercase", letterSpacing: "0.8px", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr></thead>
@@ -606,13 +727,18 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
                       {formatINR(p.price)}
                       {p.originalPrice && <div style={{ fontSize: 10, color: "#c8b8a8", textDecoration: "line-through" }}>{formatINR(p.originalPrice)}</div>}
                     </td>
-                    <td style={{ padding: "10px 14px", fontSize: 13, color: "#5a4a3e" }}>{p.stock || 0}</td>
                     <td style={{ padding: "10px 14px" }}>
-                      {p.inStock && (p.stock || 0) > 5
+                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                        {p.isBestseller && <span style={tagPillStyle("#e0b070")}>⭐</span>}
+                        {p.isTrending && <span style={tagPillStyle("#c4706a")}>🔥</span>}
+                        {p.isNew && <span style={tagPillStyle("#7fb3c8")}>✨</span>}
+                        {(p.onSale || p.originalPrice) && <span style={tagPillStyle("#d4a574")}>🏷</span>}
+                      </div>
+                    </td>
+                    <td style={{ padding: "10px 14px" }}>
+                      {p.inStock
                         ? <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "#e8f5e8", color: "#4a8f4a" }}>In Stock</span>
-                        : p.inStock && (p.stock || 0) > 0
-                        ? <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "#fdf3e3", color: "#c47a2a" }}>Low</span>
-                        : <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "#fde8e8", color: "#c44a4a" }}>Out</span>}
+                        : <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "#fde8e8", color: "#c44a4a" }}>Out of Stock</span>}
                     </td>
                     <td style={{ padding: "10px 14px", display: "flex", gap: 6 }}>
                       <button onClick={() => openEdit(p)} style={{ padding: "5px 10px", border: "1px solid #d4a574", borderRadius: 6, background: "#fff", cursor: "pointer", fontSize: 11, color: "#b07a5a", fontFamily: "inherit", fontWeight: 600 }}>✏ Edit</button>
@@ -650,13 +776,6 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
                   style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018" }} />
               </div>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Stock</label>
-                <input type="number" value={editForm.stock || 0} onChange={e => {
-                  const val = Number(e.target.value) || 0;
-                  setEditForm({ ...editForm, stock: val, inStock: val > 0 });
-                }} style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018" }} />
-              </div>
-              <div>
                 <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Category</label>
                 <select value={editForm.category || ""} onChange={e => setEditForm({ ...editForm, category: e.target.value })}
                   style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018" }}>
@@ -672,12 +791,11 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
                   {OCCASIONS.map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
-            </div>
-
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Material</label>
-              <input value={editForm.material || ""} onChange={e => setEditForm({ ...editForm, material: e.target.value })}
-                style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018" }} />
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Material</label>
+                <input value={editForm.material || ""} onChange={e => setEditForm({ ...editForm, material: e.target.value })}
+                  style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018" }} />
+              </div>
             </div>
 
             <div style={{ marginBottom: 14 }}>
@@ -711,9 +829,19 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
   );
 }
 
+function bulkBtnStyle(color) {
+  return { flex: 1, padding: "7px 10px", borderRadius: 8, border: "none", background: color, color: "#fff", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "inherit", whiteSpace: "nowrap" };
+}
+function bulkBtnStyleOutline() {
+  return { flex: 1, padding: "7px 10px", borderRadius: 8, border: "1px solid #e8e0d8", background: "#fff", color: "#8a7a6e", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "inherit", whiteSpace: "nowrap" };
+}
+function tagPillStyle(color) {
+  return { fontSize: 11, padding: "2px 6px", borderRadius: 6, background: `${color}22`, color };
+}
+
 // ── Add Product Page ──────────────────────────
 function AddProductPage({ showToast, onSave }) {
-  const blank = { name: "", price: "", originalPrice: "", category: "", occasion: "", stock: "", material: "", careInstructions: "", description: "", image: "", variants: "", inStock: true, isBestseller: false, isTrending: false, isNew: false, onSale: false };
+  const blank = { name: "", price: "", originalPrice: "", category: "", occasion: "", material: "", careInstructions: "", description: "", image: "", variants: "", inStock: true, isBestseller: false, isTrending: false, isNew: false, onSale: false };
   const [form, setForm] = useState(blank);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -749,11 +877,8 @@ function AddProductPage({ showToast, onSave }) {
       ...form,
       price: Number(form.price),
       originalPrice: Number(form.originalPrice) || null,
-      stock: Number(form.stock) || 0,
       variants: form.variants ? form.variants.split(",").map(v => v.trim()) : [],
     };
-    delete product.image; // re-add below after upload check — kept inline for simplicity
-    product.image = form.image;
     try {
       const savedData = await supabaseQuery(SUPABASE_TABLE, "POST", [toDbRow(product)]);
       const saved = Array.isArray(savedData) ? savedData[0] : null;
@@ -786,7 +911,6 @@ function AddProductPage({ showToast, onSave }) {
           {inp("Product Name", "name", { placeholder: "e.g. Kundan Jhumka Set" })}
           {inp("Price (₹)", "price", { type: "number", placeholder: "1499" })}
           {inp("Original Price (₹)", "originalPrice", { type: "number", placeholder: "Leave blank if no discount" })}
-          {inp("Stock Quantity", "stock", { type: "number", placeholder: "0" })}
 
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>
@@ -864,16 +988,14 @@ function AddProductPage({ showToast, onSave }) {
   );
 }
 
-
-
-  
-
-
-function BulkImportPage({ showToast, onImport }) {
+// ── Bulk Import Page ───────────────────────────
+function BulkImportPage({ showToast, onImport, onDeleteAll }) {
   const fileRef = useRef();
   const [dragging, setDragging] = useState(false);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [deletingAll, setDeletingAll] = useState(false);
+  const [deleteProgress, setDeleteProgress] = useState(0);
 
   // Each batch: { id, fileName, headers, rawRows, mapping, rows: [enriched products], usdRate, isUSD }
   const [batches, setBatches] = useState([]);
@@ -902,7 +1024,7 @@ function BulkImportPage({ showToast, onImport }) {
             usdRate: USD_TO_INR_DEFAULT,
             overrideCat: "",
             overrideOcc: "",
-            defaultQuantity: 1, // NEW: manual quantity multiplier
+            defaultInStock: true, // NEW: default in-stock for all rows in this batch
             rows: built,
           };
           setBatches(prev => [...prev, newBatch]);
@@ -917,7 +1039,7 @@ function BulkImportPage({ showToast, onImport }) {
   };
 
   // Build enriched product rows from raw CSV rows + a column mapping
-  function buildRows(rawRows, mapping, usdRate, defaultQty = 1) {
+  function buildRows(rawRows, mapping, usdRate, defaultInStock = true) {
     return rawRows.map((raw, i) => {
       const get = (key) => mapping[key] ? (raw[mapping[key]] ?? "") : "";
       const tags = get("tags");
@@ -927,22 +1049,17 @@ function BulkImportPage({ showToast, onImport }) {
       const price = usdRate !== 1 ? Math.round(priceRaw * usdRate) : Math.round(priceRaw);
       const origRaw = parseFloat(get("originalPrice")) || 0;
       const originalPrice = origRaw ? (usdRate !== 1 ? Math.round(origRaw * usdRate) : Math.round(origRaw)) : null;
-      
-      // FIX: Handle stock with fallback logic
-      let stock = parseInt(get("stock")) || 0;
-      if (stock === 0) stock = defaultQty; // Use default if stock is 0
-      
+
       const imageField = get("image");
       const image = imageField.split(",")[0]?.trim().replace(/^http:\/\//i, "https://")?.split("?")[0] || "";
-      
+
       return {
         _rowNum: i + 2,
         name: title,
         description: get("description").replace(/\n/g, " ").trim().slice(0, 1000),
         price,
         originalPrice,
-        stock,
-        inStock: stock > 0,
+        inStock: defaultInStock,
         category: get("category") || detected.category || guessCategoryFromTitle(title) || "",
         occasion: get("occasion") || detected.occasion || "",
         material: get("material"),
@@ -960,8 +1077,8 @@ function BulkImportPage({ showToast, onImport }) {
     setBatches(prev => prev.map(b => {
       if (b.id !== id) return b;
       const next = { ...b, ...patch };
-      if (patch.mapping || patch.usdRate !== undefined || patch.defaultQuantity !== undefined) {
-        next.rows = buildRows(next.rawRows, next.mapping, next.usdRate, next.defaultQuantity);
+      if (patch.mapping || patch.usdRate !== undefined || patch.defaultInStock !== undefined) {
+        next.rows = buildRows(next.rawRows, next.mapping, next.usdRate, next.defaultInStock);
       }
       return next;
     }));
@@ -1014,6 +1131,42 @@ function BulkImportPage({ showToast, onImport }) {
     if (ok) { setBatches([]); setActiveBatch(null); onImport(); }
   };
 
+  // Delete ALL products from the table
+  const deleteAllProducts = async () => {
+    if (!window.confirm("⚠️ This will permanently delete ALL products from the database. Are you sure?")) return;
+    if (!window.confirm("Really sure? This cannot be undone. Type-confirm by clicking OK again.")) return;
+    setDeletingAll(true);
+    setDeleteProgress(0);
+    try {
+      // fetch all ids first
+      const all = await supabaseQuery(`${SUPABASE_TABLE}?select=id`);
+      const ids = Array.isArray(all) ? all.map(r => r.id) : [];
+      if (!ids.length) { showToast("No products to delete"); setDeletingAll(false); return; }
+      const CHUNK = 50;
+      let done = 0;
+      for (let i = 0; i < ids.length; i += CHUNK) {
+        const chunk = ids.slice(i, i + CHUNK);
+        const filter = chunk.map(id => `id.eq.${id}`).join(",");
+        try {
+          await supabaseQuery(`${SUPABASE_TABLE}?or=(${filter})`, "DELETE");
+        } catch (err) {
+          // fallback one by one
+          for (const id of chunk) {
+            try { await supabaseQuery(`${SUPABASE_TABLE}?id=eq.${id}`, "DELETE"); } catch {}
+          }
+        }
+        done += chunk.length;
+        setDeleteProgress(Math.min(100, Math.round((done / ids.length) * 100)));
+      }
+      showToast(`${ids.length} product(s) deleted`);
+      onDeleteAll && onDeleteAll();
+    } catch (err) {
+      showToast("Delete all failed: " + err.message, "error");
+    } finally {
+      setDeletingAll(false);
+    }
+  };
+
   const active = batches.find(b => b.id === activeBatch);
 
   return (
@@ -1021,7 +1174,7 @@ function BulkImportPage({ showToast, onImport }) {
       <div className="am-card" style={{ marginBottom: 16 }}>
         <div style={{ marginBottom: 16 }}>
           <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 400, color: "#2d2018", marginBottom: 4 }}>Bulk Upload</h3>
-          <p style={{ fontSize: 12, color: "#b8a898" }}>Drop any CSV — Etsy export or your own format. Map columns per file, then fine-tune stock & flags per row before uploading. You can load multiple CSVs at once.</p>
+          <p style={{ fontSize: 12, color: "#b8a898" }}>Drop any CSV — Etsy export or your own format. Map columns per file, then fine-tune flags per row before uploading. You can load multiple CSVs at once.</p>
         </div>
 
         <div
@@ -1035,6 +1188,25 @@ function BulkImportPage({ showToast, onImport }) {
           <p style={{ fontSize: 14, color: "#8a7a6e" }}>Drop CSV file(s) here or <strong style={{ color: "#d4a574" }}>tap to browse</strong></p>
           <p style={{ fontSize: 11, color: "#c8b8a8", marginTop: 6 }}>Multiple files supported — columns auto-detected, fully adjustable</p>
         </div>
+      </div>
+
+      {/* Danger zone: delete all */}
+      <div className="am-card" style={{ marginBottom: 16, border: "1.5px solid #f5d5d5", background: "#fdf5f5" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#c44a4a" }}>⚠️ Danger Zone</p>
+            <p style={{ fontSize: 11, color: "#c8a8a8" }}>Permanently delete every product in the database. Use before a fresh re-import.</p>
+          </div>
+          <button onClick={deleteAllProducts} disabled={deletingAll}
+            style={{ padding: "10px 18px", borderRadius: 10, border: "none", background: "#e07070", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "inherit", whiteSpace: "nowrap" }}>
+            {deletingAll ? `Deleting… ${deleteProgress}%` : "🗑 Delete All Products"}
+          </button>
+        </div>
+        {deletingAll && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ height: 6, background: "#f5e0e0", borderRadius: 4 }}><div style={{ height: "100%", background: "#e07070", width: `${deleteProgress}%`, borderRadius: 4, transition: "width .3s" }} /></div>
+          </div>
+        )}
       </div>
 
       {batches.length > 0 && (
@@ -1072,7 +1244,7 @@ function BulkImportPage({ showToast, onImport }) {
   );
 }
 
-// ── Per-batch column mapper + editable preview table (Fixed) ──
+// ── Per-batch column mapper + editable preview table ──
 function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
   const [showMapper, setShowMapper] = useState(false);
 
@@ -1090,7 +1262,7 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
         <div>
           <p style={{ fontSize: 13, fontWeight: 700, color: "#2d2018" }}>{batch.fileName}</p>
           <p style={{ fontSize: 11, color: "#c8b8a8" }}>
-            {validRows} ready {invalidRows ? `, ${invalidRows} missing name/price (skipped)` : ""} • {inStockCount} with stock
+            {validRows} ready {invalidRows ? `, ${invalidRows} missing name/price (skipped)` : ""} • {inStockCount} marked in stock
           </p>
         </div>
         <button onClick={() => setShowMapper(s => !s)} style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #d4a574", background: showMapper ? "#d4a574" : "#fff", color: showMapper ? "#fff" : "#d4a574", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "inherit", letterSpacing: "0.6px" }}>
@@ -1142,13 +1314,11 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
             </div>
           </div>
 
-          <div>
-            <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
-              📦 Default Stock (if CSV has 0 or blank)
+          <div style={{ marginTop: 10 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, cursor: "pointer", color: "#5a4a3e" }}>
+              <input type="checkbox" checked={!!batch.defaultInStock} onChange={e => onUpdateBatch(batch.id, { defaultInStock: e.target.checked })} style={{ accentColor: "#d4a574", width: 15, height: 15 }} />
+              📦 Mark all rows as In Stock by default (uncheck to import as Out of Stock)
             </label>
-            <input type="number" value={batch.defaultQuantity || 1} onChange={e => onUpdateBatch(batch.id, { defaultQuantity: Math.max(1, Number(e.target.value) || 1) })}
-              className="am-inp" style={{ width: "100%", padding: "9px 10px", border: "1.5px solid #e8e0d8", borderRadius: 8, fontSize: 12, background: "#fff", color: "#2d2018" }} />
-            <p style={{ fontSize: 10, color: "#c8b8a8", marginTop: 4 }}>Products with 0 stock will use this value instead</p>
           </div>
         </div>
       )}
@@ -1157,7 +1327,7 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
       <div style={{ overflowX: "auto", borderRadius: 10, border: "1px solid #ede8e3" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
           <thead><tr style={{ background: "#faf7f4" }}>
-            {["#", "Image", "Name", "Category", "Occasion", "Price (₹)", "Stock", "🏷 Sale"].map(h => (
+            {["#", "Image", "Name", "Category", "Occasion", "Price (₹)", "📦 Stock", "🏷 Sale"].map(h => (
               <th key={h} style={{ fontSize: 10, color: "#c8b8a8", fontWeight: 700, textAlign: "left", padding: "9px 10px", borderBottom: "1px solid #ede8e3", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
             ))}
           </tr></thead>
@@ -1194,9 +1364,8 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
                     <input type="number" value={row.price} onChange={e => onUpdateRow(batch.id, i, { price: Number(e.target.value) || 0 })}
                       style={{ width: 80, border: incomplete && !row.price ? "1.5px solid #e07070" : "1px solid #ede8e3", borderRadius: 6, padding: "5px 7px", fontSize: 12, color: "#b07a5a", fontWeight: 600, background: "#fff" }} />
                   </td>
-                  <td style={{ padding: "8px 10px" }}>
-                    <input type="number" value={row.stock} onChange={e => onUpdateRow(batch.id, i, { stock: Number(e.target.value) || 0, inStock: (Number(e.target.value) || 0) > 0 })}
-                      style={{ width: 56, border: "1px solid #ede8e3", borderRadius: 6, padding: "5px 7px", fontSize: 12, color: row.stock > 0 ? "#4a8f4a" : "#c44a4a", fontWeight: 600, background: "#fff" }} />
+                  <td style={{ padding: "8px 10px", textAlign: "center" }}>
+                    <input type="checkbox" checked={!!row.inStock} onChange={e => onUpdateRow(batch.id, i, { inStock: e.target.checked })} style={{ accentColor: "#7dba7d", width: 16, height: 16, cursor: "pointer" }} />
                   </td>
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
                     <input type="checkbox" checked={!!row.onSale} onChange={e => onUpdateRow(batch.id, i, { onSale: e.target.checked })} style={{ accentColor: "#d4a574", width: 15, height: 15, cursor: "pointer" }} />
