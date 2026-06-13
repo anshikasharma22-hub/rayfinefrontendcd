@@ -4,7 +4,54 @@ import "./App.css";
 import Login from "./login";
 import RFOPanel from "./RFOPanel";
 import Chatbot from "./Chatbot";
+ // ── BODY LOCK HOOK ──
+function useBodyLock(isLocked) {
+  useEffect(() => {
+    if (!isLocked) return;
+    const scrollbarW = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.paddingRight = `${scrollbarW}px`;
+    document.body.classList.add('modal-open');
+    return () => {
+      document.body.style.paddingRight = '0px';
+      document.body.classList.remove('modal-open');
+    };
+  }, [isLocked]);
+}
 
+// ── LAZY IMAGE ──
+function LazyImage({ src, alt, style = {}, eager = false, ...props }) {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+  const safeSrc = src
+    ? src.replace(/^http:\/\//i, 'https://').split(',')[0].trim()
+    : '';
+  const fallback = 'https://placehold.co/400x400/EDE5D8/8A7968?text=✦';
+  return (
+    <img
+      src={error ? fallback : safeSrc}
+      alt={alt}
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+      onLoad={() => setLoaded(true)}
+      onError={() => { setError(true); setLoaded(true); }}
+      style={{ transition: 'opacity 0.3s ease', opacity: loaded ? 1 : 0, ...style }}
+      {...props}
+    />
+  );
+}
+
+// ── SKELETON CARD ──
+function SkeletonCard() {
+  return (
+    <div className="skeleton-card">
+      <div className="skeleton-img" />
+      <div className="skeleton-line" style={{ width: '75%' }} />
+      <div className="skeleton-line short" />
+      <div className="skeleton-line price" style={{ width: '50%' }} />
+      <div className="skeleton-line btn" />
+    </div>
+  );
+}
 // ─────────────────────────────────────────────
 // CONSTANTS
 // ─────────────────────────────────────────────
@@ -259,16 +306,8 @@ function ProductModal({ product, onClose, cart, setCart, wishlist, setWishlist }
     }
   };
 
- useEffect(() => {
-  const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-  document.body.style.overflow = "hidden";
-  document.body.style.paddingRight = scrollbarWidth + "px";
-  addViewed(product);
-  return () => { 
-    document.body.style.overflow = "unset"; 
-    document.body.style.paddingRight = "0";
-  };
-}, [addViewed, product]);
+useBodyLock(true);
+useEffect(() => { addViewed(product); }, [addViewed, product]);
   return (
     <div
       onClick={onClose}
@@ -572,7 +611,7 @@ function CartDrawer({ cart, setCart, open, onClose }) {
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
   const [couponMsg, setCouponMsg] = useState("");
-
+useBodyLock(open);
   const GIFT_WRAP_PRICE = 99;
   const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
   const savings = cart.reduce((s, i) => s + ((i.originalPrice || i.price) - i.price) * i.quantity, 0);
@@ -588,20 +627,7 @@ function CartDrawer({ cart, setCart, open, onClose }) {
       setCouponMsg("✕ Invalid coupon code");
     }
   };
-  useEffect(() => {
-  if (open) {
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-    document.body.style.overflow = "hidden";
-    document.body.style.paddingRight = scrollbarWidth + "px";
-  } else {
-    document.body.style.overflow = "unset";
-    document.body.style.paddingRight = "0";
-  }
-  return () => {
-    document.body.style.overflow = "unset";
-    document.body.style.paddingRight = "0";
-  };
-}, [open]);
+  
 
   // FIX: use item._id || item.id consistently
   const updateQty = (itemId, delta) => {
@@ -797,11 +823,7 @@ function ProductCard({ product, cart, setCart, wishlist, setWishlist }) {
         style={{ cursor: "pointer", opacity: product.inStock ? 1 : 0.7 }}
       >
         <div className="product-img-wrap">
-          <img
-            src={product.image}
-            alt={product.name}
-            onError={e => { e.target.src = "https://placehold.co/300x300?text=Jewellery"; }}
-          />
+         <LazyImage src={product.image} alt={product.name} />
           <button className={`wishlist-btn ${inWishlist ? "active" : ""}`} onClick={toggleWishlist}>
             {inWishlist ? "❤️" : "🤍"}
           </button>
@@ -1153,15 +1175,11 @@ function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
       }}>
         {loading ? (
           // Skeleton Loader
-          [...Array(5)].map((_, i) => (
-            <div 
-              key={`skeleton-${i}`} 
-              style={{ 
-                minWidth: 200, 
-                maxWidth: 200, 
-                flexShrink: 0,
-                scrollSnapAlign: "start"
-              }}>
+         {[...Array(5)].map((_, i) => (
+  <div key={i} style={{ minWidth: 200, maxWidth: 200, flexShrink: 0 }}>
+    <SkeletonCard />
+  </div>
+))}
               <div style={{ 
                 background: "linear-gradient(90deg, #e8dfd5 25%, #f0e8df 50%, #e8dfd5 75%)",
                 backgroundSize: "200% 100%",
@@ -1558,21 +1576,8 @@ function TrendingSection({ cart, setCart, wishlist, setWishlist }) {
       
       {loading ? (
         <div className="products-grid" style={{ padding: "0 40px 80px" }}>
-          {[...Array(8)].map((_, i) => (
-            <div key={i} style={{ display: "flex", flexDirection: "column" }}>
-              <div style={{
-                background: "linear-gradient(90deg, #e8dfd5 25%, #f0e8df 50%, #e8dfd5 75%)",
-                backgroundSize: "200% 100%",
-                animation: "loading 1.5s infinite",
-                aspectRatio: "1",
-                borderRadius: "8px",
-                marginBottom: "12px"
-              }} />
-              <div style={{ background: "#e8dfd5", height: "20px", borderRadius: "4px", marginBottom: "8px" }} />
-              <div style={{ background: "#e8dfd5", height: "16px", borderRadius: "4px", marginBottom: "12px", width: "80%" }} />
-              <div style={{ background: "#e8dfd5", height: "36px", borderRadius: "4px" }} />
-            </div>
-          ))}
+         
+            {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : (
         <>
