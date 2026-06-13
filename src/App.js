@@ -8,7 +8,7 @@ import Chatbot from "./Chatbot";
 function useBodyLock(isLocked) {
   useEffect(() => {
     if (!isLocked) return;
-    const scrollbarW = window.innerWidth - document.documentElement.clientWidth;
+    const scrollbarW = window.innerWidth - document.documentEarrlement.clientWidth;
     document.body.style.paddingRight = `${scrollbarW}px`;
     document.body.classList.add('modal-open');
     return () => {
@@ -1073,23 +1073,7 @@ function TrackOrderPage() {
   );
 }
 
-// ─────────────────────────────────────────────
-// RECENTLY VIEWED
-// ─────────────────────────────────────────────
-// function RecentlyViewedSection({ cart, setCart, wishlist, setWishlist }) {
-//   const { viewed } = useRecentlyViewed();
-//   if (viewed.length === 0) return null;
-//   return (
-//     <section className="featured-section" style={{ background: "#fff", paddingTop: "60px" }}>
-//       <SectionDivider subtitle="Your Browsing History" title="Recently Viewed" />
-//       <div className="products-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
-//         {viewed.slice(0, 6).map(p => (
-//           <ProductCard key={p._id || p.id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
-//         ))}
-//       </div>
-//     </section>
-//   );
-// }
+
 
 // ─────────────────────────────────────────────
 // BESTSELLERS SECTION — horizontal scroll
@@ -1118,132 +1102,53 @@ function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
   if (products.length === 0 && !loading) return null;
 
   return (
-    <section style={{ 
-      padding: "60px 0", 
+    <section style={{
+      padding: "60px 0",
       background: "var(--cream)",
       minHeight: loading ? "400px" : "auto"
     }}>
-      {/* Header - consistent height */}
-      <div style={{ 
-        display: "flex", 
-        justifyContent: "space-between", 
-        alignItems: "flex-end", 
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-end",
         padding: "0 40px 28px",
         minHeight: "80px"
       }}>
         <div>
-          <p style={{ 
-            fontSize: "11px", 
-            letterSpacing: "2px", 
-            textTransform: "uppercase", 
-            color: "var(--primary)", 
-            fontWeight: 600, 
-            marginBottom: 6 
-          }}>Most Loved</p>
-          <h2 style={{ 
-            fontFamily: "Cormorant Garamond, serif", 
-            fontSize: "clamp(24px,3vw,36px)", 
-            fontWeight: 400, 
-            color: "var(--text)",
-            lineHeight: 1.2
-          }}>Our Best Sellers</h2>
+          <p style={{ fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--primary)", fontWeight: 600, marginBottom: 6 }}>Most Loved</p>
+          <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "clamp(24px,3vw,36px)", fontWeight: 400, color: "var(--text)", lineHeight: 1.2 }}>Our Best Sellers</h2>
         </div>
         {!loading && (
-          <Link to="/shop" style={{ 
-            fontSize: "11px", 
-            fontWeight: 700, 
-            letterSpacing: "1.5px", 
-            textTransform: "uppercase", 
-            color: "var(--primary)", 
-            textDecoration: "none", 
-            borderBottom: "1px solid var(--primary)", 
-            paddingBottom: 2,
-            whiteSpace: "nowrap"
-          }}>View All</Link>
+          <Link to="/shop" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--primary)", textDecoration: "none", borderBottom: "1px solid var(--primary)", paddingBottom: 2, whiteSpace: "nowrap" }}>View All</Link>
         )}
       </div>
 
-      {/* Products container */}
-      <div style={{ 
-        display: "flex", 
-        gap: 14, 
-        overflowX: "auto", 
+      <div style={{
+        display: "flex",
+        gap: 14,
+        overflowX: "auto",
         padding: "0 40px 16px",
-        scrollSnapType: "x mandatory", 
+        scrollSnapType: "x mandatory",
         WebkitOverflowScrolling: "touch",
         minHeight: loading ? "300px" : "auto"
       }}>
         {loading ? (
-          // Skeleton Loader
-         {[...Array(5)].map((_, i) => (
-  <div key={i} style={{ minWidth: 200, maxWidth: 200, flexShrink: 0 }}>
-    <SkeletonCard />
-  </div>
-))}
-              <div style={{ 
-                background: "linear-gradient(90deg, #e8dfd5 25%, #f0e8df 50%, #e8dfd5 75%)",
-                backgroundSize: "200% 100%",
-                animation: "loading 1.5s infinite",
-                width: "100%",
-                aspectRatio: "1",
-                borderRadius: "8px",
-                marginBottom: "12px"
-              }} />
-              <div style={{ 
-                background: "#e8dfd5",
-                height: "20px",
-                borderRadius: "4px",
-                marginBottom: "8px"
-              }} />
-              <div style={{ 
-                background: "#e8dfd5",
-                height: "16px",
-                borderRadius: "4px",
-                marginBottom: "12px",
-                width: "80%"
-              }} />
-              <div style={{ 
-                background: "#e8dfd5",
-                height: "36px",
-                borderRadius: "4px"
-              }} />
+          [...Array(5)].map((_, i) => (
+            <div key={i} style={{ minWidth: 200, maxWidth: 200, flexShrink: 0 }}>
+              <SkeletonCard />
             </div>
           ))
         ) : (
           products.map(p => (
-            <div 
-              key={p._id || p.id} 
-              style={{ 
-                minWidth: 200, 
-                maxWidth: 200, 
-                flexShrink: 0, 
-                scrollSnapAlign: "start",
-                display: "flex",
-                flexDirection: "column",
-                height: "100%"
-              }}>
-              <ProductCard 
-                product={p} 
-                cart={cart} 
-                setCart={setCart} 
-                wishlist={wishlist} 
-                setWishlist={setWishlist} 
-              />
+            <div key={p._id || p.id} style={{ minWidth: 200, maxWidth: 200, flexShrink: 0, scrollSnapAlign: "start", display: "flex", flexDirection: "column", height: "100%" }}>
+              <ProductCard product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
             </div>
           ))
         )}
       </div>
-
-      <style>{`
-        @keyframes loading {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      `}</style>
     </section>
   );
 }
-
 
 // ─────────────────────────────────────────────
 // SHOP BY OCCASION — horizontal scroll
