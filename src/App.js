@@ -1238,7 +1238,7 @@ function CategorySection() {
       <div className="cat-square-grid">
         {CATEGORIES.map(cat => (
           <Link to={cat.path} key={cat.name} className="cat-square-card">
-            <img src={cat.img} alt={cat.name} onError={e => { e.target.src = `https://placehold.co/300x300?text=${cat.name}`; }} />
+            <LazyImage src={cat.img} alt={cat.name} />
             <div className="cat-square-overlay">
               <span className="cat-square-name">{cat.name}</span>
               <span className="cat-square-cta">Shop Now →</span>
@@ -1249,7 +1249,6 @@ function CategorySection() {
     </section>
   );
 }
-
 // ─────────────────────────────────────────────
 // REVIEWS SECTION — NEW, enhanced carousel
 // ─────────────────────────────────────────────
