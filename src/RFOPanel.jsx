@@ -5,7 +5,7 @@ const SUPABASE_URL = "https://ajqqaeejotlghgilgajy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqcXFhZWVqb3RsZ2hnaWxnYWp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNjU2MTUsImV4cCI6MjA5NTY0MTYxNX0.fZ1MmCpMiQnwu7HsaK3zP4HXjxrLK6JseEZSUvIkreY";
 const SUPABASE_TABLE = "rayfinedatabase";
 // Columns that actually exist on public.rayfinedatabase
-const PRODUCT_COLUMNS = ["name","price","original_price","image","description","category","in_stock","variants","material","care_instructions","occasion","is_bestseller","is_trending","is_new"];
+const PRODUCT_COLUMNS = ["name","price","original_price","image","description","category","in_stock","variants","material","occasion","is_bestseller","is_trending","is_new"];
 function sanitizeProduct(p){
   const out = {};
   for(const k of PRODUCT_COLUMNS){ if(p[k] !== undefined) out[k] = p[k]; }
@@ -26,7 +26,9 @@ function toDbRow(p){
     in_stock: p.inStock,
     variants: Array.isArray(p.variants) ? p.variants.join(", ") : (p.variants || ""),
     material: p.material || "",
-    care_instructions: p.careInstructions || "",
+
+
+    
     occasion: p.occasion || "",
     is_bestseller: !!p.isBestseller,
     is_trending: !!p.isTrending,
@@ -40,7 +42,7 @@ function fromDbRow(r){
     id: r.id,
     originalPrice: r.original_price,
     inStock: !!r.in_stock,
-    careInstructions: r.care_instructions,
+   
     occasion: r.occasion || "",
     isBestseller: !!r.is_bestseller,
     isTrending: !!r.is_trending,
@@ -181,7 +183,8 @@ const PRODUCT_FIELDS = [
   { key: "occasion", label: "Occasion", required: false, type: "occasion" },
   { key: "material", label: "Material", required: false, type: "text" },
   { key: "image", label: "Image URL", required: false, type: "text" },
-  { key: "careInstructions", label: "Care Instructions", required: false, type: "text" },
+
+  
   { key: "tags", label: "Tags (for auto-detect)", required: false, type: "text" },
 ];
 
@@ -804,9 +807,8 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
                 style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018", resize: "vertical" }} />
             </div>
 
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Care Instructions</label>
-              <textarea rows={2} value={editForm.careInstructions || ""} onChange={e => setEditForm({ ...editForm, careInstructions: e.target.value })}
+          
+              
                 style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018", resize: "vertical" }} />
             </div>
 
@@ -841,7 +843,7 @@ function tagPillStyle(color) {
 
 // ── Add Product Page ──────────────────────────
 function AddProductPage({ showToast, onSave }) {
-  const blank = { name: "", price: "", originalPrice: "", category: "", occasion: "", material: "", careInstructions: "", description: "", image: "", variants: "", inStock: true, isBestseller: false, isTrending: false, isNew: false, onSale: false };
+  const blank = { name: "", price: "", originalPrice: "", category: "", occasion: "", material: "", description: "", image: "", variants: "", inStock: true, isBestseller: false, isTrending: false, isNew: false, onSale: false };
   const [form, setForm] = useState(blank);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -960,11 +962,7 @@ function AddProductPage({ showToast, onSave }) {
             style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018", resize: "vertical" }} />
         </div>
 
-        <div style={{ marginBottom: 14 }}>
-          <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Care Instructions</label>
-          <textarea className="am-inp" rows={2} placeholder="e.g. Keep away from water and perfumes…" value={form.careInstructions} onChange={e => set("careInstructions", e.target.value)}
-            style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018", resize: "vertical" }} />
-        </div>
+        
 
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 8 }}>Tags</label>
@@ -1063,7 +1061,7 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
         category: get("category") || detected.category || guessCategoryFromTitle(title) || "",
         occasion: get("occasion") || detected.occasion || "",
         material: get("material"),
-        careInstructions: get("careInstructions"),
+      
         image,
         isBestseller: detected.isBestseller,
         isTrending: detected.isTrending,
