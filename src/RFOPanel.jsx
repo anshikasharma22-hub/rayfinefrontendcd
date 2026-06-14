@@ -26,9 +26,6 @@ function toDbRow(p){
     in_stock: p.inStock,
     variants: Array.isArray(p.variants) ? p.variants.join(", ") : (p.variants || ""),
     material: p.material || "",
-
-
-    
     occasion: p.occasion || "",
     is_bestseller: !!p.isBestseller,
     is_trending: !!p.isTrending,
@@ -42,7 +39,6 @@ function fromDbRow(r){
     id: r.id,
     originalPrice: r.original_price,
     inStock: !!r.in_stock,
-   
     occasion: r.occasion || "",
     isBestseller: !!r.is_bestseller,
     isTrending: !!r.is_trending,
@@ -95,7 +91,7 @@ const NAV = [
   { id: "orders", icon: "◻", label: "Orders" },
 ];
 
-// ── Tag-based auto-detection (used as a hint, never forced) ──
+// ── Tag-based auto-detection ──
 const TAG_TO_CATEGORY = {
   earring: "Earring", jhumka: "Earring", stud_earring: "Earring", dangle_earring: "Earring", ear_stud: "Earring", hoop: "Earring", chandbali: "Earring",
   necklace: "Necklace", choker: "Necklace", locket: "Necklace", pendant: "Pendants", pendent: "Pendants", haar: "Necklace",
@@ -142,11 +138,10 @@ function guessCategoryFromTitle(title = "") {
   return "";
 }
 
-// ── Robust CSV parser (handles quoted fields w/ commas & newlines) ──
+// ── Robust CSV parser ──
 function parseCSV(text) {
   const rows = [];
   let row = [], field = "", inQ = false;
-  // normalize line endings
   const t = text.replace(/\r\n/g, "\n");
   for (let i = 0; i < t.length; i++) {
     const ch = t[i], next = t[i + 1];
@@ -173,7 +168,6 @@ function parseCSV(text) {
   return { headers, rows: dataRows };
 }
 
-// Field definitions for our product schema — used to build the column mapper
 const PRODUCT_FIELDS = [
   { key: "name", label: "Product Name", required: true, type: "text" },
   { key: "description", label: "Description", required: false, type: "text" },
@@ -183,12 +177,9 @@ const PRODUCT_FIELDS = [
   { key: "occasion", label: "Occasion", required: false, type: "occasion" },
   { key: "material", label: "Material", required: false, type: "text" },
   { key: "image", label: "Image URL", required: false, type: "text" },
-
-  
   { key: "tags", label: "Tags (for auto-detect)", required: false, type: "text" },
 ];
 
-// Guess a sensible default mapping from header names
 function autoMapHeaders(headers) {
   const map = {};
   const norm = h => h.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -248,7 +239,6 @@ export default function RFOAdmin() {
         setLoading(false);
       })
       .catch(() => {
-        // fallback to API if supabase select fails for any reason
         fetch(`${API}/products`).then(r => r.json()).then(data => {
           const list = Array.isArray(data?.data) ? data.data : [];
           setProducts(list.map(r => {
@@ -474,7 +464,7 @@ function DashboardPage({ products, loading, setPage }) {
 function ProductsPage({ products, loading, showToast, setProducts }) {
   const [search, setSearch] = useState("");
   const [catF, setCatF] = useState("All");
-  const [statusF, setStatusF] = useState("All"); // All | InStock | OutOfStock | Bestseller | Trending | New | Sale
+  const [statusF, setStatusF] = useState("All");
   const [selected, setSelected] = useState(new Set());
   const [editingProduct, setEditingProduct] = useState(null);
   const [editForm, setEditForm] = useState(null);
@@ -496,7 +486,6 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
     return matchesSearch && matchesCat && matchesStatus;
   });
 
-  // Toggle select
   const toggleSelect = (id) => {
     const newSelected = new Set(selected);
     if (newSelected.has(id)) newSelected.delete(id);
@@ -504,13 +493,11 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
     setSelected(newSelected);
   };
 
-  // Select all visible
   const toggleSelectAll = () => {
     if (selected.size === filtered.length) setSelected(new Set());
     else setSelected(new Set(filtered.map(p => p.id)));
   };
 
-  // Delete single
   const del = async (id) => {
     if (!window.confirm("Delete this product?")) return;
     try {
@@ -523,7 +510,6 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
     }
   };
 
-  // Bulk delete
   const bulkDelete = async () => {
     if (!selected.size) { showToast("No products selected", "error"); return; }
     if (!window.confirm(`Delete ${selected.size} product(s)?`)) return;
@@ -545,7 +531,6 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
     else showToast(`${ok} product(s) deleted!`);
   };
 
-  // Generic bulk field update (patch applied to each selected product)
   const bulkUpdateField = async (patchFn, successMsg) => {
     if (!selected.size) { showToast("No products selected", "error"); return; }
     setBulkBusy(true);
@@ -591,13 +576,11 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
     bulkUpdateField(() => ({ occasion: bulkOcc }), n => `${n} product(s) set to "${bulkOcc}"`);
   };
 
-  // Open edit form
   const openEdit = (product) => {
     setEditingProduct(product.id);
     setEditForm({ ...product });
   };
 
-  // Save edit
   const saveEdit = async () => {
     if (!editForm.name.trim()) { showToast("Name required", "error"); return; }
     if (!editForm.price) { showToast("Price required", "error"); return; }
@@ -637,7 +620,6 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
         <span style={{ alignSelf: "center", fontSize: 12, color: "#c8b8a8", whiteSpace: "nowrap" }}>{filtered.length} items</span>
       </div>
 
-      {/* Status filter pills */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
         {STATUS_FILTERS.map(s => (
           <button key={s.id} onClick={() => setStatusF(s.id)}
@@ -804,11 +786,6 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
             <div style={{ marginBottom: 14 }}>
               <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Description</label>
               <textarea rows={3} value={editForm.description || ""} onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-              
-            </div>
-
-          
-              
                 style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018", resize: "vertical" }} />
             </div>
 
@@ -962,8 +939,6 @@ function AddProductPage({ showToast, onSave }) {
             style={{ width: "100%", padding: "11px 13px", border: "1.5px solid #e8e0d8", borderRadius: 10, fontSize: 13, background: "#faf7f4", color: "#2d2018", resize: "vertical" }} />
         </div>
 
-        
-
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 8 }}>Tags</label>
           <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
@@ -995,7 +970,6 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
   const [deletingAll, setDeletingAll] = useState(false);
   const [deleteProgress, setDeleteProgress] = useState(0);
 
-  // Each batch: { id, fileName, headers, rawRows, mapping, rows: [enriched products], usdRate, isUSD }
   const [batches, setBatches] = useState([]);
   const [activeBatch, setActiveBatch] = useState(null);
 
@@ -1022,7 +996,7 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
             usdRate: USD_TO_INR_DEFAULT,
             overrideCat: "",
             overrideOcc: "",
-            defaultInStock: true, // NEW: default in-stock for all rows in this batch
+            defaultInStock: true,
             rows: built,
           };
           setBatches(prev => [...prev, newBatch]);
@@ -1036,7 +1010,6 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
     });
   };
 
-  // Build enriched product rows from raw CSV rows + a column mapping
   function buildRows(rawRows, mapping, usdRate, defaultInStock = true) {
     return rawRows.map((raw, i) => {
       const get = (key) => mapping[key] ? (raw[mapping[key]] ?? "") : "";
@@ -1061,7 +1034,6 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
         category: get("category") || detected.category || guessCategoryFromTitle(title) || "",
         occasion: get("occasion") || detected.occasion || "",
         material: get("material"),
-      
         image,
         isBestseller: detected.isBestseller,
         isTrending: detected.isTrending,
@@ -1129,14 +1101,12 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
     if (ok) { setBatches([]); setActiveBatch(null); onImport(); }
   };
 
-  // Delete ALL products from the table
   const deleteAllProducts = async () => {
     if (!window.confirm("⚠️ This will permanently delete ALL products from the database. Are you sure?")) return;
     if (!window.confirm("Really sure? This cannot be undone. Type-confirm by clicking OK again.")) return;
     setDeletingAll(true);
     setDeleteProgress(0);
     try {
-      // fetch all ids first
       const all = await supabaseQuery(`${SUPABASE_TABLE}?select=id`);
       const ids = Array.isArray(all) ? all.map(r => r.id) : [];
       if (!ids.length) { showToast("No products to delete"); setDeletingAll(false); return; }
@@ -1148,7 +1118,6 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
         try {
           await supabaseQuery(`${SUPABASE_TABLE}?or=(${filter})`, "DELETE");
         } catch (err) {
-          // fallback one by one
           for (const id of chunk) {
             try { await supabaseQuery(`${SUPABASE_TABLE}?id=eq.${id}`, "DELETE"); } catch {}
           }
@@ -1188,7 +1157,6 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
         </div>
       </div>
 
-      {/* Danger zone: delete all */}
       <div className="am-card" style={{ marginBottom: 16, border: "1.5px solid #f5d5d5", background: "#fdf5f5" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
           <div>
@@ -1209,13 +1177,12 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
 
       {batches.length > 0 && (
         <>
-          {/* Batch tabs */}
           <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
             {batches.map(b => (
               <button key={b.id} onClick={() => setActiveBatch(b.id)}
                 style={{ padding: "8px 14px", borderRadius: 10, border: activeBatch === b.id ? "1.5px solid #d4a574" : "1px solid #e8e0d8", background: activeBatch === b.id ? "#fdf5ee" : "#fff", cursor: "pointer", fontSize: 12, fontWeight: 600, color: activeBatch === b.id ? "#b07a5a" : "#8a7a6e", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
                 📄 {b.fileName} <span style={{ color: "#c8b8a8", fontWeight: 400 }}>({b.rows.length})</span>
-                <span onClick={e => { e.stopPropagation(); removeBatch(b.id); }} style={{ color: "#e07070", fontWeight: 700, marginLeft: 4 }}>✕</span>
+                <span onClick={e => { e.stopPropagation(); removeBatch(b.id); }} style={{ color: "#e07070", fontWeight: 700, marginLeft: 4, cursor: "pointer" }}>✕</span>
               </button>
             ))}
           </div>
@@ -1242,13 +1209,10 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
   );
 }
 
-// ── Per-batch column mapper + editable preview table ──
-
-     function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
+function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
   const [showMapper, setShowMapper] = useState(false);
-  const [selected, setSelected] = useState(new Set());   // ← NEW
+  const [selected, setSelected] = useState(new Set());
 
-  // Reset selection when batch changes
   useEffect(() => { setSelected(new Set()); }, [batch.id]);
 
   const setMapping = (fieldKey, header) => {
@@ -1259,7 +1223,6 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
   const invalidRows = batch.rows.length - validRows;
   const inStockCount = batch.rows.filter(r => r.inStock).length;
 
-  // ── Selection helpers ────────────────────f──────────────────────────────
   const toggleSelect = (idx) => {
     const s = new Set(selected);
     s.has(idx) ? s.delete(idx) : s.add(idx);
@@ -1272,7 +1235,6 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
     );
   };
 
-  // ── Bulk flag helper ───────────────────────────────────────────────────
   const bulkSet = (patch) => {
     selected.forEach(idx => onUpdateRow(batch.id, idx, patch));
   };
@@ -1306,7 +1268,6 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
 
   return (
     <div className="am-card" style={{ marginBottom: 12 }}>
-      {/* ── Header ───────────────────────────────────────────────────── */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
         <div>
           <p style={{ fontSize: 13, fontWeight: 700, color: "#2d2018" }}>{batch.fileName}</p>
@@ -1320,7 +1281,6 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
         </button>
       </div>
 
-      {/* ── Column mapper (unchanged) ─────────────────────────────────── */}
       {showMapper && (
         <div style={{ background: "#faf7f4", border: "1px solid #ede8e3", borderRadius: 12, padding: 16, marginBottom: 16 }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: "#d4a574", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 12 }}>
@@ -1379,7 +1339,6 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
         </div>
       )}
 
-      {/* ── NEW: Bulk action bar ──────────────────────────────────────── */}
       {selected.size > 0 && (
         <div style={{
           background: "#fdf5ee",
@@ -1398,7 +1357,6 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
             </button>
           </div>
 
-          {/* Row 1: stock + bestseller + trending + new */}
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
             <button onClick={() => bulkSet({ inStock: true })}  style={bulkBarStyle("#7dba7d")}>📦 In Stock</button>
             <button onClick={() => bulkSet({ inStock: false })} style={bulkBarStyle("#e07070")}>🚫 Out of Stock</button>
@@ -1414,12 +1372,10 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
         </div>
       )}
 
-      {/* ── Preview table (now with checkbox column) ──────────────────── */}
       <div style={{ overflowX: "auto", borderRadius: 10, border: "1px solid #ede8e3" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 960 }}>
           <thead>
             <tr style={{ background: "#faf7f4" }}>
-              {/* Select-all checkbox */}
               <th style={{ padding: "9px 10px", borderBottom: "1px solid #ede8e3", textAlign: "center", width: 36 }}>
                 <input type="checkbox"
                   checked={batch.rows.length > 0 && selected.size === batch.rows.length}
@@ -1442,7 +1398,6 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
                   borderBottom: "1px solid #f5f0ea",
                   background: isSelected ? "#fdf5ee" : incomplete ? "#fdf3f0" : "transparent",
                 }}>
-                  {/* Row checkbox */}
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
                     <input type="checkbox"
                       checked={isSelected}
@@ -1490,35 +1445,30 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
                       style={{ width: 80, border: incomplete && !row.price ? "1.5px solid #e07070" : "1px solid #ede8e3", borderRadius: 6, padding: "5px 7px", fontSize: 12, color: "#b07a5a", fontWeight: 600, background: "#fff" }} />
                   </td>
 
-                  {/* In Stock */}
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
                     <input type="checkbox" checked={!!row.inStock}
                       onChange={e => onUpdateRow(batch.id, i, { inStock: e.target.checked })}
                       style={{ accentColor: "#7dba7d", width: 16, height: 16, cursor: "pointer" }} />
                   </td>
 
-                  {/* Bestseller ⭐ */}
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
                     <input type="checkbox" checked={!!row.isBestseller}
                       onChange={e => onUpdateRow(batch.id, i, { isBestseller: e.target.checked })}
                       style={{ accentColor: "#e0b070", width: 15, height: 15, cursor: "pointer" }} />
                   </td>
 
-                  {/* Trending 🔥 */}
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
                     <input type="checkbox" checked={!!row.isTrending}
                       onChange={e => onUpdateRow(batch.id, i, { isTrending: e.target.checked })}
                       style={{ accentColor: "#c4706a", width: 15, height: 15, cursor: "pointer" }} />
                   </td>
 
-                  {/* New ✨ */}
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
                     <input type="checkbox" checked={!!row.isNew}
                       onChange={e => onUpdateRow(batch.id, i, { isNew: e.target.checked })}
                       style={{ accentColor: "#7fb3c8", width: 15, height: 15, cursor: "pointer" }} />
                   </td>
 
-                  {/* Sale 🏷 */}
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
                     <input type="checkbox" checked={!!row.onSale}
                       onChange={e => onUpdateRow(batch.id, i, { onSale: e.target.checked })}
@@ -1533,8 +1483,6 @@ function BulkImportPage({ showToast, onImport, onDeleteAll }) {
     </div>
   );
 }
-
-
 
 // ── Orders Page ───────────────────────────────
 function OrdersPage({ showToast }) {
