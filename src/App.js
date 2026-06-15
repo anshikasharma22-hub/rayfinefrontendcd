@@ -686,17 +686,34 @@ function ProductModal({ product, onClose, cart, setCart, wishlist, setWishlist }
             </div>
 
             {/* WhatsApp */}
-            
-              href={`https://wa.me/918690666771?text=Hi! I'm interested in ${encodeURIComponent(product.name)} (${formatPrice(product.price, currency)})`}
-              target="_blank"
-              rel="noreferrer"
-              style={{ display: "block", textAlign: "center", padding: "13px", background: "#25D366", color: "#fff", borderRadius: "3px", fontSize: "10px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", textDecoration: "none", transition: "filter 0.2s" }}
-              onMouseEnter={e => e.currentTarget.style.filter = "brightness(1.08)"}
-              onMouseLeave={e => e.currentTarget.style.filter = "brightness(1)"}
-            >
-              💬 Order via WhatsApp
-            </a>
-
+     {/* WhatsApp */}
+<a
+  href={`https://wa.me/918690666771?text=Hi! I'm interested in ${encodeURIComponent(product.name)} (${formatPrice(product.price, currency)})`}
+  target="_blank"
+  rel="noreferrer"
+  style={{
+    display: "block",
+    textAlign: "center",
+    padding: "13px",
+    background: "#25D366",
+    color: "#fff",
+    borderRadius: "3px",
+    fontSize: "10px",
+    fontWeight: 700,
+    letterSpacing: "2px",
+    textTransform: "uppercase",
+    textDecoration: "none",
+    transition: "filter 0.2s"
+  }}
+  onMouseEnter={(e) =>
+    (e.currentTarget.style.filter = "brightness(1.08)")
+  }
+  onMouseLeave={(e) =>
+    (e.currentTarget.style.filter = "brightness(1)")
+  }
+>
+  💬 Order via WhatsApp
+</a>
             {/* Trust strip */}
             <div style={{ display: "flex", gap: 8, marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border-light)", justifyContent: "center" }}>
               {[["🚚", "Free Delivery"], ["🔒", "Secure Pay"], ["🔄", "Easy Returns"]].map(([icon, label]) => (
