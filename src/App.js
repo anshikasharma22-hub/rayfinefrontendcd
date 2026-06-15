@@ -132,7 +132,20 @@ function formatPrice(inr, currency) {
   const val = inr * currency.rate;
   return `${currency.symbol}${currency.code === "INR" ? Math.round(val).toLocaleString() : val.toFixed(2)}`;
 }
-
+function normalizeProduct(p) {
+  const stockVal = p.stock || 0;
+  return {
+    ...p,
+    id: p._id || p.id,
+    inStock: p.in_stock && stockVal > 0,
+    stock: stockVal,
+    originalPrice: p.original_price,
+    isBestseller: !!p.is_bestseller,
+    isTrending: !!p.is_trending,
+    isNew: !!p.is_new,
+    image: p.image?.replace(/^http:\/\//i, "https://")?.split(",")[0]?.trim(),
+  };
+}
 // ─────────────────────────────────────────────
 // RECENTLY VIEWED CONTEXT
 // ─────────────────────────────────────────────
@@ -1078,6 +1091,7 @@ function TrackOrderPage() {
 // ─────────────────────────────────────────────
 // BESTSELLERS SECTION — horizontal scroll
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
 function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1087,17 +1101,13 @@ function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
       .then(res => res.json())
       .then(data => {
         const list = Array.isArray(data?.data) ? data.data : [];
-        const fixed = list.map(p => ({
-          ...p,
-          id: p._id || p.id,
-          image: p.image?.replace(/^http:\/\//i, "https://")?.split(",")[0]?.trim(),
-          isBestseller: true,
-        }));
+        const fixed = list.map(normalizeProduct); // ← CHANGED
         setProducts(fixed.filter(p => p.inStock).slice(0, 10));
         setLoading(false);
       })
       .catch(err => { console.error(err); setLoading(false); });
   }, []);
+
 
   if (products.length === 0 && !loading) return null;
 
@@ -1107,6 +1117,7 @@ function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
       background: "var(--cream)",
       minHeight: loading ? "400px" : "auto"
     }}>
+  
       <div style={{
         display: "flex",
         justifyContent: "space-between",
@@ -1122,8 +1133,8 @@ function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
           <Link to="/shop" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--primary)", textDecoration: "none", borderBottom: "1px solid var(--primary)", paddingBottom: 2, whiteSpace: "nowrap" }}>View All</Link>
         )}
       </div>
-
-      <div style={{
+      
+        <div style={{
         display: "flex",
         gap: 14,
         overflowX: "auto",
@@ -1463,9 +1474,7 @@ function TrendingSection({ cart, setCart, wishlist, setWishlist }) {
       .then(data => {
         const list = Array.isArray(data?.data) ? data.data : [];
         const fixed = list.map((p, i) => ({
-          ...p,
-          id: p._id || p.id,
-          image: p.image?.replace(/^http:\/\//i, "https://")?.split(",")[0]?.trim(),
+          ...normalizeProduct(p), // ← USE HELPER + isNew logic
           isNew: i < 4,
         }));
         setFeatured(fixed.slice(0, 8));
@@ -1473,15 +1482,13 @@ function TrendingSection({ cart, setCart, wishlist, setWishlist }) {
       })
       .catch(err => { console.error(err); setLoading(false); });
   }, []);
-
-  return (
+ return (
     <section className="featured-section" style={{ minHeight: loading ? "600px" : "auto" }}>
       <SectionDivider subtitle="Curated For You" title="Trending Now" />
       
       {loading ? (
         <div className="products-grid" style={{ padding: "0 40px 80px" }}>
-         
-            {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
+          {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : (
         <>
@@ -1495,8 +1502,7 @@ function TrendingSection({ cart, setCart, wishlist, setWishlist }) {
           </div>
         </>
       )}
-      
-      <style>{`
+ <style>{`
         @keyframes loading {
           0% { background-position: 200% 0; }
           100% { background-position: -200% 0; }
@@ -1565,16 +1571,12 @@ function Shop({ cart, setCart, wishlist, setWishlist }) {
     if (occ) setOccasion(occ); else if (cat) setOccasion("All");
     if (q) setSearch(q);
   }, [searchParams]);
-  useEffect(() => {
+ useEffect(() => {
     fetch("https://rayfinesite-3.onrender.com/api/products")
       .then(res => res.json())
       .then(data => {
         const list = Array.isArray(data?.data) ? data.data : [];
-        const fixed = list.map(p => ({
-          ...p,
-          id: p._id || p.id,
-          image: p.image?.replace(/^http:\/\//i, "https://")?.split(",")[0]?.trim(),
-        }));
+        const fixed = list.map(normalizeProduct); // ← CHANGED
         setProducts(fixed);
         setLoading(false);
       })
