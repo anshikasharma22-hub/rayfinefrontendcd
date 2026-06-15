@@ -5,7 +5,7 @@ const SUPABASE_URL = "https://ajqqaeejotlghgilgajy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqcXFhZWVqb3RsZ2hnaWxnYWp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNjU2MTUsImV4cCI6MjA5NTY0MTYxNX0.fZ1MmCpMiQnwu7HsaK3zP4HXjxrLK6JseEZSUvIkreY";
 const SUPABASE_TABLE = "rayfinedatabase";
 
-const PRODUCT_COLUMNS = ["name","price","original_price","image","description","category","in_stock","stock","variants","material","occasion","is_bestseller","is_trending","is_new"];
+const PRODUCT_COLUMNS = ["name","price","original_price","image","description","category","in_stock","stock","variants","material","occasion","is_bestseller","is_trending","is_new","is_visible"];
 
 function sanitizeProduct(p){
   const out = {};
@@ -32,6 +32,7 @@ function toDbRow(p){
     is_bestseller: !!p.isBestseller,
     is_trending: !!p.isTrending,
     is_new: !!p.isNew,
+    is_visible: p.isVisible !== false,
   });
 }
 
@@ -46,6 +47,7 @@ function fromDbRow(r){
     isBestseller: !!r.is_bestseller,
     isTrending: !!r.is_trending,
     isNew: !!r.is_new,
+    isVisible: r.is_visible !== false,
     onSale: !!r.original_price,
   };
 }
@@ -444,7 +446,7 @@ function DashboardPage({ products, loading, setPage }) {
         </div>
         <div className="am-card">
           <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 16, fontWeight: 400, color: "#2d2018", marginBottom: 16 }}>Quick Actions</h3>
-          {[{ label: "Add new product", icon: "＋", desc: "Single product entry", id: "add" }, { label: "Bulk CSV upload", icon: "⊞", desc: "Import any CSV with flexible mapping", id: "bulk" }, { label: "View all products", icon: "✦", desc: "Browse & manage catalogue", id: "products" }].map(a => (
+          {[{ label: "Add new product", icon: "＋", desc: "Single product entry", id: "add" }, { label: "Bulk CSV upload", icon: "⊞", desc: "Import categories & occasions", id: "bulk" }, { label: "View all products", icon: "✦", desc: "Browse & manage catalogue", id: "products" }].map(a => (
             <button key={a.id} onClick={() => setPage(a.id)}
               style={{ width: "100%", padding: "13px 14px", background: "#faf7f4", border: "1px solid #ede8e3", borderRadius: 10, cursor: "pointer", textAlign: "left", marginBottom: 8, display: "flex", alignItems: "center", gap: 12, fontFamily: "inherit", transition: "all .15s" }}
               onMouseEnter={e => e.currentTarget.style.borderColor = "#d4a574"}
@@ -520,6 +522,16 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
     else showToast(`${ok} product(s) deleted!`);
   };
 
+  const toggleVisibility = async (id, currentVisibility) => {
+    try {
+      await supabaseQuery(`${SUPABASE_TABLE}?id=eq.${id}`, "PATCH", { is_visible: !currentVisibility });
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, isVisible: !p.isVisible } : p));
+      showToast(currentVisibility ? "Hidden from shop" : "Visible in shop");
+    } catch (err) {
+      showToast("Update failed: " + err.message, "error");
+    }
+  };
+
   const openEdit = (product) => {
     setEditingProduct(product.id);
     setEditForm({ ...product });
@@ -573,7 +585,7 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
                   <input type="checkbox" checked={filtered.length > 0 && selected.size === filtered.length} 
                     onChange={toggleSelectAll} style={{ accentColor: "#d4a574", width: 16, height: 16, cursor: "pointer" }} />
                 </th>
-                {["Image", "Product", "Category", "Price", "Stock", "Status", ""].map(h => (
+                {["Image", "Product", "Category", "Price", "Stock", "Status", "Visibility", ""].map(h => (
                   <th key={h} style={{ fontSize: 10, color: "#c8b8a8", fontWeight: 700, textAlign: "left", padding: "10px 14px", borderBottom: "1px solid #ede8e3", textTransform: "uppercase", letterSpacing: "0.8px", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr></thead>
@@ -602,6 +614,11 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
                     <td style={{ padding: "10px 14px" }}>
                       {p.inStock ? <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "#e8f5e8", color: "#4a8f4a" }}>In Stock</span>
                         : <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "#fde8e8", color: "#c44a4a" }}>Out</span>}
+                    </td>
+                    <td style={{ padding: "10px 14px" }}>
+                      <button onClick={() => toggleVisibility(p.id, p.isVisible)} style={{ padding: "6px 10px", border: "1px solid #d4a574", borderRadius: 6, background: p.isVisible ? "#fdf5ee" : "#f5f0ea", cursor: "pointer", fontSize: 14, color: p.isVisible ? "#b07a5a" : "#c8b8a8", fontFamily: "inherit" }} title={p.isVisible ? "Click to hide" : "Click to show"}>
+                        {p.isVisible ? "👁" : "👁‍🗨"}
+                      </button>
                     </td>
                     <td style={{ padding: "10px 14px", display: "flex", gap: 6 }}>
                       <button onClick={() => openEdit(p)} style={{ padding: "5px 10px", border: "1px solid #d4a574", borderRadius: 6, background: "#fff", cursor: "pointer", fontSize: 11, color: "#b07a5a", fontFamily: "inherit", fontWeight: 600 }}>✏ Edit</button>
@@ -674,7 +691,7 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
             </div>
 
             <div style={{ marginBottom: 16, display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {[["inStock", "📦 In Stock"], ["isBestseller", "⭐ Bestseller"], ["isTrending", "🔥 Trending"], ["isNew", "✨ New"], ["onSale", "🏷 On Sale"]].map(([k, lbl]) => (
+              {[["inStock", "📦 In Stock"], ["isBestseller", "⭐ Bestseller"], ["isTrending", "🔥 Trending"], ["isNew", "✨ New"], ["onSale", "🏷 On Sale"], ["isVisible", "👁 Visible"]].map(([k, lbl]) => (
                 <label key={k} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer", color: "#5a4a3e" }}>
                   <input type="checkbox" checked={!!editForm[k]} onChange={e => setEditForm({ ...editForm, [k]: e.target.checked })} style={{ accentColor: "#d4a574", width: 15, height: 15 }} />{lbl}
                 </label>
@@ -693,7 +710,7 @@ function ProductsPage({ products, loading, showToast, setProducts }) {
 }
 
 function AddProductPage({ showToast, onSave }) {
-  const blank = { name: "", price: "", originalPrice: "", category: "", occasion: "", stock: "", material: "", description: "", image: "", variants: "", inStock: true, isBestseller: false, isTrending: false, isNew: false, onSale: false };
+  const blank = { name: "", price: "", originalPrice: "", category: "", occasion: "", stock: "", material: "", description: "", image: "", variants: "", inStock: true, isBestseller: false, isTrending: false, isNew: false, onSale: false, isVisible: true };
   const [form, setForm] = useState(blank);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -817,7 +834,7 @@ function AddProductPage({ showToast, onSave }) {
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 8 }}>Tags</label>
           <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-            {[["isBestseller", "⭐ Bestseller"], ["isTrending", "🔥 Trending"], ["isNew", "✨ New"], ["onSale", "🏷 On Sale"], ["inStock", "📦 In Stock"]].map(([k, lbl]) => (
+            {[["isBestseller", "⭐ Bestseller"], ["isTrending", "🔥 Trending"], ["isNew", "✨ New"], ["onSale", "🏷 On Sale"], ["inStock", "📦 In Stock"], ["isVisible", "👁 Visible"]].map(([k, lbl]) => (
               <label key={k} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", color: "#5a4a3e" }}>
                 <input type="checkbox" checked={!!form[k]} onChange={e => set(k, e.target.checked)} style={{ accentColor: "#d4a574", width: 15, height: 15 }} />{lbl}
               </label>
@@ -839,6 +856,7 @@ function AddProductPage({ showToast, onSave }) {
 function BulkImportPage({ showToast, onImport }) {
   const fileRef = useRef();
   const [dragging, setDragging] = useState(false);
+  const [section, setSection] = useState("occasions"); // occasions or categories
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [batches, setBatches] = useState([]);
@@ -865,12 +883,13 @@ function BulkImportPage({ showToast, onImport }) {
             mapping,
             isUSD,
             usdRate: USD_TO_INR_DEFAULT,
-            overrideCat: "",
-            overrideOcc: "",
+            overrideCat: section === "categories" ? "" : null,
+            overrideOcc: section === "occasions" ? "" : null,
             overrideBestseller: null,
             overrideTrending: null,
             overrideOnSale: null,
             defaultInStock: true,
+            section,
             rows: built,
           };
           setBatches(prev => [...prev, newBatch]);
@@ -941,19 +960,19 @@ function BulkImportPage({ showToast, onImport }) {
     if (activeBatch === id) setActiveBatch(null);
   };
 
-  const totalRows = useMemo(() => batches.reduce((s, b) => s + b.rows.length, 0), [batches]);
+  const totalRows = useMemo(() => batches.filter(b => b.section === section).reduce((s, b) => s + b.rows.length, 0), [batches, section]);
 
   const getReadyRows = (batch) => batch.rows.map(({ _rowNum, ...row }) => toDbRow({
     ...row,
-    category: batch.overrideCat || row.category,
-    occasion: batch.overrideOcc || row.occasion,
+    category: batch.section === "categories" ? (batch.overrideCat || row.category) : row.category,
+    occasion: batch.section === "occasions" ? (batch.overrideOcc || row.occasion) : row.occasion,
     isBestseller: batch.overrideBestseller !== null ? batch.overrideBestseller : row.isBestseller,
     isTrending: batch.overrideTrending !== null ? batch.overrideTrending : row.isTrending,
     onSale: batch.overrideOnSale !== null ? batch.overrideOnSale : row.onSale,
   })).filter(r => r.name && r.price);
 
   const doImport = async () => {
-    const allRows = batches.flatMap(b => getReadyRows(b));
+    const allRows = batches.filter(b => b.section === section).flatMap(b => getReadyRows(b));
     if (!allRows.length) { showToast("No valid rows to import", "error"); return; }
     setImporting(true); setProgress(0);
     const BATCH = 50;
@@ -975,17 +994,31 @@ function BulkImportPage({ showToast, onImport }) {
     setImporting(false);
     if (fail) showToast(`${ok} imported, ${fail} failed`, fail === allRows.length ? "error" : "success");
     else showToast(`${ok} products imported!`);
-    if (ok) { setBatches([]); setActiveBatch(null); onImport(); }
+    if (ok) { setBatches(prev => prev.filter(b => b.section !== section)); setActiveBatch(null); onImport(); }
   };
 
   const active = batches.find(b => b.id === activeBatch);
+  const sectionBatches = batches.filter(b => b.section === section);
 
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto", animation: "fadeIn .3s ease" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+        <div className="am-card" onClick={() => { setSection("occasions"); setActiveBatch(null); }} style={{ cursor: "pointer", border: section === "occasions" ? "2px solid #d4a574" : "1px solid #ede8e3", background: section === "occasions" ? "#fdf5ee" : "#fff" }}>
+          <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 400, color: "#2d2018", marginBottom: 8 }}>📌 Shop by Occasion</h3>
+          <p style={{ fontSize: 12, color: "#b8a898", marginBottom: 12 }}>Upload CSV with occasions. Categories auto-detected from product titles.</p>
+          <p style={{ fontSize: 11, fontWeight: 700, color: section === "occasions" ? "#b07a5a" : "#c8b8a8" }}>{sectionBatches.filter(b => b.section === "occasions").length} file(s) ready</p>
+        </div>
+        <div className="am-card" onClick={() => { setSection("categories"); setActiveBatch(null); }} style={{ cursor: "pointer", border: section === "categories" ? "2px solid #d4a574" : "1px solid #ede8e3", background: section === "categories" ? "#fdf5ee" : "#fff" }}>
+          <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 400, color: "#2d2018", marginBottom: 8 }}>🏷 Shop by Category</h3>
+          <p style={{ fontSize: 12, color: "#b8a898", marginBottom: 12 }}>Upload CSV with categories. Occasions auto-detected from tags or titles.</p>
+          <p style={{ fontSize: 11, fontWeight: 700, color: section === "categories" ? "#b07a5a" : "#c8b8a8" }}>{sectionBatches.filter(b => b.section === "categories").length} file(s) ready</p>
+        </div>
+      </div>
+
       <div className="am-card" style={{ marginBottom: 16 }}>
         <div style={{ marginBottom: 16 }}>
-          <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 400, color: "#2d2018", marginBottom: 4 }}>Bulk Upload</h3>
-          <p style={{ fontSize: 12, color: "#b8a898" }}>Drop any CSV — Etsy export or your own format. Columns auto-detect, fully adjustable per row before uploading.</p>
+          <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 400, color: "#2d2018", marginBottom: 4 }}>Upload CSV File</h3>
+          <p style={{ fontSize: 12, color: "#b8a898" }}>Drop any CSV — columns auto-detect, fully adjustable per row before uploading.</p>
         </div>
 
         <div
@@ -1001,10 +1034,10 @@ function BulkImportPage({ showToast, onImport }) {
         </div>
       </div>
 
-      {batches.length > 0 && (
+      {sectionBatches.length > 0 && (
         <>
           <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-            {batches.map(b => (
+            {sectionBatches.map(b => (
               <button key={b.id} onClick={() => setActiveBatch(b.id)}
                 style={{ padding: "8px 14px", borderRadius: 10, border: activeBatch === b.id ? "1.5px solid #d4a574" : "1px solid #e8e0d8", background: activeBatch === b.id ? "#fdf5ee" : "#fff", cursor: "pointer", fontSize: 12, fontWeight: 600, color: activeBatch === b.id ? "#b07a5a" : "#8a7a6e", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
                 📄 {b.fileName} <span style={{ color: "#c8b8a8", fontWeight: 400 }}>({b.rows.length})</span>
@@ -1013,7 +1046,7 @@ function BulkImportPage({ showToast, onImport }) {
             ))}
           </div>
 
-          {active && <BatchEditor batch={active} onUpdateBatch={updateBatch} onUpdateRow={updateRow} />}
+          {active && <BatchEditor batch={active} onUpdateBatch={updateBatch} onUpdateRow={updateRow} section={section} />}
 
           {importing && (
             <div style={{ margin: "14px 0" }}>
@@ -1035,7 +1068,7 @@ function BulkImportPage({ showToast, onImport }) {
   );
 }
 
-function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
+function BatchEditor({ batch, onUpdateBatch, onUpdateRow, section }) {
   const [showMapper, setShowMapper] = useState(false);
   const validRows = batch.rows.filter(r => r.name && r.price).length;
   const invalidRows = batch.rows.length - validRows;
@@ -1043,6 +1076,8 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
   const setMapping = (fieldKey, header) => {
     onUpdateBatch(batch.id, { mapping: { ...batch.mapping, [fieldKey]: header } });
   };
+
+  const isCategorySection = section === "categories";
 
   return (
     <div className="am-card" style={{ marginBottom: 12 }}>
@@ -1060,37 +1095,57 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
       {showMapper && (
         <div style={{ background: "#faf7f4", border: "1px solid #ede8e3", borderRadius: 12, padding: 16, marginBottom: 16 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 14 }}>
-            {PRODUCT_FIELDS.map(f => (
-              <div key={f.key}>
-                <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
-                  {f.label}{f.required && <span style={{ color: "#e07070" }}> *</span>}
-                </label>
-                <select value={batch.mapping[f.key] || ""} onChange={e => setMapping(f.key, e.target.value)}
-                  className="am-inp" style={{ width: "100%", padding: "9px 10px", border: "1.5px solid #e8e0d8", borderRadius: 8, fontSize: 12, background: "#fff", color: "#2d2018" }}>
-                  <option value="">— Not mapped —</option>
-                  {batch.headers.map(h => <option key={h} value={h}>{h}</option>)}
-                </select>
-              </div>
-            ))}
+            {PRODUCT_FIELDS.map(f => {
+              const isOccasionField = f.key === "occasion";
+              const isCategoryField = f.key === "category";
+              const isLocked = (isCategorySection && isOccasionField) || (!isCategorySection && isCategoryField);
+              return (
+                <div key={f.key} style={{ opacity: isLocked ? 0.5 : 1 }}>
+                  <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
+                    {f.label}{isLocked ? " (auto)" : f.required ? " *" : ""}
+                  </label>
+                  <select value={batch.mapping[f.key] || ""} onChange={e => setMapping(f.key, e.target.value)} disabled={isLocked}
+                    className="am-inp" style={{ width: "100%", padding: "9px 10px", border: "1.5px solid #e8e0d8", borderRadius: 8, fontSize: 12, background: isLocked ? "#f0ebe5" : "#fff", color: "#2d2018", cursor: isLocked ? "not-allowed" : "pointer" }}>
+                    <option value="">— Not mapped —</option>
+                    {batch.headers.map(h => <option key={h} value={h}>{h}</option>)}
+                  </select>
+                </div>
+              );
+            })}
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 10 }}>
-            <div>
-              <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Override Category</label>
-              <select value={batch.overrideCat} onChange={e => onUpdateBatch(batch.id, { overrideCat: e.target.value })}
-                className="am-inp" style={{ width: "100%", padding: "9px 10px", border: "1.5px solid #e8e0d8", borderRadius: 8, fontSize: 12, background: "#fff", color: "#2d2018" }}>
-                <option value="">Auto / per-row</option>
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Override Occasion</label>
-              <select value={batch.overrideOcc} onChange={e => onUpdateBatch(batch.id, { overrideOcc: e.target.value })}
-                className="am-inp" style={{ width: "100%", padding: "9px 10px", border: "1.5px solid #e8e0d8", borderRadius: 8, fontSize: 12, background: "#fff", color: "#2d2018" }}>
-                <option value="">Auto / per-row</option>
-                {OCCASIONS.map(o => <option key={o} value={o}>{o}</option>)}
-              </select>
-            </div>
+            {isCategorySection ? (
+              <>
+                <div>
+                  <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Override Category</label>
+                  <select value={batch.overrideCat} onChange={e => onUpdateBatch(batch.id, { overrideCat: e.target.value })}
+                    className="am-inp" style={{ width: "100%", padding: "9px 10px", border: "1.5px solid #e8e0d8", borderRadius: 8, fontSize: 12, background: "#fff", color: "#2d2018" }}>
+                    <option value="">Auto / per-row</option>
+                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div style={{ opacity: 0.5, pointerEvents: "none" }}>
+                  <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Occasion (auto-detect)</label>
+                  <div style={{ fontSize: 11, padding: "9px 10px", borderRadius: 8, background: "#f0ebe5", color: "#c8b8a8" }}>Auto from tags</div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ opacity: 0.5, pointerEvents: "none" }}>
+                  <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Category (auto-detect)</label>
+                  <div style={{ fontSize: 11, padding: "9px 10px", borderRadius: 8, background: "#f0ebe5", color: "#c8b8a8" }}>Auto from title</div>
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Override Occasion</label>
+                  <select value={batch.overrideOcc} onChange={e => onUpdateBatch(batch.id, { overrideOcc: e.target.value })}
+                    className="am-inp" style={{ width: "100%", padding: "9px 10px", border: "1.5px solid #e8e0d8", borderRadius: 8, fontSize: 12, background: "#fff", color: "#2d2018" }}>
+                    <option value="">Auto / per-row</option>
+                    {OCCASIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+              </>
+            )}
             <div>
               <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>
                 {batch.isUSD ? "USD → INR" : "Price Multiplier"}
@@ -1122,7 +1177,7 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
       <div style={{ overflowX: "auto", borderRadius: 10, border: "1px solid #ede8e3" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1000 }}>
           <thead><tr style={{ background: "#faf7f4" }}>
-            {["#", "Image", "Name", "Category", "Occasion", "Price (₹)", "Stock", "Tags"].map(h => (
+            {["#", "Image", "Name", isCategorySection ? "Category" : "Occasion", "Price (₹)", "Stock", "Tags"].map(h => (
               <th key={h} style={{ fontSize: 10, color: "#c8b8a8", fontWeight: 700, textAlign: "left", padding: "9px 10px", borderBottom: "1px solid #ede8e3", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
             ))}
           </tr></thead>
@@ -1145,18 +1200,19 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
                       style={{ width: "100%", border: incomplete && !row.name ? "1.5px solid #e07070" : "1px solid #ede8e3", borderRadius: 6, padding: "5px 7px", fontSize: 12, fontFamily: "'Playfair Display',serif", color: "#2d2018", background: "#fff" }} />
                   </td>
                   <td style={{ padding: "8px 10px" }}>
-                    <select value={dc} onChange={e => onUpdateRow(batch.id, i, { category: e.target.value })} disabled={!!batch.overrideCat}
-                      style={{ fontSize: 11, fontWeight: 600, padding: "4px 6px", borderRadius: 6, border: "1px solid #ede8e3", background: batch.overrideCat ? "#f5f0ea" : "#fff", color: CAT_COLORS[dc] || "#5a4a3e", cursor: batch.overrideCat ? "not-allowed" : "pointer" }}>
-                      <option value="">—</option>
-                      {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </td>
-                  <td style={{ padding: "8px 10px" }}>
-                    <select value={docc} onChange={e => onUpdateRow(batch.id, i, { occasion: e.target.value })} disabled={!!batch.overrideOcc}
-                      style={{ fontSize: 11, padding: "4px 6px", borderRadius: 6, border: "1px solid #ede8e3", background: batch.overrideOcc ? "#f5f0ea" : "#fff", color: "#5a4a3e", cursor: batch.overrideOcc ? "not-allowed" : "pointer" }}>
-                      <option value="">—</option>
-                      {OCCASIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
+                    {isCategorySection ? (
+                      <select value={dc} onChange={e => onUpdateRow(batch.id, i, { category: e.target.value })} disabled={!!batch.overrideCat}
+                        style={{ fontSize: 11, fontWeight: 600, padding: "4px 6px", borderRadius: 6, border: "1px solid #ede8e3", background: batch.overrideCat ? "#f5f0ea" : "#fff", color: CAT_COLORS[dc] || "#5a4a3e", cursor: batch.overrideCat ? "not-allowed" : "pointer" }}>
+                        <option value="">—</option>
+                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    ) : (
+                      <select value={docc} onChange={e => onUpdateRow(batch.id, i, { occasion: e.target.value })} disabled={!!batch.overrideOcc}
+                        style={{ fontSize: 11, padding: "4px 6px", borderRadius: 6, border: "1px solid #ede8e3", background: batch.overrideOcc ? "#f5f0ea" : "#fff", color: "#5a4a3e", cursor: batch.overrideOcc ? "not-allowed" : "pointer" }}>
+                        <option value="">—</option>
+                        {OCCASIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    )}
                   </td>
                   <td style={{ padding: "8px 10px" }}>
                     <input type="number" value={row.price} onChange={e => onUpdateRow(batch.id, i, { price: Number(e.target.value) || 0 })}
