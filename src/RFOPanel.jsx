@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 
 // ── Config ────────────────────────────────────
@@ -868,6 +867,9 @@ function BulkImportPage({ showToast, onImport }) {
             usdRate: USD_TO_INR_DEFAULT,
             overrideCat: "",
             overrideOcc: "",
+            overrideBestseller: null,
+            overrideTrending: null,
+            overrideOnSale: null,
             defaultInStock: true,
             rows: built,
           };
@@ -892,7 +894,7 @@ function BulkImportPage({ showToast, onImport }) {
       const price = usdRate !== 1 ? Math.round(priceRaw * usdRate) : Math.round(priceRaw);
       const origRaw = parseFloat(get("originalPrice")) || 0;
       const originalPrice = origRaw ? (usdRate !== 1 ? Math.round(origRaw * usdRate) : Math.round(origRaw)) : null;
-      const stock = parseInt(get("stock")) || 0;
+      const stockVal = parseInt(get("stock")) || 0;
       const imageField = get("image");
       const image = imageField.split(",")[0]?.trim().replace(/^http:\/\//i, "https://")?.split("?")[0] || "";
       return {
@@ -901,8 +903,8 @@ function BulkImportPage({ showToast, onImport }) {
         description: get("description").replace(/\n/g, " ").trim().slice(0, 1000),
         price,
         originalPrice,
-        stock,
-        inStock: stock > 0,
+        stock: stockVal,
+        inStock: stockVal > 0,
         category: get("category") || detected.category || guessCategoryFromTitle(title) || "",
         occasion: get("occasion") || detected.occasion || "",
         material: get("material"),
@@ -945,6 +947,9 @@ function BulkImportPage({ showToast, onImport }) {
     ...row,
     category: batch.overrideCat || row.category,
     occasion: batch.overrideOcc || row.occasion,
+    isBestseller: batch.overrideBestseller !== null ? batch.overrideBestseller : row.isBestseller,
+    isTrending: batch.overrideTrending !== null ? batch.overrideTrending : row.isTrending,
+    onSale: batch.overrideOnSale !== null ? batch.overrideOnSale : row.onSale,
   })).filter(r => r.name && r.price);
 
   const doImport = async () => {
@@ -1069,7 +1074,7 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
             ))}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 10 }}>
             <div>
               <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Override Category</label>
               <select value={batch.overrideCat} onChange={e => onUpdateBatch(batch.id, { overrideCat: e.target.value })}
@@ -1094,14 +1099,30 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
                 onChange={e => onUpdateBatch(batch.id, { usdRate: Number(e.target.value) || 1 })}
                 className="am-inp" style={{ width: "100%", padding: "9px 10px", border: "1.5px solid #e8e0d8", borderRadius: 8, fontSize: 12, background: "#fff", color: "#2d2018" }} />
             </div>
+            <div>
+              <label style={{ fontSize: 11, color: "#b8a898", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Tag Override</label>
+              <select onChange={e => {
+                const val = e.target.value;
+                if (val === "bestseller") onUpdateBatch(batch.id, { overrideBestseller: true, overrideTrending: null, overrideOnSale: null });
+                else if (val === "trending") onUpdateBatch(batch.id, { overrideTrending: true, overrideBestseller: null, overrideOnSale: null });
+                else if (val === "sale") onUpdateBatch(batch.id, { overrideOnSale: true, overrideBestseller: null, overrideTrending: null });
+                else onUpdateBatch(batch.id, { overrideBestseller: null, overrideTrending: null, overrideOnSale: null });
+              }}
+                className="am-inp" style={{ width: "100%", padding: "9px 10px", border: "1.5px solid #e8e0d8", borderRadius: 8, fontSize: 12, background: "#fff", color: "#2d2018" }}>
+                <option value="">Auto / per-row</option>
+                <option value="bestseller">⭐ Bestseller</option>
+                <option value="trending">🔥 Trending</option>
+                <option value="sale">🏷 On Sale</option>
+              </select>
+            </div>
           </div>
         </div>
       )}
 
       <div style={{ overflowX: "auto", borderRadius: 10, border: "1px solid #ede8e3" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1000 }}>
           <thead><tr style={{ background: "#faf7f4" }}>
-            {["#", "Image", "Name", "Category", "Occasion", "Price (₹)", "Stock"].map(h => (
+            {["#", "Image", "Name", "Category", "Occasion", "Price (₹)", "Stock", "Tags"].map(h => (
               <th key={h} style={{ fontSize: 10, color: "#c8b8a8", fontWeight: 700, textAlign: "left", padding: "9px 10px", borderBottom: "1px solid #ede8e3", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
             ))}
           </tr></thead>
@@ -1109,6 +1130,9 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
             {batch.rows.map((row, i) => {
               const dc = batch.overrideCat || row.category;
               const docc = batch.overrideOcc || row.occasion;
+              const isBestseller = batch.overrideBestseller !== null ? batch.overrideBestseller : row.isBestseller;
+              const isTrending = batch.overrideTrending !== null ? batch.overrideTrending : row.isTrending;
+              const onSale = batch.overrideOnSale !== null ? batch.overrideOnSale : row.onSale;
               const incomplete = !row.name || !row.price;
               return (
                 <tr key={i} style={{ borderBottom: "1px solid #f5f0ea", background: incomplete ? "#fdf3f0" : "transparent" }}>
@@ -1116,20 +1140,20 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
                   <td style={{ padding: "8px 10px" }}>
                     {row.image ? <img src={row.image} alt="" style={{ width: 34, height: 34, objectFit: "cover", borderRadius: 6, border: "1px solid #ede8e3" }} onError={e => { e.target.style.display = "none"; }} /> : <div style={{ width: 34, height: 34, background: "#f5f0ea", borderRadius: 6, border: "1px solid #ede8e3" }} />}
                   </td>
-                  <td style={{ padding: "8px 10px", maxWidth: 220 }}>
+                  <td style={{ padding: "8px 10px", maxWidth: 200 }}>
                     <input value={row.name} onChange={e => onUpdateRow(batch.id, i, { name: e.target.value })}
                       style={{ width: "100%", border: incomplete && !row.name ? "1.5px solid #e07070" : "1px solid #ede8e3", borderRadius: 6, padding: "5px 7px", fontSize: 12, fontFamily: "'Playfair Display',serif", color: "#2d2018", background: "#fff" }} />
                   </td>
                   <td style={{ padding: "8px 10px" }}>
                     <select value={dc} onChange={e => onUpdateRow(batch.id, i, { category: e.target.value })} disabled={!!batch.overrideCat}
-                      style={{ fontSize: 11, fontWeight: 600, padding: "4px 6px", borderRadius: 6, border: "1px solid #ede8e3", background: batch.overrideCat ? "#f5f0ea" : "#fff", color: CAT_COLORS[dc] || "#5a4a3e" }}>
+                      style={{ fontSize: 11, fontWeight: 600, padding: "4px 6px", borderRadius: 6, border: "1px solid #ede8e3", background: batch.overrideCat ? "#f5f0ea" : "#fff", color: CAT_COLORS[dc] || "#5a4a3e", cursor: batch.overrideCat ? "not-allowed" : "pointer" }}>
                       <option value="">—</option>
                       {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </td>
                   <td style={{ padding: "8px 10px" }}>
                     <select value={docc} onChange={e => onUpdateRow(batch.id, i, { occasion: e.target.value })} disabled={!!batch.overrideOcc}
-                      style={{ fontSize: 11, padding: "4px 6px", borderRadius: 6, border: "1px solid #ede8e3", background: batch.overrideOcc ? "#f5f0ea" : "#fff", color: "#5a4a3e" }}>
+                      style={{ fontSize: 11, padding: "4px 6px", borderRadius: 6, border: "1px solid #ede8e3", background: batch.overrideOcc ? "#f5f0ea" : "#fff", color: "#5a4a3e", cursor: batch.overrideOcc ? "not-allowed" : "pointer" }}>
                       <option value="">—</option>
                       {OCCASIONS.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
@@ -1141,6 +1165,11 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow }) {
                   <td style={{ padding: "8px 10px" }}>
                     <input type="number" value={row.stock} onChange={e => onUpdateRow(batch.id, i, { stock: Number(e.target.value) || 0, inStock: (Number(e.target.value) || 0) > 0 })}
                       style={{ width: 60, border: "1px solid #ede8e3", borderRadius: 6, padding: "5px 7px", fontSize: 12, color: row.stock > 0 ? "#4a8f4a" : "#c44a4a", fontWeight: 600, background: "#fff" }} />
+                  </td>
+                  <td style={{ padding: "8px 10px", display: "flex", gap: 4, flexWrap: "wrap" }}>
+                    {isBestseller && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 10, background: "#e0b07022", color: "#c4906a", fontWeight: 600 }}>⭐</span>}
+                    {isTrending && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 10, background: "#c4706a22", color: "#c4706a", fontWeight: 600 }}>🔥</span>}
+                    {onSale && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 10, background: "#d4a57422", color: "#b07a5a", fontWeight: 600 }}>🏷</span>}
                   </td>
                 </tr>
               );
