@@ -19,7 +19,7 @@
 ══════════════════════════════════════════ */
 :root {
   /* Brand pinks */
-  --primary:        #9B3050;   /* deep rose — logo color */
+  --primary:        #eaa8a2;   /* deep rose — logo color */
   --primary-light:  #C4607A;   /* medium rose */
   --primary-dark:   #eaa8a2;   /* darkest rose */
   --blush:          #F7DDD8;   /* soft blush pink */
@@ -32,7 +32,7 @@
   --cream3:         #EDE0D4;   /* sand beige */
 
   /* Text */
-  --text:           #2E1018;   /* near-black with warm rose undertone */
+  --text:           #white;   /* near-black with warm rose undertone */
   --text-muted:     #7A5060;   /* muted rose-brown */
   --text-light:     #B08898;   /* light rose-grey */
 
