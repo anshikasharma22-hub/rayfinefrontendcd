@@ -8,7 +8,7 @@ import Chatbot from "./Chatbot";
 function useBodyLock(isLocked) {
   useEffect(() => {
     if (!isLocked) return;
-    const scrollbarW = window.innerWidth - document.documentEarrlement.clientWidth;
+    const scrollbarW = window.innerWidth - document.documentElement.clientWidth;
     document.body.style.paddingRight = `${scrollbarW}px`;
     document.body.classList.add('modal-open');
     return () => {
@@ -279,33 +279,79 @@ function ProductModal({ product, onClose, cart, setCart, wishlist, setWishlist }
   const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0] || "");
   const [qty, setQty] = useState(1);
   const [imgIdx, setImgIdx] = useState(0);
+  const [imgZoomed, setImgZoomed] = useState(false);
+  const [qtyBounce, setQtyBounce] = useState(false);
+  const [wishAnim, setWishAnim] = useState(false);
+  const [cartAnim, setCartAnim] = useState(false);
+  const [entered, setEntered] = useState(false);
+  const rippleRef = useRef(null);
 
-  const inWishlist = wishlist.find(w => w.id === product.id);
-  const inCart = cart.find(c => c.id === product.id && c.selectedVariant === selectedVariant);
-  const discount = product.originalPrice ? Math.round((1 - product.price / product.originalPrice) * 100) : null;
+  const productId = product.id || product._id;
+  const inWishlist = wishlist.find(w => (w.id || w._id) === productId);
+  const inCart = cart.find(c => c.id === productId && c.selectedVariant === selectedVariant);
+  const discount = product.originalPrice
+    ? Math.round((1 - product.price / product.originalPrice) * 100)
+    : null;
   const images = product.images?.length ? product.images : [product.image];
 
-  const addToCart = () => {
+  // Entrance animation
+  useEffect(() => { requestAnimationFrame(() => setEntered(true)); }, []);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") setImgIdx(i => (i - 1 + images.length) % images.length);
+      if (e.key === "ArrowRight") setImgIdx(i => (i + 1) % images.length);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [images.length, onClose]);
+
+  useBodyLock(true);
+  useEffect(() => { addViewed(product); }, [addViewed, product]);
+
+  const addToCart = (e) => {
     if (!product.inStock) return;
+    // Ripple effect
+    if (rippleRef.current) {
+      const btn = rippleRef.current;
+      const rect = btn.getBoundingClientRect();
+      const span = document.createElement("span");
+      span.style.cssText = `
+        position:absolute;border-radius:50%;width:20px;height:20px;
+        background:rgba(255,255,255,0.45);pointer-events:none;
+        left:${(e?.clientX ?? rect.left + rect.width / 2) - rect.left - 10}px;
+        top:${(e?.clientY ?? rect.top + rect.height / 2) - rect.top - 10}px;
+        animation:modalRipple 0.6s ease-out forwards;
+      `;
+      btn.appendChild(span);
+      setTimeout(() => span.remove(), 700);
+    }
+    setCartAnim(true);
+    setTimeout(() => setCartAnim(false), 600);
+
     if (inCart) {
       setCart(cart.map(c =>
-        c.id === product.id && c.selectedVariant === selectedVariant
+        c.id === productId && c.selectedVariant === selectedVariant
           ? { ...c, quantity: c.quantity + qty }
           : c
       ));
     } else {
-      setCart([...cart, { ...product, quantity: qty, selectedVariant }]);
+      setCart([...cart, { ...product, id: productId, quantity: qty, selectedVariant }]);
     }
     showToast(`${product.name} added to cart!`, "success");
     onClose();
   };
 
   const toggleWishlist = () => {
+    setWishAnim(true);
+    setTimeout(() => setWishAnim(false), 400);
     if (inWishlist) {
-      setWishlist(wishlist.filter(w => w.id !== product.id));
+      setWishlist(wishlist.filter(w => (w.id || w._id) !== productId));
       showToast("Removed from wishlist", "error");
     } else {
-      setWishlist([...wishlist, product]);
+      setWishlist([...wishlist, { ...product, id: productId }]);
       showToast("Added to wishlist ♥", "success");
     }
   };
@@ -319,157 +365,354 @@ function ProductModal({ product, onClose, cart, setCart, wishlist, setWishlist }
     }
   };
 
-useBodyLock(true);
-useEffect(() => { addViewed(product); }, [addViewed, product]);
+  const bumpQty = (delta) => {
+    setQty(q => Math.max(1, q + delta));
+    setQtyBounce(true);
+    setTimeout(() => setQtyBounce(false), 250);
+  };
+
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed", inset: 0, background: "rgba(44,36,24,0.7)", zIndex: 9999,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "16px", backdropFilter: "blur(6px)",
-      }}
-    >
+    <>
+      <style>{`
+        @keyframes modalEnter {
+          from { opacity: 0; transform: scale(0.94) translateY(24px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes backdropEnter {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes modalRipple {
+          to { transform: scale(6); opacity: 0; }
+        }
+        @keyframes heartPop {
+          0%   { transform: scale(1); }
+          40%  { transform: scale(1.4); }
+          70%  { transform: scale(0.9); }
+          100% { transform: scale(1); }
+        }
+        @keyframes qtyBounce {
+          0%   { transform: scale(1); }
+          50%  { transform: scale(1.25); }
+          100% { transform: scale(1); }
+        }
+        @keyframes cartShake {
+          0%,100% { transform: translateX(0); }
+          20%     { transform: translateX(-4px); }
+          40%     { transform: translateX(4px); }
+          60%     { transform: translateX(-3px); }
+          80%     { transform: translateX(3px); }
+        }
+        @keyframes thumbPulse {
+          0%,100% { box-shadow: 0 0 0 0 rgba(176,122,90,0.5); }
+          50%     { box-shadow: 0 0 0 5px rgba(176,122,90,0); }
+        }
+        .modal-img-main {
+          transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94), filter 0.3s ease;
+        }
+        .modal-img-main:hover {
+          transform: scale(1.045);
+          filter: brightness(1.04);
+        }
+        .modal-thumb {
+          transition: all 0.2s ease;
+          cursor: pointer;
+          border-radius: 4px;
+          overflow: hidden;
+          border: 2px solid transparent;
+        }
+        .modal-thumb:hover { transform: translateY(-2px); }
+        .modal-thumb.active {
+          border-color: var(--primary);
+          animation: thumbPulse 1.2s ease infinite;
+        }
+        .modal-variant-btn {
+          transition: all 0.18s ease;
+        }
+        .modal-variant-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 3px 10px rgba(44,36,24,0.12);
+        }
+        .modal-nav-btn {
+          position: absolute; top: 50%; transform: translateY(-50%);
+          width: 36px; height: 36px; border-radius: 50%;
+          background: rgba(255,255,255,0.92); border: none; cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 16px; color: var(--text);
+          box-shadow: 0 2px 12px rgba(44,36,24,0.15);
+          transition: background 0.2s, transform 0.2s;
+          z-index: 3;
+        }
+        .modal-nav-btn:hover {
+          background: #fff;
+          transform: translateY(-50%) scale(1.1);
+        }
+        .trust-icon-item {
+          text-align: center; font-size: 11px; color: var(--text-muted);
+          transition: transform 0.2s;
+          flex: 1;
+        }
+        .trust-icon-item:hover { transform: translateY(-3px); }
+      `}</style>
+
       <div
-        onClick={e => e.stopPropagation()}
+        onClick={onClose}
         style={{
-          background: "#fff", borderRadius: "12px", maxWidth: "960px", width: "100%",
-          maxHeight: "92vh", overflow: "auto", display: "flex", flexWrap: "wrap",
-          boxShadow: "0 40px 100px rgba(44,36,24,0.22)",
+          position: "fixed", inset: 0,
+          background: "rgba(44,36,24,0.72)",
+          zIndex: 9999,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "16px",
+          backdropFilter: "blur(7px)",
+          animation: "backdropEnter 0.25s ease",
         }}
       >
-        {/* Image panel */}
-        <div style={{ flex: "1 1 380px", position: "relative", minHeight: "400px", background: "#fdf8f4" }}>
-          <img
-            src={images[imgIdx] || product.image}
-            alt={product.name}
-            style={{ width: "100%", height: "100%", minHeight: "400px", objectFit: "cover", borderRadius: "12px 0 0 12px", display: "block" }}
-            onError={e => { e.target.src = "https://placehold.co/400x400?text=Jewellery"; }}
-          />
-          {!product.inStock && (
-            <div style={{ position: "absolute", top: 16, left: 16, background: "#555", color: "#fff", padding: "6px 14px", borderRadius: "2px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px" }}>OUT OF STOCK</div>
-          )}
-          {discount && product.inStock && (
-            <div style={{ position: "absolute", top: 16, left: 16, background: "var(--primary)", color: "#fff", padding: "6px 14px", borderRadius: "2px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px" }}>-{discount}% OFF</div>
-          )}
-          {images.length > 1 && (
-            <div style={{ position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6 }}>
-              {images.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setImgIdx(i)}
-                  style={{ width: 8, height: 8, borderRadius: "50%", border: "none", cursor: "pointer", background: i === imgIdx ? "var(--primary)" : "rgba(255,255,255,0.6)" }}
-                />
-              ))}
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{
+            background: "#fff",
+            borderRadius: "14px",
+            maxWidth: "960px",
+            width: "100%",
+            maxHeight: "92vh",
+            overflow: "auto",
+            display: "flex",
+            flexWrap: "wrap",
+            boxShadow: "0 48px 120px rgba(44,36,24,0.28), 0 0 0 1px rgba(176,122,90,0.08)",
+            animation: "modalEnter 0.38s cubic-bezier(0.16,1,0.3,1) both",
+          }}
+        >
+          {/* ── IMAGE PANEL ── */}
+          <div style={{
+            flex: "1 1 380px",
+            position: "relative",
+            background: "#fdf8f4",
+            borderRadius: "14px 0 0 14px",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 400,
+          }}>
+            {/* Main image */}
+            <div style={{ flex: 1, position: "relative", overflow: "hidden", minHeight: 340 }}>
+              <img
+                src={images[imgIdx] || product.image}
+                alt={product.name}
+                className="modal-img-main"
+                style={{ width: "100%", height: "100%", minHeight: 340, objectFit: "cover", display: "block" }}
+                onError={e => { e.target.src = "https://placehold.co/400x400?text=Jewellery"; }}
+              />
+
+              {/* Gradient overlay bottom */}
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, background: "linear-gradient(to top, rgba(253,248,244,0.7), transparent)", pointerEvents: "none" }} />
+
+              {/* Badges — 3D float */}
+              <div style={{ position: "absolute", top: 14, left: 14, display: "flex", flexDirection: "column", gap: 6, zIndex: 3 }}>
+                {!product.inStock && (
+                  <div style={{ background: "#555", color: "#fff", padding: "5px 12px", borderRadius: "3px", fontSize: "10px", fontWeight: 700, letterSpacing: "1px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", transform: "translateZ(0)" }}>OUT OF STOCK</div>
+                )}
+                {discount && product.inStock && (
+                  <div style={{ background: "var(--primary)", color: "#fff", padding: "5px 12px", borderRadius: "3px", fontSize: "10px", fontWeight: 700, letterSpacing: "1px", boxShadow: "0 4px 14px rgba(176,122,90,0.4)" }}>-{discount}% OFF</div>
+                )}
+                {product.isNew && product.inStock && (
+                  <div style={{ background: "#2C2418", color: "#fff", padding: "5px 12px", borderRadius: "3px", fontSize: "10px", fontWeight: 700, letterSpacing: "1px", boxShadow: "0 4px 12px rgba(44,36,24,0.3)" }}>✨ NEW</div>
+                )}
+              </div>
+
+              {/* Share */}
+              <button
+                onClick={handleShare}
+                title="Share"
+                style={{ position: "absolute", top: 14, right: 14, background: "rgba(255,255,255,0.92)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", boxShadow: "0 2px 10px rgba(0,0,0,0.12)", transition: "transform 0.2s", zIndex: 3 }}
+                onMouseEnter={e => e.currentTarget.style.transform = "scale(1.12)"}
+                onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+              >🔗</button>
+
+              {/* Prev / Next arrows */}
+              {images.length > 1 && (
+                <>
+                  <button className="modal-nav-btn" style={{ left: 10 }} onClick={() => setImgIdx(i => (i - 1 + images.length) % images.length)}>‹</button>
+                  <button className="modal-nav-btn" style={{ right: 10 }} onClick={() => setImgIdx(i => (i + 1) % images.length)}>›</button>
+                </>
+              )}
             </div>
-          )}
-          <button
-            onClick={handleShare}
-            style={{ position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.9)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}
-            title="Share"
-          >
-            🔗
-          </button>
-        </div>
 
-        {/* Details panel */}
-        <div style={{ flex: "1 1 320px", padding: "36px 32px", overflowY: "auto" }}>
-          <button onClick={onClose} style={{ float: "right", background: "none", border: "none", fontSize: "22px", cursor: "pointer", color: "#aaa", lineHeight: 1 }}>✕</button>
-          <div style={{ fontSize: "10px", color: "var(--primary)", fontWeight: 700, letterSpacing: "3px", textTransform: "uppercase", marginBottom: 8 }}>{product.category}</div>
-          <h2 style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--text)", fontSize: "28px", marginBottom: 12, fontWeight: 500, lineHeight: 1.2 }}>{product.name}</h2>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-            <span style={{ color: "#E8B84B", fontSize: "14px" }}>★★★★★</span>
-            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>4.9 (124 reviews)</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
-            <span style={{ fontSize: "26px", fontWeight: 700, color: "var(--primary)" }}>{formatPrice(product.price, currency)}</span>
-            {product.originalPrice && (
-              <span style={{ textDecoration: "line-through", color: "var(--text-light)", fontSize: "16px" }}>{formatPrice(product.originalPrice, currency)}</span>
-            )}
-            {discount && (
-              <span style={{ background: "#fff0f3", color: "var(--primary)", fontSize: "12px", padding: "3px 10px", borderRadius: "20px", fontWeight: 700 }}>Save {discount}%</span>
-            )}
-          </div>
-          <p style={{ color: "var(--text-muted)", lineHeight: "1.8", marginBottom: 20, fontSize: "14px" }}>{product.description}</p>
-
-          {product.variants && product.variants.length > 0 && (
-            <div style={{ marginBottom: 18 }}>
-              <p style={{ fontWeight: 700, marginBottom: 10, fontSize: "11px", letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--text-muted)" }}>
-                Select Finish: <span style={{ color: "var(--primary)" }}>{selectedVariant}</span>
-              </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {product.variants.map(v => (
-                  <button
-                    key={v}
-                    onClick={() => setSelectedVariant(v)}
-                    style={{ padding: "8px 16px", borderRadius: "2px", fontSize: "12px", cursor: "pointer", background: selectedVariant === v ? "var(--text)" : "#fff", color: selectedVariant === v ? "#fff" : "var(--text-muted)", border: selectedVariant === v ? "1.5px solid var(--text)" : "1.5px solid var(--border)", fontWeight: selectedVariant === v ? 700 : 400, transition: "all 0.2s" }}
+            {/* Thumbnail strip */}
+            {images.length > 1 && (
+              <div style={{ display: "flex", gap: 8, padding: "10px 14px", background: "#fdf8f4", overflowX: "auto" }}>
+                {images.map((img, i) => (
+                  <div
+                    key={i}
+                    className={`modal-thumb ${i === imgIdx ? "active" : ""}`}
+                    onClick={() => setImgIdx(i)}
+                    style={{ minWidth: 56, height: 56, flexShrink: 0 }}
                   >
-                    {v}
-                  </button>
+                    <img
+                      src={img}
+                      alt={`View ${i + 1}`}
+                      style={{ width: 56, height: 56, objectFit: "cover" }}
+                      onError={e => { e.target.src = "https://placehold.co/56x56?text=?"; }}
+                    />
+                  </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          <div style={{ marginBottom: 18 }}>
-            <p style={{ fontWeight: 700, marginBottom: 10, fontSize: "11px", letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--text-muted)" }}>Quantity</p>
-            <div style={{ display: "flex", alignItems: "center", gap: 0, border: "1.5px solid var(--border)", borderRadius: "4px", width: "fit-content" }}>
-              <button onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: 36, height: 36, background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "var(--text)" }}>−</button>
-              <span style={{ width: 40, textAlign: "center", fontWeight: 700, fontSize: "14px", color: "var(--text)" }}>{qty}</span>
-              <button onClick={() => setQty(q => q + 1)} style={{ width: 36, height: 36, background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "var(--text)" }}>+</button>
-            </div>
+            )}
           </div>
 
-          <PincodeChecker />
+          {/* ── DETAILS PANEL ── */}
+          <div style={{ flex: "1 1 320px", padding: "34px 30px 28px", overflowY: "auto", display: "flex", flexDirection: "column" }}>
+            {/* Close */}
+            <button
+              onClick={onClose}
+              style={{ alignSelf: "flex-end", background: "#f5f0eb", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: "14px", color: "#aaa", marginBottom: 14, transition: "background 0.2s, transform 0.2s" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#ede5d8"; e.currentTarget.style.transform = "rotate(90deg)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#f5f0eb"; e.currentTarget.style.transform = "rotate(0deg)"; }}
+            >✕</button>
 
-          {product.material && (
-            <div style={{ marginBottom: 10, fontSize: "13px", color: "var(--text-muted)" }}><strong>Material:</strong> {product.material}</div>
-          )}
-          {product.careInstructions && (
-            <div style={{ marginBottom: 20, fontSize: "12px", color: "var(--text-muted)", background: "var(--cream)", padding: "12px", borderRadius: "6px", border: "1px solid var(--border-light)", lineHeight: 1.7 }}>
-              <strong>✨ Care:</strong> {product.careInstructions}
+            {/* Category */}
+            <div style={{ fontSize: "10px", color: "var(--primary)", fontWeight: 700, letterSpacing: "3px", textTransform: "uppercase", marginBottom: 6 }}>{product.category}</div>
+
+            {/* Name */}
+            <h2 style={{ fontFamily: "Cormorant Garamond, serif", color: "var(--text)", fontSize: "26px", marginBottom: 10, fontWeight: 500, lineHeight: 1.25 }}>{product.name}</h2>
+
+            {/* Rating */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <span style={{ color: "#E8B84B", fontSize: "13px", letterSpacing: 2 }}>★★★★★</span>
+              <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>4.9 · 124 reviews</span>
             </div>
-          )}
 
-          <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-            <button
-              onClick={addToCart}
-              disabled={!product.inStock}
-              style={{ flex: 1, padding: 15, borderRadius: "2px", border: "none", cursor: product.inStock ? "pointer" : "not-allowed", background: product.inStock ? "var(--text)" : "#ccc", color: "#fff", fontWeight: 700, fontSize: "11px", letterSpacing: "2.5px", textTransform: "uppercase", transition: "all 0.3s" }}
-            >
-              {!product.inStock ? "Out of Stock" : inCart ? "✓ Add More" : "Add to Cart"}
-            </button>
-            <button
-              onClick={toggleWishlist}
-              style={{ padding: "15px 18px", borderRadius: "2px", border: "1.5px solid var(--border)", background: inWishlist ? "var(--primary)" : "transparent", color: inWishlist ? "#fff" : "var(--text)", cursor: "pointer", fontSize: "18px", transition: "all 0.3s" }}
-            >
-              {inWishlist ? "❤️" : "🤍"}
-            </button>
-          </div>
+            {/* Price */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
+              <span style={{ fontSize: "24px", fontWeight: 700, color: "var(--primary)" }}>{formatPrice(product.price, currency)}</span>
+              {product.originalPrice && (
+                <span style={{ textDecoration: "line-through", color: "var(--text-light)", fontSize: "15px" }}>{formatPrice(product.originalPrice, currency)}</span>
+              )}
+              {discount && (
+                <span style={{ background: "#fff0f3", color: "var(--primary)", fontSize: "11px", padding: "3px 10px", borderRadius: "20px", fontWeight: 700 }}>Save {discount}%</span>
+              )}
+            </div>
 
-          <a
-            href={`https://wa.me/918690666771?text=Hi! I'm interested in ${encodeURIComponent(product.name)} (${formatPrice(product.price, currency)})`}
-            target="_blank"
-            rel="noreferrer"
-            style={{ display: "block", textAlign: "center", padding: "13px", background: "#25D366", color: "#fff", borderRadius: "2px", fontSize: "11px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", textDecoration: "none" }}
-          >
-            💬 Order via WhatsApp
-          </a>
+            {/* Description */}
+            <p style={{ color: "var(--text-muted)", lineHeight: "1.8", marginBottom: 18, fontSize: "13.5px" }}>{product.description}</p>
 
-          <div style={{ display: "flex", gap: 16, marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border-light)", justifyContent: "center" }}>
-            {[["🚚", "Free Delivery"], ["🔒", "Secure Pay"], ["🔄", "Easy Returns"]].map(([icon, label]) => (
-              <div key={label} style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)" }}>
-                <div style={{ fontSize: "18px", marginBottom: 3 }}>{icon}</div>
-                {label}
+            {/* Variants */}
+            {product.variants?.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontWeight: 700, marginBottom: 8, fontSize: "10px", letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--text-muted)" }}>
+                  Finish: <span style={{ color: "var(--primary)" }}>{selectedVariant}</span>
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                  {product.variants.map(v => (
+                    <button
+                      key={v}
+                      className="modal-variant-btn"
+                      onClick={() => setSelectedVariant(v)}
+                      style={{ padding: "7px 14px", borderRadius: "3px", fontSize: "12px", cursor: "pointer", background: selectedVariant === v ? "var(--text)" : "#fff", color: selectedVariant === v ? "#fff" : "var(--text-muted)", border: selectedVariant === v ? "1.5px solid var(--text)" : "1.5px solid var(--border)", fontWeight: selectedVariant === v ? 700 : 400 }}
+                    >{v}</button>
+                  ))}
+                </div>
               </div>
-            ))}
+            )}
+
+            {/* Quantity */}
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ fontWeight: 700, marginBottom: 8, fontSize: "10px", letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--text-muted)" }}>Quantity</p>
+              <div style={{ display: "flex", alignItems: "center", border: "1.5px solid var(--border)", borderRadius: "4px", width: "fit-content", overflow: "hidden" }}>
+                <button
+                  onClick={() => bumpQty(-1)}
+                  style={{ width: 36, height: 36, background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "var(--text)", transition: "background 0.15s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "var(--cream)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "none"}
+                >−</button>
+                <span style={{ width: 40, textAlign: "center", fontWeight: 700, fontSize: "14px", color: "var(--text)", display: "inline-block", animation: qtyBounce ? "qtyBounce 0.25s ease" : "none" }}>{qty}</span>
+                <button
+                  onClick={() => bumpQty(1)}
+                  style={{ width: 36, height: 36, background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "var(--text)", transition: "background 0.15s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "var(--cream)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "none"}
+                >+</button>
+              </div>
+            </div>
+
+            {/* Pincode */}
+            <PincodeChecker />
+
+            {/* Material / Care */}
+            {product.material && (
+              <div style={{ marginBottom: 8, fontSize: "13px", color: "var(--text-muted)" }}><strong>Material:</strong> {product.material}</div>
+            )}
+            {product.careInstructions && (
+              <div style={{ marginBottom: 18, fontSize: "12px", color: "var(--text-muted)", background: "var(--cream)", padding: "11px", borderRadius: "6px", border: "1px solid var(--border-light)", lineHeight: 1.7 }}>
+                <strong>✨ Care:</strong> {product.careInstructions}
+              </div>
+            )}
+
+            {/* CTA row */}
+            <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+              <button
+                ref={rippleRef}
+                onClick={addToCart}
+                disabled={!product.inStock}
+                style={{
+                  flex: 1, padding: "14px 10px", borderRadius: "3px", border: "none",
+                  cursor: product.inStock ? "pointer" : "not-allowed",
+                  background: product.inStock ? "var(--text)" : "#ccc",
+                  color: "#fff", fontWeight: 700, fontSize: "10px",
+                  letterSpacing: "2.5px", textTransform: "uppercase",
+                  position: "relative", overflow: "hidden",
+                  animation: cartAnim ? "cartShake 0.5s ease" : "none",
+                  transition: "background 0.25s, transform 0.2s",
+                }}
+                onMouseEnter={e => { if (product.inStock) e.currentTarget.style.background = "var(--primary)"; }}
+                onMouseLeave={e => { if (product.inStock) e.currentTarget.style.background = "var(--text)"; }}
+              >
+                {!product.inStock ? "Out of Stock" : inCart ? "✓ Add More" : "Add to Cart"}
+              </button>
+
+              <button
+                onClick={toggleWishlist}
+                style={{
+                  padding: "14px 17px", borderRadius: "3px",
+                  border: "1.5px solid var(--border)",
+                  background: inWishlist ? "var(--primary)" : "transparent",
+                  color: inWishlist ? "#fff" : "var(--text)",
+                  cursor: "pointer", fontSize: "18px",
+                  animation: wishAnim ? "heartPop 0.4s ease" : "none",
+                  transition: "background 0.25s, border-color 0.25s",
+                }}
+              >
+                {inWishlist ? "❤️" : "🤍"}
+              </button>
+            </div>
+
+            {/* WhatsApp */}
+            
+              href={`https://wa.me/918690666771?text=Hi! I'm interested in ${encodeURIComponent(product.name)} (${formatPrice(product.price, currency)})`}
+              target="_blank"
+              rel="noreferrer"
+              style={{ display: "block", textAlign: "center", padding: "13px", background: "#25D366", color: "#fff", borderRadius: "3px", fontSize: "10px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", textDecoration: "none", transition: "filter 0.2s" }}
+              onMouseEnter={e => e.currentTarget.style.filter = "brightness(1.08)"}
+              onMouseLeave={e => e.currentTarget.style.filter = "brightness(1)"}
+            >
+              💬 Order via WhatsApp
+            </a>
+
+            {/* Trust strip */}
+            <div style={{ display: "flex", gap: 8, marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border-light)", justifyContent: "center" }}>
+              {[["🚚", "Free Delivery"], ["🔒", "Secure Pay"], ["🔄", "Easy Returns"]].map(([icon, label]) => (
+                <div key={label} className="trust-icon-item">
+                  <div style={{ fontSize: "20px", marginBottom: 4 }}>{icon}</div>
+                  {label}
+                </div>
+              ))}
+            </div>
           </div>
+
         </div>
       </div>
-    </div>
+    </>
   );
 }
-
 // ─────────────────────────────────────────────
 // ANNOUNCEMENT BAR
 // ─────────────────────────────────────────────
