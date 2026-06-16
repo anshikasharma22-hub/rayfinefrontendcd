@@ -91,7 +91,7 @@ const OCCASIONS = [
   { name: "Gifting",        img: "https://rayfinesite-3.onrender.com/images/gifting.jpg",     path: "/shop?occasion=Gifting" },
   { name: "Party",          img: "https://rayfinesite-3.onrender.com/images/party.jpg",       path: "/shop?occasion=Party" },
   { name: "Traditional",    img: "https://rayfinesite-3.onrender.com/images/traditional.jpg", path: "/shop?occasion=Traditional" },
-  { name: "Vacation Ready", img: "https://rayfinesite-3.onrender.com/images/vacation.jpg", path: "/shop?occasion=Vacation" },
+  { name: "Vacation Ready", img: "https://rayfinesite-3.onrender.com/images/vacation.png", path: "/shop?occasion=Vacation" },
   { name: "Bridal",         img: "https://rayfinesite-3.onrender.com/images/1000128664.jpg",  path: "/shop?occasion=Bridal" },
   { name: "Everyday",       img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",    path: "/shop?occasion=Everyday" },
    
