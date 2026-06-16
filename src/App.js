@@ -87,16 +87,14 @@ const HERO_SLIDES = [
 ];
 
 const OCCASIONS = [
-  { name: "Festive",        img: "https://rayfinesite-3.onrender.com/images/festive.jpg",     path: "/shop?occasion=Festive" },
-  { name: "Gifting",        img: "https://rayfinesite-3.onrender.com/images/gifting.jpg",     path: "/shop?occasion=Gifting" },
-  { name: "Party",          img: "https://rayfinesite-3.onrender.com/images/party.jpg",       path: "/shop?occasion=Party" },
-  { name: "Traditional",    img: "https://rayfinesite-3.onrender.com/images/traditional.jpg", path: "/shop?occasion=Traditional" },
-  { name: "Vacation Ready", img: "https://rayfinesite-3.onrender.com/images/vacation.jpg", path: "/shop?occasion=Vacation" },
-  { name: "Bridal",         img: "https://rayfinesite-3.onrender.com/images/1000128664.jpg",  path: "/shop?occasion=Bridal" },
-  { name: "Everyday",       img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",    path: "/shop?occasion=Everyday" },
-   
+  { name: "Festive",        key: "festive",     img: "https://rayfinesite-3.onrender.com/images/festive.jpg",     emoji: "🎉" },
+  { name: "Gifting",        key: "gifting",     img: "https://rayfinesite-3.onrender.com/images/gifting.jpg",     emoji: "🎁" },
+  { name: "Party",          key: "party",       img: "https://rayfinesite-3.onrender.com/images/party.jpg",       emoji: "✨" },
+  { name: "Traditional",   key: "traditional", img: "https://rayfinesite-3.onrender.com/images/traditional.jpg", emoji: "🌸" },
+  { name: "Vacation Ready", key: "vacation",    img: "https://rayfinesite-3.onrender.com/images/vacation.jpg",    emoji: "🌴" },
+  { name: "Bridal",         key: "bridal",      img: "https://rayfinesite-3.onrender.com/images/1000128664.jpg",  emoji: "💍" },
+  { name: "Everyday",       key: "everyday",    img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",    emoji: "☀️" },
 ];
-
 const CATEGORIES = [
   { name: "Earrings",        img: "https://rayfinesite-3.onrender.com/images/1000128648.jpg", path: "/shop?cat=Earring" },
   { name: "Necklaces",       img: "https://rayfinesite-3.onrender.com/images/necklace.jpg",   path: "/shop?cat=Necklace" },
@@ -1271,11 +1269,10 @@ function OccasionSection({ cart, setCart, wishlist, setWishlist }) {
   const [allProducts, setAllProducts] = useState([]);
   const [apiLoading, setApiLoading] = useState(true);
   const [tilesLoading, setTilesLoading] = useState(true);
-  const [activeOccasion, setActiveOccasion] = useState(null); // null = none selected
+  const [activeOccasion, setActiveOccasion] = useState(null);
   const [occasionProducts, setOccasionProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(false);
 
-  // Fetch all products once on mount
   useEffect(() => {
     fetch("https://rayfinesite-3.onrender.com/api/products")
       .then(res => res.json())
@@ -1286,41 +1283,29 @@ function OccasionSection({ cart, setCart, wishlist, setWishlist }) {
       })
       .catch(err => { console.error(err); setApiLoading(false); });
 
-    // Tiles skeleton
     const t = setTimeout(() => setTilesLoading(false), 800);
     return () => clearTimeout(t);
   }, []);
 
-  // When an occasion tile is clicked
   const handleOccasionClick = (occ) => {
-    // Toggle off if same tile clicked again
     if (activeOccasion?.key === occ.key) {
       setActiveOccasion(null);
       setOccasionProducts([]);
       return;
     }
-
     setActiveOccasion(occ);
     setProductsLoading(true);
 
-    // Filter by occasion tag, OR if no match → use random products
-    // Assumes your product has a field like: product.occasion / product.tags / product.category
-    // Adjust the filter condition to match your actual product schema
     const filtered = allProducts.filter(p => {
-      const tags = [
-        p.occasion, p.tag, p.category,
-        ...(Array.isArray(p.tags) ? p.tags : [])
-      ]
+      const tags = [p.occasion, p.tag, p.category, ...(Array.isArray(p.tags) ? p.tags : [])]
         .filter(Boolean)
         .map(t => t.toLowerCase());
       return tags.includes(occ.key.toLowerCase());
     });
 
-    // If no tagged products, fall back to 8 random products
     const pool = filtered.length >= 4 ? filtered : allProducts;
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
 
-    // Simulate slight delay for smoothness
     setTimeout(() => {
       setOccasionProducts(shuffled.slice(0, 8));
       setProductsLoading(false);
@@ -1329,64 +1314,71 @@ function OccasionSection({ cart, setCart, wishlist, setWishlist }) {
 
   return (
     <section style={{ padding: "60px 0", background: "#fff" }}>
+      <style>{`
+        @keyframes shimmer {
+          0%   { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+        @keyframes fadeSlideIn {
+          from { opacity: 0; transform: translateY(16px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .occ-tile {
+          min-width: 140px; max-width: 140px; flex-shrink: 0;
+          scroll-snap-align: start; position: relative;
+          border-radius: 10px; overflow: hidden;
+          cursor: pointer; aspect-ratio: 3/4;
+          transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
+                      box-shadow 0.28s cubic-bezier(0.34,1.56,0.64,1);
+          box-shadow: 0 4px 20px rgba(44,36,24,0.10);
+        }
+        .occ-tile:hover {
+          transform: translateY(-6px) scale(1.04) !important;
+          box-shadow: 0 14px 36px rgba(44,36,24,0.20) !important;
+        }
+        .occ-tile.occ-active {
+          transform: translateY(-4px) scale(1.03) !important;
+          box-shadow: 0 0 0 3px var(--primary), 0 12px 32px rgba(44,36,24,0.22) !important;
+        }
+        .occ-tile.occ-active:hover {
+          transform: translateY(-6px) scale(1.04) !important;
+          box-shadow: 0 0 0 3px var(--primary), 0 16px 36px rgba(44,36,24,0.28) !important;
+        }
+        .occ-scroll::-webkit-scrollbar { display: none; }
+        .occ-viewall {
+          display: inline-block; padding: 10px 32px;
+          border: 1.5px solid var(--primary); color: var(--primary);
+          font-family: "DM Sans", sans-serif; font-size: 11px;
+          font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+          text-decoration: none; border-radius: 2px; transition: all 0.2s;
+        }
+        .occ-viewall:hover { background: var(--primary); color: #fff; }
+      `}</style>
+
       {/* Header */}
-      <div style={{
-        display: "flex", justifyContent: "space-between",
-        alignItems: "flex-end", padding: "0 40px 28px"
-      }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "0 40px 28px" }}>
         <div>
-          <p style={{
-            fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase",
-            color: "var(--primary)", fontWeight: 600, marginBottom: 6
-          }}>
+          <p style={{ fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--primary)", fontWeight: 600, marginBottom: 6 }}>
             Find Your Perfect Piece
           </p>
-          <h2 style={{
-            fontFamily: "Cormorant Garamond, serif",
-            fontSize: "clamp(24px,3vw,36px)", fontWeight: 400,
-            color: "var(--text)", lineHeight: 1.2
-          }}>
+          <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "clamp(24px,3vw,36px)", fontWeight: 400, color: "var(--text)", lineHeight: 1.2 }}>
             Shop by Occasion
           </h2>
         </div>
-        <Link
-          to="/shop"
-          style={{
-            fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px",
-            textTransform: "uppercase", color: "var(--primary)",
-            textDecoration: "none", borderBottom: "1px solid var(--primary)",
-            paddingBottom: 2, whiteSpace: "nowrap"
-          }}
-        >
+        <Link to="/shop" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--primary)", textDecoration: "none", borderBottom: "1px solid var(--primary)", paddingBottom: 2, whiteSpace: "nowrap" }}>
           View All
         </Link>
       </div>
 
-      {/* Occasion Tiles Row */}
-      <div style={{
-        display: "flex", gap: 14, overflowX: "auto",
-        padding: "0 40px 20px", scrollSnapType: "x mandatory",
-        WebkitOverflowScrolling: "touch",
-        scrollbarWidth: "none", // Firefox
-      }}>
-        <style>{`
-          @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-          }
-          /* Hide scrollbar Chrome/Safari */
-          .occasion-scroll::-webkit-scrollbar { display: none; }
-        `}</style>
-
+      {/* Tiles Row */}
+      <div
+        className="occ-scroll"
+        style={{ display: "flex", gap: 14, overflowX: "auto", padding: "0 40px 20px", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+      >
         {tilesLoading ? (
           [...Array(5)].map((_, i) => (
             <div key={i} style={{ minWidth: 140, maxWidth: 140, flexShrink: 0 }}>
-              <div style={{
-                background: "linear-gradient(90deg, #e8dfd5 25%, #f0e8df 50%, #e8dfd5 75%)",
-                backgroundSize: "200% 100%",
-                animation: "shimmer 1.5s infinite",
-                aspectRatio: "3/4", borderRadius: "10px"
-              }} />
+              <div style={{ background: "linear-gradient(90deg,#e8dfd5 25%,#f0e8df 50%,#e8dfd5 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite", aspectRatio: "3/4", borderRadius: 10 }} />
             </div>
           ))
         ) : (
@@ -1396,29 +1388,7 @@ function OccasionSection({ cart, setCart, wishlist, setWishlist }) {
               <div
                 key={occ.key}
                 onClick={() => handleOccasionClick(occ)}
-                style={{
-                  minWidth: 140, maxWidth: 140, flexShrink: 0,
-                  scrollSnapAlign: "start", position: "relative",
-                  borderRadius: "10px", overflow: "hidden",
-                  cursor: "pointer", aspectRatio: "3/4",
-                  boxShadow: isActive
-                    ? "0 0 0 3px var(--primary), 0 12px 32px rgba(44,36,24,0.22)"
-                    : "0 4px 20px rgba(44,36,24,0.10)",
-                  transform: isActive ? "translateY(-4px) scale(1.03)" : "translateY(0) scale(1)",
-                  transition: "all 0.28s cubic-bezier(0.34,1.56,0.64,1)",
-                }}
-                onMouseEnter={e => {
-                  if (!isActive) {
-                    e.currentTarget.style.transform = "translateY(-4px)";
-                    e.currentTarget.style.boxShadow = "0 12px 32px rgba(44,36,24,0.18)";
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (!isActive) {
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "0 4px 20px rgba(44,36,24,0.10)";
-                  }
-                }}
+                className={`occ-tile${isActive ? " occ-active" : ""}`}
               >
                 <img
                   src={occ.img}
@@ -1427,43 +1397,28 @@ function OccasionSection({ cart, setCart, wishlist, setWishlist }) {
                   loading="lazy"
                   onError={e => { e.target.src = `https://placehold.co/140x187?text=${occ.name}`; }}
                 />
-                {/* Dark gradient overlay */}
+
+                {/* Gradient overlay */}
                 <div style={{
                   position: "absolute", inset: 0,
                   background: isActive
-                    ? "linear-gradient(to top, rgba(44,36,24,0.90) 0%, rgba(44,36,24,0.15) 55%, transparent 100%)"
-                    : "linear-gradient(to top, rgba(44,36,24,0.75) 0%, rgba(44,36,24,0.05) 55%, transparent 100%)",
-                  transition: "background 0.3s"
+                    ? "linear-gradient(to top,rgba(44,36,24,0.88) 0%,rgba(44,36,24,0.12) 55%,transparent 100%)"
+                    : "linear-gradient(to top,rgba(44,36,24,0.72) 0%,rgba(44,36,24,0.04) 55%,transparent 100%)",
+                  transition: "background 0.3s",
+                  pointerEvents: "none",
                 }} />
-                {/* Active indicator dot */}
+
+                {/* Active dot */}
                 {isActive && (
-                  <div style={{
-                    position: "absolute", top: 10, right: 10,
-                    width: 8, height: 8, borderRadius: "50%",
-                    background: "var(--primary)",
-                    boxShadow: "0 0 0 2px #fff"
-                  }} />
+                  <div style={{ position: "absolute", top: 10, right: 10, width: 8, height: 8, borderRadius: "50%", background: "var(--primary)", boxShadow: "0 0 0 2px #fff" }} />
                 )}
-                {/* Text */}
-                <div style={{
-                  position: "absolute", bottom: 0, left: 0, right: 0,
-                  padding: "18px 10px 14px",
-                  display: "flex", flexDirection: "column",
-                  alignItems: "center", gap: 5
-                }}>
-                  <span style={{
-                    fontFamily: "Cormorant Garamond, serif",
-                    fontSize: "15px", fontWeight: 500, color: "#fff",
-                    letterSpacing: "0.5px", textAlign: "center"
-                  }}>
+
+                {/* Label */}
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "18px 10px 14px", display: "flex", flexDirection: "column", alignItems: "center", gap: 5, pointerEvents: "none" }}>
+                  <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 15, fontWeight: 500, color: "#fff", letterSpacing: "0.5px", textAlign: "center" }}>
                     {occ.name}
                   </span>
-                  <span style={{
-                    fontFamily: "DM Sans, sans-serif", fontSize: "8px",
-                    fontWeight: 600, letterSpacing: "2px",
-                    textTransform: "uppercase",
-                    color: isActive ? "#ffd97a" : "rgba(255,255,255,0.70)"
-                  }}>
+                  <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 8, fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase", color: isActive ? "#ffd97a" : "rgba(255,255,255,0.70)", transition: "color 0.3s" }}>
                     {isActive ? "Selected ✓" : "Explore →"}
                   </span>
                 </div>
@@ -1473,81 +1428,37 @@ function OccasionSection({ cart, setCart, wishlist, setWishlist }) {
         )}
       </div>
 
-      {/* Products Panel — shown only when an occasion is selected */}
+      {/* Products Panel */}
       {activeOccasion && (
-        <div style={{
-          padding: "0 40px",
-          animation: "fadeSlideIn 0.35s ease forwards"
-        }}>
-          <style>{`
-            @keyframes fadeSlideIn {
-              from { opacity: 0; transform: translateY(16px); }
-              to   { opacity: 1; transform: translateY(0); }
-            }
-          `}</style>
-
+        <div style={{ padding: "0 40px", animation: "fadeSlideIn 0.35s ease forwards" }}>
           {/* Sub-header */}
-          <div style={{
-            display: "flex", justifyContent: "space-between",
-            alignItems: "center", marginBottom: 20,
-            borderTop: "1px solid rgba(44,36,24,0.10)",
-            paddingTop: 24
-          }}>
-            <h3 style={{
-              fontFamily: "Cormorant Garamond, serif",
-              fontSize: "clamp(18px,2.5vw,26px)", fontWeight: 400,
-              color: "var(--text)", margin: 0
-            }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, borderTop: "1px solid rgba(44,36,24,0.10)", paddingTop: 24 }}>
+            <h3 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "clamp(18px,2.5vw,26px)", fontWeight: 400, color: "var(--text)", margin: 0 }}>
               {activeOccasion.emoji} {activeOccasion.name} Collection
             </h3>
             <button
               onClick={() => { setActiveOccasion(null); setOccasionProducts([]); }}
-              style={{
-                background: "none", border: "none", cursor: "pointer",
-                fontSize: "13px", color: "var(--primary)", fontWeight: 600,
-                letterSpacing: "1px", textTransform: "uppercase"
-              }}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "var(--primary)", fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase" }}
             >
               ✕ Close
             </button>
           </div>
 
-          {/* Product Grid */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-            gap: 16, marginBottom: 16
-          }}>
+          {/* Grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 16, marginBottom: 16 }}>
             {productsLoading || apiLoading ? (
               [...Array(8)].map((_, i) => <SkeletonCard key={i} />)
             ) : (
               occasionProducts.map(p => (
-                <ProductCard
-                  key={p._id || p.id}
-                  product={p}
-                  cart={cart} setCart={setCart}
-                  wishlist={wishlist} setWishlist={setWishlist}
-                />
+                <ProductCard key={p._id || p.id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
               ))
             )}
           </div>
 
-          {/* View all for this occasion */}
+          {/* CTA */}
           {!productsLoading && !apiLoading && (
             <div style={{ textAlign: "center", paddingTop: 8, paddingBottom: 8 }}>
-              <Link
-                to={`/shop?occasion=${activeOccasion.key}`}
-                style={{
-                  display: "inline-block", padding: "10px 32px",
-                  border: "1.5px solid var(--primary)", color: "var(--primary)",
-                  fontFamily: "DM Sans, sans-serif", fontSize: "11px",
-                  fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase",
-                  textDecoration: "none", borderRadius: "2px",
-                  transition: "all 0.2s"
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = "var(--primary)"; e.currentTarget.style.color = "#fff"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--primary)"; }}
-              >
+              <Link to={`/shop?occasion=${activeOccasion.key}`} className="occ-viewall">
                 See All {activeOccasion.name} Pieces
               </Link>
             </div>
