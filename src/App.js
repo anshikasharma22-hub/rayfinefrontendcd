@@ -18,7 +18,7 @@ function useBodyLock(isLocked) {
       document.body.classList.remove('modal-open');
     };
   }, [isLocked]);
-}
+} 
 
 // ── LAZY IMAGE ──
 function LazyImage({ src, alt, style = {}, eager = false, ...props }) {
