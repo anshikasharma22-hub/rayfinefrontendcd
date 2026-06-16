@@ -5,7 +5,7 @@ import Login from "./login";
 import RFOPanel from "./RFOPanel";
 import Chatbot from "./Chatbot";
 import Checkout from "./checkout";
-import Cartdrawer from "./cartdrawer";
+import CartDrawer from "./cartdrawer";
  // ── BODY LOCK HOOK ──
 function useBodyLock(isLocked) {
   useEffect(() => {
