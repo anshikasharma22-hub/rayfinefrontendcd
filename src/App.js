@@ -1778,7 +1778,7 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
       <WorldwideStrip />
 
       {/* 1. Shop by Occasion — horizontal scroll */}
-      <OccasionSection cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} /
+      <OccasionSection cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
       {/* 2. Best Sellers — horizontal scroll */}
       <BestsellersSection cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
 
