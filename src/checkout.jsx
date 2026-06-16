@@ -1,7 +1,7 @@
 
 import React, { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
-
+import { useCurrency } from "./App";
 function Checkout({ cart, setCart }) {
   const navigate = useNavigate();
   const { currency } = useCurrency();
