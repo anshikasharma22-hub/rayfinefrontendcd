@@ -91,10 +91,10 @@ const OCCASIONS = [
   { name: "Gifting",        img: "https://rayfinesite-3.onrender.com/images/gifting.jpg",     path: "/shop?occasion=Gifting" },
   { name: "Party",          img: "https://rayfinesite-3.onrender.com/images/party.jpg",       path: "/shop?occasion=Party" },
   { name: "Traditional",    img: "https://rayfinesite-3.onrender.com/images/traditional.jpg", path: "/shop?occasion=Traditional" },
-  { name: "Vacation Ready", img: "https://images.unsplash.com/photo-1506619216599-9d16d0903dfd?w=400&q=80", path: "/shop?occasion=Vacation" },
+  { name: "Vacation Ready", img: "https://rayfinesite-3.onrender.com/images/vacation.jpg", path: "/shop?occasion=Vacation" },
   { name: "Bridal",         img: "https://rayfinesite-3.onrender.com/images/1000128664.jpg",  path: "/shop?occasion=Bridal" },
   { name: "Everyday",       img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",    path: "/shop?occasion=Everyday" },
-   { name: "Deity",       img: "https://rayfinesite-3.onrender.com/images/.jpg",    path: "/shop?occasion=Everyday"
+   
 ];
 
 const CATEGORIES = [
