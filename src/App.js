@@ -126,7 +126,7 @@ const CURRENCIES = [
   { code: "AUD", symbol: "A$",   rate: 0.018 },
 ];
 
-const CurrencyContext = createContext({ currency: CURRENCIES[0], setCurrency: () => {} });
+ export const CurrencyContext = createContext({ currency: CURRENCIES[0], setCurrency: () => {} });
 export function useCurrency() 
 { return useContext(CurrencyContext); }
 
