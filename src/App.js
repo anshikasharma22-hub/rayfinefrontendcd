@@ -127,7 +127,8 @@ const CURRENCIES = [
 ];
 
 const CurrencyContext = createContext({ currency: CURRENCIES[0], setCurrency: () => {} });
-function useCurrency() { return useContext(CurrencyContext); }
+export function useCurrency() 
+{ return useContext(CurrencyContext); }
 
 function formatPrice(inr, currency) {
   if (!currency) return `₹${inr.toLocaleString()}`;
