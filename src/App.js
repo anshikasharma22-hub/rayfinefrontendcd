@@ -3,9 +3,9 @@ import {BrowserRouter,Routes, Route, Link, useLocation, useSearchParams, useNavi
 import "./App.css";
 import Login from "./login";
 import RFOPanel from "./RFOPanel";
-import Chatbot from "./Chatbot";
-import Checkout from "./Checkout";
-import cartdrawer from "./Cartdrawer";
+import chatbot from "./Chatbot";
+import checkout from "./checkout";
+import cartdrawer from "./cartdrawer";
  // ── BODY LOCK HOOK ──
 function useBodyLock(isLocked) {
   useEffect(() => {
