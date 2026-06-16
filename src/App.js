@@ -94,6 +94,7 @@ const OCCASIONS = [
   { name: "Vacation Ready", img: "https://images.unsplash.com/photo-1506619216599-9d16d0903dfd?w=400&q=80", path: "/shop?occasion=Vacation" },
   { name: "Bridal",         img: "https://rayfinesite-3.onrender.com/images/1000128664.jpg",  path: "/shop?occasion=Bridal" },
   { name: "Everyday",       img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",    path: "/shop?occasion=Everyday" },
+   { name: "Deity",       img: "https://rayfinesite-3.onrender.com/images/.jpg",    path: "/shop?occasion=Everyday"
 ];
 
 const CATEGORIES = [
@@ -1266,61 +1267,211 @@ function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
 // ─────────────────────────────────────────────
 // SHOP BY OCCASION — horizontal scroll
 // ─────────────────────────────────────────────
-function OccasionSection({ cart, setCart, wishlist, setWishlist }) {
-  const [products, setProducts] = useState([]);
+function OccasionSection() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("https://rayfinesite-3.onrender.com/api/products")
-      .then(res => res.json())
-      .then(data => {
-        const list = Array.isArray(data?.data) ? data.data : [];
-        const fixed = list.map(normalizeProduct);
-        // Get random 8 products
-        const shuffled = [...fixed].sort(() => Math.random() - 0.5);
-        setProducts(shuffled.slice(0, 8));
-        setLoading(false);
-      })
-      .catch(err => { console.error(err); setLoading(false); });
+    const timer = setTimeout(() => setLoading(false), 800);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
-    <section style={{ padding: "60px 0", background: "#fff", minHeight: loading ? "400px" : "auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "0 40px 28px" }}>
+    <section
+      style={{
+        padding: "60px 0",
+        background: "#fff",
+        minHeight: loading ? "400px" : "auto",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+          padding: "0 40px 28px",
+        }}
+      >
         <div>
-          <p style={{ fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--primary)", fontWeight: 600, marginBottom: 6 }}>Explore Our Collection</p>
-          <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "clamp(24px,3vw,36px)", fontWeight: 400, color: "var(--text)", lineHeight: 1.2 }}>Shop Featured Pieces</h2>
+          <p
+            style={{
+              fontSize: "11px",
+              letterSpacing: "2px",
+              textTransform: "uppercase",
+              color: "var(--primary)",
+              fontWeight: 600,
+              marginBottom: 6,
+            }}
+          >
+            Find Your Perfect Piece
+          </p>
+
+          <h2
+            style={{
+              fontFamily: "Cormorant Garamond, serif",
+              fontSize: "clamp(24px,3vw,36px)",
+              fontWeight: 400,
+              color: "var(--text)",
+              lineHeight: 1.2,
+            }}
+          >
+            Shop by Occasion
+          </h2>
         </div>
+
         {!loading && (
-          <Link to="/shop" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--primary)", textDecoration: "none", borderBottom: "1px solid var(--primary)", paddingBottom: 2, whiteSpace: "nowrap" }}>View All</Link>
+          <Link
+            to="/shop"
+            style={{
+              fontSize: "11px",
+              fontWeight: 700,
+              letterSpacing: "1.5px",
+              textTransform: "uppercase",
+              color: "var(--primary)",
+              textDecoration: "none",
+              borderBottom: "1px solid var(--primary)",
+              paddingBottom: 2,
+              whiteSpace: "nowrap",
+            }}
+          >
+            View All
+          </Link>
         )}
       </div>
-      
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-        gap: 14,
-        padding: "0 40px 16px",
-        minHeight: loading ? "300px" : "auto"
-      }}>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 14,
+          overflowX: "auto",
+          padding: "0 40px 16px",
+          scrollSnapType: "x mandatory",
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
         {loading ? (
-          [...Array(8)].map((_, i) => (
-            <div key={i}>
-              <SkeletonCard />
+          [...Array(7)].map((_, i) => (
+            <div
+              key={i}
+              style={{
+                minWidth: 160,
+                maxWidth: 160,
+                flexShrink: 0,
+              }}
+            >
+              <div
+                style={{
+                  background:
+                    "linear-gradient(90deg,#e8dfd5 25%,#f0e8df 50%,#e8dfd5 75%)",
+                  backgroundSize: "200% 100%",
+                  animation: "loading 1.5s infinite",
+                  aspectRatio: "3/4",
+                  borderRadius: "10px",
+                }}
+              />
             </div>
           ))
         ) : (
-          products.map(p => (
-            <div key={p._id || p.id}>
-              <ProductCard product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
-            </div>
+          OCCASIONS.map((occ) => (
+            <Link
+              key={occ.name}
+              to={occ.path}
+              style={{
+                minWidth: 160,
+                maxWidth: 160,
+                flexShrink: 0,
+                position: "relative",
+                borderRadius: "10px",
+                overflow: "hidden",
+                textDecoration: "none",
+                display: "block",
+                aspectRatio: "3/4",
+                boxShadow: "0 4px 20px rgba(44,36,24,0.10)",
+                transition: "all 0.3s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-4px)";
+                e.currentTarget.style.boxShadow =
+                  "0 12px 32px rgba(44,36,24,0.18)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 20px rgba(44,36,24,0.10)";
+              }}
+            >
+              <img
+                src={occ.img}
+                alt={occ.name}
+                loading="lazy"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  display: "block",
+                }}
+              />
+
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background:
+                    "linear-gradient(to top, rgba(44,36,24,0.80) 0%, rgba(44,36,24,0.08) 55%, transparent 100%)",
+                }}
+              />
+
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  padding: "18px 12px 14px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "Cormorant Garamond, serif",
+                    fontSize: "16px",
+                    fontWeight: 500,
+                    color: "#fff",
+                    letterSpacing: "0.5px",
+                    textAlign: "center",
+                  }}
+                >
+                  {occ.name}
+                </span>
+
+                <span
+                  style={{
+                    fontSize: "8px",
+                    fontWeight: 500,
+                    letterSpacing: "2px",
+                    textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.75)",
+                  }}
+                >
+                  Shop Now →
+                </span>
+              </div>
+            </Link>
           ))
         )}
       </div>
+
+      <style>{`
+        @keyframes loading {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
     </section>
   );
 }
-
 
 // ─────────────────────────────────────────────
 // SHOP BY CATEGORY — cat-square-grid (inline on home)
