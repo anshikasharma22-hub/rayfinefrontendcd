@@ -4,6 +4,7 @@ import "./App.css";
 import Login from "./login";
 import RFOPanel from "./RFOPanel";
 import Chatbot from "./Chatbot";
+import Checkout from "./Checkout";
  // ── BODY LOCK HOOK ──
 function useBodyLock(isLocked) {
   useEffect(() => {
@@ -773,6 +774,7 @@ function WorldwideStrip() {
 // ─────────────────────────────────────────────
 // NAVBAR
 // ─────────────────────────────────────────────
+const LOGO_URL = "https://rayfinesite-3.onrender.com/images/logo.png";
 function Navbar({ cart, wishlist, onCartOpen, user }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -838,13 +840,14 @@ function Navbar({ cart, wishlist, onCartOpen, user }) {
 
       <nav className="navbar" style={scrolled ? { boxShadow: "0 2px 20px rgba(176,122,90,0.10)" } : {}}>
         <Link to="/" className="navbar-logo" onClick={() => setMenuOpen(false)}>
-          <svg width="160" height="40" viewBox="0 0 200 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <text x="0" y="34" fontFamily="Cormorant Garamond, serif" fontSize="32" fontStyle="italic" fontWeight="300" fill="#B07A5A" letterSpacing="1">Ray</text>
-            <text x="60" y="34" fontFamily="Cormorant Garamond, serif" fontSize="32" fontWeight="400" fill="#2C2418" letterSpacing="1"> Fine</text>
-            <line x1="0" y1="40" x2="150" y2="40" stroke="#B07A5A" strokeWidth="0.6" opacity="0.3" />
-            <text x="0" y="47" fontFamily="DM Sans, sans-serif" fontSize="7" fontWeight="300" fill="#8A7968" letterSpacing="5">ORNATES</text>
-          </svg>
-        </Link>
+          <img 
+    src={LOGO_URL} 
+    alt="Ray Fine Ornates" 
+    style={{ height: "40px", width: "auto", objectFit: "contain" }} 
+    onError={e => { e.target.style.display = "none"; }}
+  />
+</Link>
+        
 
         <div className={`nav-links ${menuOpen ? "open" : ""}`}>
           <Link to="/"       className={loc.pathname === "/"        ? "active" : ""}>Home</Link>
@@ -1384,6 +1387,8 @@ function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
         alignItems: "flex-end",
         padding: "0 40px 28px",
         minHeight: "80px"
+
+ 
       }}>
         <div>
           <p style={{ fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--primary)", fontWeight: 600, marginBottom: 6 }}>Most Loved</p>
@@ -1393,7 +1398,11 @@ function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
           <Link to="/shop" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--primary)", textDecoration: "none", borderBottom: "1px solid var(--primary)", paddingBottom: 2, whiteSpace: "nowrap" }}>View All</Link>
         )}
       </div>
-      
+
+
+
+
+         
         <div style={{
         display: "flex",
         gap: 14,
@@ -1424,80 +1433,61 @@ function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
 // ─────────────────────────────────────────────
 // SHOP BY OCCASION — horizontal scroll
 // ─────────────────────────────────────────────
-function OccasionSection() {
+function OccasionSection({ cart, setCart, wishlist, setWishlist }) {
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
-    // Simulate image preloading
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
+    fetch("https://rayfinesite-3.onrender.com/api/products")
+      .then(res => res.json())
+      .then(data => {
+        const list = Array.isArray(data?.data) ? data.data : [];
+        const fixed = list.map(normalizeProduct);
+        // Get random 8 products
+        const shuffled = [...fixed].sort(() => Math.random() - 0.5);
+        setProducts(shuffled.slice(0, 8));
+        setLoading(false);
+      })
+      .catch(err => { console.error(err); setLoading(false); });
   }, []);
 
   return (
     <section style={{ padding: "60px 0", background: "#fff", minHeight: loading ? "400px" : "auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "0 40px 28px" }}>
         <div>
-          <p style={{ fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--primary)", fontWeight: 600, marginBottom: 6 }}>Find Your Perfect Piece</p>
-          <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "clamp(24px,3vw,36px)", fontWeight: 400, color: "var(--text)", lineHeight: 1.2 }}>Shop by Occasion</h2>
+          <p style={{ fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--primary)", fontWeight: 600, marginBottom: 6 }}>Explore Our Collection</p>
+          <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "clamp(24px,3vw,36px)", fontWeight: 400, color: "var(--text)", lineHeight: 1.2 }}>Shop Featured Pieces</h2>
         </div>
         {!loading && (
           <Link to="/shop" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--primary)", textDecoration: "none", borderBottom: "1px solid var(--primary)", paddingBottom: 2, whiteSpace: "nowrap" }}>View All</Link>
         )}
       </div>
       
-      <div style={{ display: "flex", gap: 14, overflowX: "auto", padding: "0 40px 16px", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch", minHeight: loading ? "280px" : "auto" }}>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+        gap: 14,
+        padding: "0 40px 16px",
+        minHeight: loading ? "300px" : "auto"
+      }}>
         {loading ? (
-          [...Array(4)].map((_, i) => (
-            <div key={`skeleton-${i}`} style={{ minWidth: 160, maxWidth: 160, flexShrink: 0, scrollSnapAlign: "start" }}>
-              <div style={{
-                background: "linear-gradient(90deg, #e8dfd5 25%, #f0e8df 50%, #e8dfd5 75%)",
-                backgroundSize: "200% 100%",
-                animation: "loading 1.5s infinite",
-                aspectRatio: "3/4",
-                borderRadius: "10px"
-              }} />
+          [...Array(8)].map((_, i) => (
+            <div key={i}>
+              <SkeletonCard />
             </div>
           ))
         ) : (
-          OCCASIONS.map(occ => (
-            <Link
-              key={occ.name}
-              to={occ.path}
-              style={{
-                minWidth: 160, maxWidth: 160, flexShrink: 0, scrollSnapAlign: "start",
-                position: "relative", borderRadius: "10px", overflow: "hidden",
-                textDecoration: "none", display: "block", aspectRatio: "3/4",
-                boxShadow: "0 4px 20px rgba(44,36,24,0.10)", transition: "all 0.3s",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(44,36,24,0.18)"; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(44,36,24,0.10)"; }}
-            >
-              <img
-                src={occ.img}
-                alt={occ.name}
-                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                loading="lazy"
-                onError={e => { e.target.src = "https://placehold.co/160x213?text=Jewellery"; }}
-              />
-              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(44,36,24,0.80) 0%, rgba(44,36,24,0.08) 55%, transparent 100%)" }} />
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "18px 12px 14px", display: "flex", flexDirection: "column", alignItems: "center", gap: "5px" }}>
-                <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "16px", fontWeight: 500, color: "#fff", letterSpacing: "0.5px", textAlign: "center" }}>{occ.name}</span>
-                <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: "8px", fontWeight: 500, letterSpacing: "2px", textTransform: "uppercase", color: "rgba(255,255,255,0.75)" }}>Shop Now →</span>
-              </div>
-            </Link>
+          products.map(p => (
+            <div key={p._id || p.id}>
+              <ProductCard product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
+            </div>
           ))
         )}
       </div>
-      
-      <style>{`
-        @keyframes loading {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      `}</style>
     </section>
   );
 }
+
 
 // ─────────────────────────────────────────────
 // SHOP BY CATEGORY — cat-square-grid (inline on home)
@@ -1788,8 +1778,7 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
       <WorldwideStrip />
 
       {/* 1. Shop by Occasion — horizontal scroll */}
-      <OccasionSection />
-
+      <OccasionSection cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} /
       {/* 2. Best Sellers — horizontal scroll */}
       <BestsellersSection cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
 
@@ -2435,6 +2424,7 @@ function AppInner() {
             <Route path="/terms"     element={<Terms />} />
             <Route path="/login"     element={<Login />} />
             <Route path="/rfo-panel" element={<RFOPanel />} />
+           <Route path="/checkout" element={<Checkout cart={cart} setCart={setCart} />} />
           </Routes>
 
           {!isAdminPage && <Footer />}
