@@ -87,13 +87,13 @@ const HERO_SLIDES = [
 ];
 
 const OCCASIONS = [
-  { name: "Festive",        key: "festive",     img: "https://rayfinesite-3.onrender.com/images/festive.jpg",     emoji: "🎉" },
-  { name: "Gifting",        key: "gifting",     img: "https://rayfinesite-3.onrender.com/images/gifting.jpg",     emoji: "🎁" },
-  { name: "Party",          key: "party",       img: "https://rayfinesite-3.onrender.com/images/party.jpg",       emoji: "✨" },
-  { name: "Traditional",   key: "traditional", img: "https://rayfinesite-3.onrender.com/images/traditional.jpg", emoji: "🌸" },
-  { name: "Vacation Ready", key: "vacation",    img: "https://rayfinesite-3.onrender.com/images/vacation.jpg",    emoji: "🌴" },
-  { name: "Bridal",         key: "bridal",      img: "https://rayfinesite-3.onrender.com/images/1000128664.jpg",  emoji: "💍" },
-  { name: "Everyday",       key: "everyday",    img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",    emoji: "☀️" },
+  { name: "Festive",        key: "festive",     emoji: "🎉", img: "https://rayfinesite-3.onrender.com/images/festive.jpg",     path: "/shop?occasion=Festive" },
+  { name: "Gifting",        key: "gifting",     emoji: "🎁", img: "https://rayfinesite-3.onrender.com/images/gifting.jpg",     path: "/shop?occasion=Gifting" },
+  { name: "Party",          key: "party",       emoji: "✨", img: "https://rayfinesite-3.onrender.com/images/party.jpg",       path: "/shop?occasion=Party" },
+  { name: "Traditional",   key: "traditional", emoji: "🌸", img: "https://rayfinesite-3.onrender.com/images/traditional.jpg", path: "/shop?occasion=Traditional" },
+  { name: "Vacation Ready", key: "vacation",    emoji: "🌴", img: "https://rayfinesite-3.onrender.com/images/vacation.jpg",    path: "/shop?occasion=Vacation" },
+  { name: "Bridal",         key: "bridal",      emoji: "💍", img: "https://rayfinesite-3.onrender.com/images/1000128664.jpg",  path: "/shop?occasion=Bridal" },
+  { name: "Everyday",       key: "everyday",    emoji: "☀️", img: "https://rayfinesite-3.onrender.com/images/bracelet.jpg",    path: "/shop?occasion=Everyday" },
 ];
 const CATEGORIES = [
   { name: "Earrings",        img: "https://rayfinesite-3.onrender.com/images/1000128648.jpg", path: "/shop?cat=Earring" },
@@ -1265,52 +1265,13 @@ function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
 // ─────────────────────────────────────────────
 // SHOP BY OCCASION — horizontal scroll
 // ─────────────────────────────────────────────
-function OccasionSection({ cart, setCart, wishlist, setWishlist }) {
-  const [allProducts, setAllProducts] = useState([]);
-  const [apiLoading, setApiLoading] = useState(true);
-  const [tilesLoading, setTilesLoading] = useState(true);
-  const [activeOccasion, setActiveOccasion] = useState(null);
-  const [occasionProducts, setOccasionProducts] = useState([]);
-  const [productsLoading, setProductsLoading] = useState(false);
+function OccasionSection() {
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("https://rayfinesite-3.onrender.com/api/products")
-      .then(res => res.json())
-      .then(data => {
-        const list = Array.isArray(data?.data) ? data.data : [];
-        setAllProducts(list.map(normalizeProduct));
-        setApiLoading(false);
-      })
-      .catch(err => { console.error(err); setApiLoading(false); });
-
-    const t = setTimeout(() => setTilesLoading(false), 800);
+    const t = setTimeout(() => setLoading(false), 600);
     return () => clearTimeout(t);
   }, []);
-
-  const handleOccasionClick = (occ) => {
-    if (activeOccasion?.key === occ.key) {
-      setActiveOccasion(null);
-      setOccasionProducts([]);
-      return;
-    }
-    setActiveOccasion(occ);
-    setProductsLoading(true);
-
-    const filtered = allProducts.filter(p => {
-      const tags = [p.occasion, p.tag, p.category, ...(Array.isArray(p.tags) ? p.tags : [])]
-        .filter(Boolean)
-        .map(t => t.toLowerCase());
-      return tags.includes(occ.key.toLowerCase());
-    });
-
-    const pool = filtered.length >= 4 ? filtered : allProducts;
-    const shuffled = [...pool].sort(() => Math.random() - 0.5);
-
-    setTimeout(() => {
-      setOccasionProducts(shuffled.slice(0, 8));
-      setProductsLoading(false);
-    }, 300);
-  };
 
   return (
     <section style={{ padding: "60px 0", background: "#fff" }}>
@@ -1319,152 +1280,139 @@ function OccasionSection({ cart, setCart, wishlist, setWishlist }) {
           0%   { background-position: 200% 0; }
           100% { background-position: -200% 0; }
         }
-        @keyframes fadeSlideIn {
-          from { opacity: 0; transform: translateY(16px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
         .occ-tile {
-          min-width: 140px; max-width: 140px; flex-shrink: 0;
-          scroll-snap-align: start; position: relative;
-          border-radius: 10px; overflow: hidden;
-          cursor: pointer; aspect-ratio: 3/4;
-          transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
-                      box-shadow 0.28s cubic-bezier(0.34,1.56,0.64,1);
-          box-shadow: 0 4px 20px rgba(44,36,24,0.10);
+          min-width: 150px;
+          max-width: 150px;
+          flex-shrink: 0;
+          scroll-snap-align: start;
+          position: relative;
+          border-radius: 12px;
+          overflow: hidden;
+          aspect-ratio: 3/4;
+          text-decoration: none;
+          display: block;
+          box-shadow: 0 4px 16px rgba(44,36,24,0.10);
+          transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1),
+                      box-shadow 0.3s ease;
         }
         .occ-tile:hover {
-          transform: translateY(-6px) scale(1.04) !important;
-          box-shadow: 0 14px 36px rgba(44,36,24,0.20) !important;
+          transform: translateY(-6px) scale(1.03);
+          box-shadow: 0 16px 36px rgba(44,36,24,0.20);
         }
-        .occ-tile.occ-active {
-          transform: translateY(-4px) scale(1.03) !important;
-          box-shadow: 0 0 0 3px var(--primary), 0 12px 32px rgba(44,36,24,0.22) !important;
+        .occ-tile img {
+          width: 100%; height: 100%;
+          object-fit: cover; display: block;
+          transition: transform 0.4s ease;
         }
-        .occ-tile.occ-active:hover {
-          transform: translateY(-6px) scale(1.04) !important;
-          box-shadow: 0 0 0 3px var(--primary), 0 16px 36px rgba(44,36,24,0.28) !important;
+        .occ-tile:hover img {
+          transform: scale(1.06);
         }
         .occ-scroll::-webkit-scrollbar { display: none; }
-        .occ-viewall {
-          display: inline-block; padding: 10px 32px;
-          border: 1.5px solid var(--primary); color: var(--primary);
-          font-family: "DM Sans", sans-serif; font-size: 11px;
-          font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
-          text-decoration: none; border-radius: 2px; transition: all 0.2s;
-        }
-        .occ-viewall:hover { background: var(--primary); color: #fff; }
       `}</style>
 
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "0 40px 28px" }}>
+      <div style={{
+        display: "flex", justifyContent: "space-between",
+        alignItems: "flex-end", padding: "0 24px 24px"
+      }}>
         <div>
-          <p style={{ fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--primary)", fontWeight: 600, marginBottom: 6 }}>
+          <p style={{
+            fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase",
+            color: "var(--primary)", fontWeight: 600, marginBottom: 6
+          }}>
             Find Your Perfect Piece
           </p>
-          <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "clamp(24px,3vw,36px)", fontWeight: 400, color: "var(--text)", lineHeight: 1.2 }}>
+          <h2 style={{
+            fontFamily: "Cormorant Garamond, serif",
+            fontSize: "clamp(22px,3vw,34px)", fontWeight: 400,
+            color: "var(--text)", lineHeight: 1.2, margin: 0
+          }}>
             Shop by Occasion
           </h2>
         </div>
-        <Link to="/shop" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--primary)", textDecoration: "none", borderBottom: "1px solid var(--primary)", paddingBottom: 2, whiteSpace: "nowrap" }}>
+        <Link to="/shop" style={{
+          fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px",
+          textTransform: "uppercase", color: "var(--primary)",
+          textDecoration: "none", borderBottom: "1px solid var(--primary)",
+          paddingBottom: 2, whiteSpace: "nowrap"
+        }}>
           View All
         </Link>
       </div>
 
-      {/* Tiles Row */}
+      {/* Tiles */}
       <div
         className="occ-scroll"
-        style={{ display: "flex", gap: 14, overflowX: "auto", padding: "0 40px 20px", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+        style={{
+          display: "flex", gap: 12,
+          overflowX: "auto", padding: "4px 24px 16px",
+          scrollSnapType: "x mandatory",
+          WebkitOverflowScrolling: "touch",
+          scrollbarWidth: "none",
+        }}
       >
-        {tilesLoading ? (
+        {loading ? (
           [...Array(5)].map((_, i) => (
-            <div key={i} style={{ minWidth: 140, maxWidth: 140, flexShrink: 0 }}>
-              <div style={{ background: "linear-gradient(90deg,#e8dfd5 25%,#f0e8df 50%,#e8dfd5 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite", aspectRatio: "3/4", borderRadius: 10 }} />
+            <div key={i} style={{ minWidth: 150, maxWidth: 150, flexShrink: 0, scrollSnapAlign: "start" }}>
+              <div style={{
+                background: "linear-gradient(90deg,#e8dfd5 25%,#f0e8df 50%,#e8dfd5 75%)",
+                backgroundSize: "200% 100%",
+                animation: "shimmer 1.5s infinite",
+                aspectRatio: "3/4", borderRadius: 12
+              }} />
+              <div style={{ height: 14, borderRadius: 6, background: "#e8dfd5", marginTop: 8, width: "60%", marginLeft: "auto", marginRight: "auto" }} />
             </div>
           ))
         ) : (
-          OCCASIONS.map(occ => {
-            const isActive = activeOccasion?.key === occ.key;
-            return (
-              <div
-                key={occ.key}
-                onClick={() => handleOccasionClick(occ)}
-                className={`occ-tile${isActive ? " occ-active" : ""}`}
-              >
-                <img
-                  src={occ.img}
-                  alt={occ.name}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                  loading="lazy"
-                  onError={e => { e.target.src = `https://placehold.co/140x187?text=${occ.name}`; }}
-                />
+          OCCASIONS.map(occ => (
+            <Link
+              key={occ.key}
+              to={occ.path}
+              className="occ-tile"
+            >
+              <img
+                src={occ.img}
+                alt={occ.name}
+                loading="lazy"
+                onError={e => { e.target.src = `https://placehold.co/150x200/EDE5D8/8A7968?text=${occ.name}`; }}
+              />
 
-                {/* Gradient overlay */}
-                <div style={{
-                  position: "absolute", inset: 0,
-                  background: isActive
-                    ? "linear-gradient(to top,rgba(44,36,24,0.88) 0%,rgba(44,36,24,0.12) 55%,transparent 100%)"
-                    : "linear-gradient(to top,rgba(44,36,24,0.72) 0%,rgba(44,36,24,0.04) 55%,transparent 100%)",
-                  transition: "background 0.3s",
-                  pointerEvents: "none",
-                }} />
+              {/* Gradient */}
+              <div style={{
+                position: "absolute", inset: 0,
+                background: "linear-gradient(to top, rgba(30,22,14,0.82) 0%, rgba(30,22,14,0.10) 50%, transparent 100%)",
+                pointerEvents: "none",
+              }} />
 
-                {/* Active dot */}
-                {isActive && (
-                  <div style={{ position: "absolute", top: 10, right: 10, width: 8, height: 8, borderRadius: "50%", background: "var(--primary)", boxShadow: "0 0 0 2px #fff" }} />
-                )}
-
-                {/* Label */}
-                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "18px 10px 14px", display: "flex", flexDirection: "column", alignItems: "center", gap: 5, pointerEvents: "none" }}>
-                  <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 15, fontWeight: 500, color: "#fff", letterSpacing: "0.5px", textAlign: "center" }}>
-                    {occ.name}
-                  </span>
-                  <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 8, fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase", color: isActive ? "#ffd97a" : "rgba(255,255,255,0.70)", transition: "color 0.3s" }}>
-                    {isActive ? "Selected ✓" : "Explore →"}
-                  </span>
-                </div>
+              {/* Text */}
+              <div style={{
+                position: "absolute", bottom: 0, left: 0, right: 0,
+                padding: "20px 10px 16px",
+                display: "flex", flexDirection: "column",
+                alignItems: "center", gap: 6,
+                pointerEvents: "none",
+              }}>
+                <span style={{
+                  fontFamily: "Cormorant Garamond, serif",
+                  fontSize: 16, fontWeight: 600,
+                  color: "#fff", letterSpacing: "0.3px",
+                  textAlign: "center", lineHeight: 1.2,
+                }}>
+                  {occ.name}
+                </span>
+                <span style={{
+                  fontFamily: "DM Sans, sans-serif",
+                  fontSize: 9, fontWeight: 700,
+                  letterSpacing: "2px", textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.75)",
+                }}>
+                  Shop Now ›
+                </span>
               </div>
-            );
-          })
+            </Link>
+          ))
         )}
       </div>
-
-      {/* Products Panel */}
-      {activeOccasion && (
-        <div style={{ padding: "0 40px", animation: "fadeSlideIn 0.35s ease forwards" }}>
-          {/* Sub-header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, borderTop: "1px solid rgba(44,36,24,0.10)", paddingTop: 24 }}>
-            <h3 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "clamp(18px,2.5vw,26px)", fontWeight: 400, color: "var(--text)", margin: 0 }}>
-              {activeOccasion.emoji} {activeOccasion.name} Collection
-            </h3>
-            <button
-              onClick={() => { setActiveOccasion(null); setOccasionProducts([]); }}
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "var(--primary)", fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase" }}
-            >
-              ✕ Close
-            </button>
-          </div>
-
-          {/* Grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 16, marginBottom: 16 }}>
-            {productsLoading || apiLoading ? (
-              [...Array(8)].map((_, i) => <SkeletonCard key={i} />)
-            ) : (
-              occasionProducts.map(p => (
-                <ProductCard key={p._id || p.id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
-              ))
-            )}
-          </div>
-
-          {/* CTA */}
-          {!productsLoading && !apiLoading && (
-            <div style={{ textAlign: "center", paddingTop: 8, paddingBottom: 8 }}>
-              <Link to={`/shop?occasion=${activeOccasion.key}`} className="occ-viewall">
-                See All {activeOccasion.name} Pieces
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
     </section>
   );
 }
@@ -1757,7 +1705,7 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
       <WorldwideStrip />
 
       {/* 1. Shop by Occasion — horizontal scroll */}
-      <OccasionSection cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
+     <OccasionSection />
       {/* 2. Best Sellers — horizontal scroll */}
       <BestsellersSection cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
 
