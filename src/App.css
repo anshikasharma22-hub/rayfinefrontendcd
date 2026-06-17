@@ -32,7 +32,7 @@
   --cream3:         #EDE0D4;   /* sand beige */
 
   /* Text */
-  --text:           #white;   /* near-black with warm rose undertone */
+  --text:           DAD7CD;   /* near-black with warm rose undertone */
   --text-muted:     #7A5060;   /* muted rose-brown */
   --text-light:     #B08898;   /* light rose-grey */
 
@@ -182,13 +182,18 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  width: 160px;
-  height: 44px;
-  transition: opacity 0.2s ease;
+  background: transparent !important;
+  padding: 0 !important;
 }
 .navbar-logo:hover { opacity: 0.82; }
 .navbar-logo svg { width: 160px; height: 40px; display: block; }
-
+.navbar-logo img {
+  height: 48px !important;
+  width: auto !important;
+  max-width: 150px !important;
+  object-fit: contain !important;
+  mix-blend-mode: multiply;
+}
 .nav-links {
   display: flex;
   gap: 40px;
