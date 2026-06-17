@@ -775,7 +775,7 @@ function WorldwideStrip() {
 // ─────────────────────────────────────────────
 // NAVBAR
 // ─────────────────────────────────────────────
-const LOGO_URL = "https://rayfinesite-3.onrender.com/images/unnamed.png";
+const LOGO_URL = "https://rayfinesite-3.onrender.com/images/unnamed.jpg";
 function Navbar({ cart, wishlist, onCartOpen, user }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
