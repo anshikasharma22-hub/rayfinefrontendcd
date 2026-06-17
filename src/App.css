@@ -176,17 +176,47 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   transition: box-shadow 0.3s ease;
   contain: layout style;
 }
-.navbar:hover { box-shadow: var(--shadow-md); }
+
+.navbar:hover {
+  box-shadow: var(--shadow-md);
+}
 
 .navbar-logo {
   display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  background: transparent !important;
-  padding: 0 !important;
+  align-items: flex-end;
+  gap: 6px;
+  text-decoration: none;
+  white-space: nowrap;
 }
-.navbar-logo:hover { opacity: 0.82; }
-.navbar-logo svg { width: 160px; height: 40px; display: block; }
+
+.navbar-logo:hover {
+  opacity: 0.82;
+}
+
+.logo-script {
+  font-family: "Allura", cursive;
+  font-size: 42px;
+  line-height: 1;
+  color: #7A2743;
+}
+
+.logo-text {
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  color: #7A2743;
+  margin-bottom: 7px;
+}
+
+/* Remove these if you're no longer using image logos */
+/*
+.navbar-logo svg {
+  width: 160px;
+  height: 40px;
+  display: block;
+}
+
 .navbar-logo img {
   height: 48px !important;
   width: auto !important;
@@ -194,11 +224,14 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   object-fit: contain !important;
   mix-blend-mode: multiply;
 }
+*/
+
 .nav-links {
   display: flex;
   gap: 40px;
   align-items: center;
 }
+
 .nav-links a {
   font-size: 10px;
   font-weight: 500;
@@ -210,18 +243,27 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   line-height: 1;
   padding: 4px 0;
 }
+
 .nav-links a::after {
   content: '';
   position: absolute;
-  bottom: -3px; left: 0;
-  width: 0; height: 2px;
+  bottom: -3px;
+  left: 0;
+  width: 0;
+  height: 2px;
   background: var(--primary);
   transition: width 0.25s ease;
 }
+
 .nav-links a:hover::after,
-.nav-links a.active::after { width: 100%; }
+.nav-links a.active::after {
+  width: 100%;
+}
+
 .nav-links a:hover,
-.nav-links a.active { color: var(--text); }
+.nav-links a.active {
+  color: var(--text);
+}
 
 .nav-actions {
   display: flex;
@@ -229,6 +271,7 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   gap: 4px;
   flex-shrink: 0;
 }
+
 .nav-icon {
   background: none;
   border: none;
@@ -246,16 +289,22 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   min-width: 44px;
   justify-content: center;
 }
-.nav-icon:hover { background: var(--blush); color: var(--primary); }
+
+.nav-icon:hover {
+  background: var(--blush);
+  color: var(--primary);
+}
 
 .badge {
   position: absolute;
-  top: 2px; right: 2px;
+  top: 2px;
+  right: 2px;
   background: var(--primary);
   color: #fff;
   font-size: 9px;
   font-weight: 700;
-  width: 15px; height: 15px;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -263,6 +312,17 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   border: 1.5px solid #fff;
 }
 
+@media (max-width: 768px) {
+  .logo-script {
+    font-size: 32px;
+  }
+
+  .logo-text {
+    font-size: 9px;
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+  }
+}
 .hamburger {
   display: none;
   background: none;
