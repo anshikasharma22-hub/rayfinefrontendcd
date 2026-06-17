@@ -775,7 +775,7 @@ function WorldwideStrip() {
 // ─────────────────────────────────────────────
 // NAVBAR
 // ─────────────────────────────────────────────
-const LOGO_URL = "https://rayfinesite-3.onrender.com/images/unnamed.jpg";
+
 function Navbar({ cart, wishlist, onCartOpen, user }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -844,22 +844,8 @@ function Navbar({ cart, wishlist, onCartOpen, user }) {
   <img
     src={LOGO_URL}
     alt="Ray Fine Ornates"
-    style={{ height: "72px", width: "auto",  maxWidth: "160px", objectFit: "contain" }}
-    onError={e => {
-      e.target.style.display = "none";
-      
-      const text = document.createElement("span");
-      text.innerText = "Ray Fine Ornates";
-      text.style.cssText = `
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 20px;
-        font-weight: 600;
-        color: var(--primary);
-        letter-spacing: 1px;
-        white-space: nowrap;
-      `;
-      e.target.parentNode.appendChild(text);
-    }}
+    style={{ height: "48px", width: "auto", maxWidth: "150px", objectFit: "contain", mixBlendMode: "multiply" }}
+    onError={e => { e.target.style.display = "none"; }}
   />
 </Link>
         
