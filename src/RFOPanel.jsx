@@ -12,7 +12,20 @@ function sanitizeProduct(p) {
   for (const k of PRODUCT_COLUMNS) { if (p[k] !== undefined) out[k] = p[k]; }
   return out;
 }
-
+function normalizeProduct(p) {
+  const stockVal = p.stock || 0;
+  return {
+    ...p,
+    id: p._id || p.id,
+    inStock: p.in_stock && stockVal > 0,
+    stock: stockVal,
+    originalPrice: p.original_price,
+    isBestseller: !!p.is_bestseller,
+    isTrending: !!p.is_trending,
+    isNew: !!p.is_new,
+    image: p.image?.replace(/^http:\/\//i, "https://")?.split(",")[0]?.trim(),
+  };
+}
 function toDbRow(p) {
   let originalPrice = p.originalPrice ?? null;
   if (p.onSale && !originalPrice && p.price) originalPrice = Math.round(p.price * 1.25);
@@ -1488,6 +1501,121 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow, section }) {
         </table>
       </div>
     </div>
+  );
+}
+function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("https://rayfinesite-3.onrender.com/api/products")
+      .then(res => res.json())
+      .then(data => {
+        const list = Array.isArray(data?.data) ? data.data : [];
+        const fixed = list.map(normalizeProduct); // ← USE HELPER
+        setProducts(fixed.filter(p => p.inStock).slice(0, 10));
+        setLoading(false);
+      })
+      .catch(err => { console.error(err); setLoading(false); });
+  }, []);
+
+  if (products.length === 0 && !loading) return null;
+
+  return (
+    <section style={{
+      padding: "60px 0",
+      background: "var(--cream)",
+      minHeight: loading ? "400px" : "auto"
+    }}>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-end",
+        padding: "0 40px 28px",
+        minHeight: "80px"
+      }}>
+        <div>
+          <p style={{ fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--primary)", fontWeight: 600, marginBottom: 6 }}>Most Loved</p>
+          <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "clamp(24px,3vw,36px)", fontWeight: 400, color: "var(--text)", lineHeight: 1.2 }}>Our Best Sellers</h2>
+        </div>
+        {!loading && (
+          <Link to="/shop" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--primary)", textDecoration: "none", borderBottom: "1px solid var(--primary)", paddingBottom: 2, whiteSpace: "nowrap" }}>View All</Link>
+        )}
+      </div>
+
+      <div style={{
+        display: "flex",
+        gap: 14,
+        overflowX: "auto",
+        padding: "0 40px 16px",
+        scrollSnapType: "x mandatory",
+        WebkitOverflowScrolling: "touch",
+        minHeight: loading ? "300px" : "auto"
+      }}>
+        {loading ? (
+          [...Array(5)].map((_, i) => (
+            <div key={i} style={{ minWidth: 200, maxWidth: 200, flexShrink: 0 }}>
+              <SkeletonCard />
+            </div>
+          ))
+        ) : (
+          products.map(p => (
+            <div key={p._id || p.id} style={{ minWidth: 200, maxWidth: 200, flexShrink: 0, scrollSnapAlign: "start", display: "flex", flexDirection: "column", height: "100%" }}>
+              <ProductCard product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+function TrendingSection({ cart, setCart, wishlist, setWishlist }) {
+  const [featured, setFeatured] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("https://rayfinesite-3.onrender.com/api/products")
+      .then(res => res.json())
+      .then(data => {
+        const list = Array.isArray(data?.data) ? data.data : [];
+        const fixed = list.map((p, i) => ({
+          ...normalizeProduct(p), // ← USE HELPER + isNew logic
+          isNew: i < 4,
+        }));
+        setFeatured(fixed.slice(0, 8));
+        setLoading(false);
+      })
+      .catch(err => { console.error(err); setLoading(false); });
+  }, []);
+
+  return (
+    <section className="featured-section" style={{ minHeight: loading ? "600px" : "auto" }}>
+      <SectionDivider subtitle="Curated For You" title="Trending Now" />
+      
+      {loading ? (
+        <div className="products-grid" style={{ padding: "0 40px 80px" }}>
+          {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
+        </div>
+      ) : (
+        <>
+          <div className="products-grid" style={{ padding: "0 40px 80px" }}>
+            {featured.map(p => (
+              <ProductCard key={p._id || p.id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
+            ))}
+          </div>
+          <div style={{ textAlign: "center", marginBottom: "52px" }}>
+            <Link to="/shop" className="btn-primary">View All Products</Link>
+          </div>
+        </>
+      )}
+      
+      <style>{`
+        @keyframes loading {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
+    </section>
   );
 }
 
