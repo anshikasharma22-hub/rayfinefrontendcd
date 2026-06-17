@@ -844,10 +844,10 @@ function Navbar({ cart, wishlist, onCartOpen, user }) {
   <img
     src={LOGO_URL}
     alt="Ray Fine Ornates"
-    style={{ height: "40px", width: "auto", objectFit: "contain" }}
+    style={{ height: "72px", width: "auto",  maxWidth: "160px", objectFit: "contain" }}
     onError={e => {
       e.target.style.display = "none";
-      // Text logo show karo
+      
       const text = document.createElement("span");
       text.innerText = "Ray Fine Ornates";
       text.style.cssText = `
