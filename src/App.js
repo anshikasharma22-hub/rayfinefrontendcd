@@ -840,13 +840,13 @@ function Navbar({ cart, wishlist, onCartOpen, user }) {
       )}
 
       <nav className="navbar" style={scrolled ? { boxShadow: "0 2px 20px rgba(176,122,90,0.10)" } : {}}>
-       <Link to="/" className="navbar-logo" onClick={() => setMenuOpen(false)}>
-  <img
-    
-    alt="Ray Fine Ornates"
-    style={{ height: "48px", width: "auto", maxWidth: "150px", objectFit: "contain", mixBlendMode: "multiply" }}
-    onError={e => { e.target.style.display = "none"; }}
-  />
+     <Link
+  to="/"
+  className="navbar-logo"
+  onClick={() => setMenuOpen(false)}
+>
+  <span className="logo-script">Ray</span>
+  <span className="logo-text">FINE ORNATES</span>
 </Link>
         
 
