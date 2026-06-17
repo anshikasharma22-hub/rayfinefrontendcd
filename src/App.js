@@ -840,12 +840,26 @@ function Navbar({ cart, wishlist, onCartOpen, user }) {
       )}
 
       <nav className="navbar" style={scrolled ? { boxShadow: "0 2px 20px rgba(176,122,90,0.10)" } : {}}>
-        <Link to="/" className="navbar-logo" onClick={() => setMenuOpen(false)}>
-          <img 
-    src={LOGO_URL} 
-    alt="Ray Fine Ornates" 
-    style={{ height: "40px", width: "auto", objectFit: "contain" }} 
-    onError={e => { e.target.style.display = "none"; }}
+       <Link to="/" className="navbar-logo" onClick={() => setMenuOpen(false)}>
+  <img
+    src={LOGO_URL}
+    alt="Ray Fine Ornates"
+    style={{ height: "40px", width: "auto", objectFit: "contain" }}
+    onError={e => {
+      e.target.style.display = "none";
+      // Text logo show karo
+      const text = document.createElement("span");
+      text.innerText = "Ray Fine Ornates";
+      text.style.cssText = `
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--primary);
+        letter-spacing: 1px;
+        white-space: nowrap;
+      `;
+      e.target.parentNode.appendChild(text);
+    }}
   />
 </Link>
         
@@ -1729,9 +1743,9 @@ function Home({ cart, setCart, wishlist, setWishlist }) {
 // ─────────────────────────────────────────────
 function Shop({ cart, setCart, wishlist, setWishlist }) {
   const [searchParams] = useSearchParams();
-  const [category, setCategory] = useState(searchParams.get("cat") || "All");
-  const [search, setSearch] = useState(searchParams.get("search") || "");
-  const [occasion, setOccasion] = useState(searchParams.get("occasion") || "All");
+  const [category, setCategory] = useState("All");
+  const [search, setSearch] = useState("");
+  const [occasion, setOccasion] = useState("All");
   const [sort, setSort] = useState("default");
   const [products, setProducts] = useState([]);
   const [showInStock, setShowInStock] = useState(false);
@@ -1739,53 +1753,102 @@ function Shop({ cart, setCart, wishlist, setWishlist }) {
   const [priceRange, setPriceRange] = useState([0, 50000]);
   const [showFilters, setShowFilters] = useState(false);
 
- useEffect(() => {
+  // Read URL params — occasion aaye toh category reset, category aaye toh occasion reset
+  useEffect(() => {
     const cat = searchParams.get("cat");
     const occ = searchParams.get("occasion");
-    const q = searchParams.get("search");
-    if (cat) setCategory(cat);
-    if (occ) setOccasion(occ); else if (cat) setOccasion("All");
-    if (q) setSearch(q);
+    const q   = searchParams.get("search");
+
+    if (occ) {
+      setOccasion(occ);
+      setCategory("All"); // ← KEY FIX
+    } else if (cat) {
+      setCategory(cat);
+      setOccasion("All"); // ← KEY FIX
+    } else {
+      setCategory("All");
+      setOccasion("All");
+    }
+    if (q) setSearch(q); else setSearch("");
   }, [searchParams]);
- useEffect(() => {
+
+  useEffect(() => {
     fetch("https://rayfinesite-3.onrender.com/api/products")
       .then(res => res.json())
       .then(data => {
         const list = Array.isArray(data?.data) ? data.data : [];
-        const fixed = list.map(normalizeProduct); // ← CHANGED
-        setProducts(fixed);
+        setProducts(list.map(normalizeProduct));
         setLoading(false);
       })
       .catch(err => { console.error(err); setLoading(false); });
   }, []);
 
   let filtered = products.filter(p => {
-    const matchCat = category === "All"
-      ? true
-      : category === "sale"
-      ? p.originalPrice
-      : (p.category || "").toLowerCase().trim() === category.toLowerCase().trim();
-    const matchOccasion = occasion === "All"
-      ? true
-      : (p.occasion || "").toLowerCase().trim() === occasion.toLowerCase().trim();
+    // Category filter
+    const matchCat =
+      category === "All"   ? true :
+      category === "sale"  ? !!p.originalPrice :
+      (p.category || "").toLowerCase().trim() === category.toLowerCase().trim();
+
+    // Occasion filter — case-insensitive exact match on p.occasion
+    const matchOccasion =
+      occasion === "All"
+        ? true
+        : (p.occasion || "").toLowerCase().trim() === occasion.toLowerCase().trim();
+
     const matchSearch = (p.name || "").toLowerCase().includes(search.toLowerCase());
-    const matchStock = showInStock ? p.inStock : true;
-    const matchPrice = p.price >= priceRange[0] && p.price <= priceRange[1];
+    const matchStock  = showInStock ? p.inStock : true;
+    const matchPrice  = p.price >= priceRange[0] && p.price <= priceRange[1];
+
     return matchCat && matchOccasion && matchSearch && matchStock && matchPrice;
   });
+
   if (sort === "low")    filtered = [...filtered].sort((a, b) => a.price - b.price);
   if (sort === "high")   filtered = [...filtered].sort((a, b) => b.price - a.price);
   if (sort === "newest") filtered = [...filtered].reverse();
+
+  const clearAll = () => {
+    setSearch(""); setCategory("All");
+    setOccasion("All"); setPriceRange([0, 50000]);
+  };
 
   return (
     <div className="shop-page">
       <div className="shop-hero">
         <p className="section-subtitle" style={{ marginBottom: "12px" }}>Handcrafted in Jaipur</p>
         <h1>Our Collection</h1>
-        <p>Discover timeless pieces crafted with love</p>
+        <p>
+          {occasion !== "All"
+            ? `✨ ${occasion} Jewellery`
+            : "Discover timeless pieces crafted with love"}
+        </p>
       </div>
+
+      {/* Active occasion pill — easy dismiss */}
+      {occasion !== "All" && (
+        <div style={{ padding: "12px 40px 0", display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "var(--cream)", border: "1.5px solid var(--primary)",
+            color: "var(--primary)", padding: "6px 14px", borderRadius: "20px",
+            fontSize: "12px", fontWeight: 700, letterSpacing: "1px"
+          }}>
+            Occasion: {occasion}
+            <button
+              onClick={clearAll}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--primary)", fontSize: "14px", padding: 0, lineHeight: 1 }}
+            >✕</button>
+          </span>
+        </div>
+      )}
+
       <div className="shop-controls">
-        <input className="shop-search" placeholder="🔍 Search jewellery..." value={search} onChange={e => setSearch(e.target.value)} />
+        <input
+          className="shop-search"
+          placeholder="🔍 Search jewellery..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
         <select className="shop-sort" value={sort} onChange={e => setSort(e.target.value)}>
           <option value="default">Sort: Featured</option>
           <option value="newest">Sort: Newest</option>
@@ -1805,56 +1868,77 @@ function Shop({ cart, setCart, wishlist, setWishlist }) {
           ⚙ Filters
         </button>
       </div>
+
       {showFilters && (
         <div style={{ padding: "20px 40px", background: "var(--cream)", borderBottom: "1px solid var(--border-light)" }}>
           <p style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 12 }}>
             Price Range: ₹{priceRange[0].toLocaleString()} – ₹{priceRange[1].toLocaleString()}
           </p>
           <div style={{ display: "flex", gap: 16, alignItems: "center", maxWidth: 400 }}>
-            <input type="range" min={0} max={50000} step={500} value={priceRange[1]}
+            <input
+              type="range" min={0} max={50000} step={500} value={priceRange[1]}
               onChange={e => setPriceRange([priceRange[0], Number(e.target.value)])}
               style={{ flex: 1, accentColor: "var(--primary)" }}
             />
             <button
               onClick={() => setPriceRange([0, 50000])}
               style={{ padding: "6px 14px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", background: "transparent", border: "1.5px solid var(--border)", borderRadius: "2px", cursor: "pointer", color: "var(--text-muted)" }}
-            >
-              Reset
-            </button>
+            >Reset</button>
           </div>
         </div>
       )}
-      <div className="category-tabs">
-        {["All", "Earring", "Necklace", "Bracelet", "Ring", "Anklet", "Sale 🔥"].map(cat => (
-          <button
-            key={cat}
-            className={`cat-tab ${(cat === "Sale 🔥" ? category === "sale" : category === cat) ? "active" : ""}`}
-            onClick={() => setCategory(cat === "Sale 🔥" ? "sale" : cat)}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-      {!loading && <p style={{ textAlign: "right", padding: "0 40px 16px", fontSize: "12px", color: "var(--text-muted)", fontWeight: 600 }}>{filtered.length} piece{filtered.length !== 1 ? "s" : ""} found</p>}
-      {loading && <p style={{ textAlign: "center", padding: "80px", color: "var(--text-muted)", fontFamily: "Cormorant Garamond, serif", fontSize: "22px", fontStyle: "italic" }}>Loading collection...</p>}
-      {!loading && (
-        <div className="products-grid" style={{ padding: "0 40px 80px" }}>
-          {filtered.map(p => (
-            <ProductCard key={p._id || p.id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
+
+      {/* Category tabs — only show when no occasion filter active */}
+      {occasion === "All" && (
+        <div className="category-tabs">
+          {["All", "Earring", "Necklace", "Bracelet", "Ring", "Anklet", "Sale 🔥"].map(cat => (
+            <button
+              key={cat}
+              className={`cat-tab ${(cat === "Sale 🔥" ? category === "sale" : category === cat) ? "active" : ""}`}
+              onClick={() => setCategory(cat === "Sale 🔥" ? "sale" : cat)}
+            >
+              {cat}
+            </button>
           ))}
         </div>
       )}
+
+      {!loading && (
+        <p style={{ textAlign: "right", padding: "0 40px 16px", fontSize: "12px", color: "var(--text-muted)", fontWeight: 600 }}>
+          {filtered.length} piece{filtered.length !== 1 ? "s" : ""} found
+        </p>
+      )}
+
+      {loading && (
+        <p style={{ textAlign: "center", padding: "80px", color: "var(--text-muted)", fontFamily: "Cormorant Garamond, serif", fontSize: "22px", fontStyle: "italic" }}>
+          Loading collection...
+        </p>
+      )}
+
+      {!loading && (
+        <div className="products-grid" style={{ padding: "0 40px 80px" }}>
+          {filtered.map(p => (
+            <ProductCard
+              key={p._id || p.id} product={p}
+              cart={cart} setCart={setCart}
+              wishlist={wishlist} setWishlist={setWishlist}
+            />
+          ))}
+        </div>
+      )}
+
       {!loading && filtered.length === 0 && (
         <div style={{ textAlign: "center", padding: "80px 20px" }}>
           <div style={{ fontSize: "48px", marginBottom: 16 }}>🔍</div>
-          <p style={{ color: "var(--text-muted)", fontFamily: "Cormorant Garamond, serif", fontSize: "22px", fontStyle: "italic", marginBottom: 20 }}>No pieces found.</p>
-          <button onClick={() => { setSearch(""); setCategory("All"); setPriceRange([0, 50000]); }} className="btn-primary">Clear Filters</button>
+          <p style={{ color: "var(--text-muted)", fontFamily: "Cormorant Garamond, serif", fontSize: "22px", fontStyle: "italic", marginBottom: 20 }}>
+            No pieces found for "{occasion !== "All" ? occasion : category}".
+          </p>
+          <button onClick={clearAll} className="btn-primary">Clear Filters</button>
         </div>
       )}
     </div>
   );
 }
-
 // ─────────────────────────────────────────────
 // WISHLIST
 // ─────────────────────────────────────────────
