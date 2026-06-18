@@ -7,53 +7,46 @@
   padding: 0;
 }
 
-/* ══════════════════════════════════════════
-   ROOT VARIABLES — Ray Fine Ornates
-   Palette extracted from logo:
-   Blush:   #F2C4C0  (background pink)
-   Rose:    #8B2A45  (logo text / primary accent)
-   Beige:   #FAF5EF  (off-white cream)
-   Sand:    #EEE0D4  (light beige)
-   Warm:    #E4D0C4  (border/divider)
-   Deep:    #3D1020  (dark text)
-══════════════════════════════════════════ */
 :root {
-  /* Brand pinks */
-  --primary:        #eaa8a2;   /* deep rose — logo color */
-  --primary-light:  #C4607A;   /* medium rose */
-  --primary-dark:   #eaa8a2;   /* darkest rose */
-  --blush:          #F7DDD8;   /* soft blush pink */
-  --blush2:         #F2C4C0;   /* logo background blush */
-  --blush3:         #EAA8A2;   /* deeper blush accent */
+  /* Brand */
+  --primary:       #EAA8A2;
+  --primary-light: #F4C8C4;
+  --primary-dark:  #D98F88;
 
-  /* Neutrals — beige/off-white */
-  --cream:          #FAF5EF;   /* off-white beige */
-  --cream2:         #F5ECE3;   /* warm beige */
-  --cream3:         #EDE0D4;   /* sand beige */
+  /* Soft pinks */
+  --blush:         #FFF4F3;
+  --blush2:        #F8E4E1;
+  --blush3:        #F2D2CE;
+
+  /* Creams */
+  --cream:         #FFFDFC;
+  --cream2:        #FAF5F2;
+  --cream3:        #F5EEEA;
 
   /* Text */
-  --text:           DAD7CD;   /* near-black with warm rose undertone */
-  --text-muted:     #7A5060;   /* muted rose-brown */
-  --text-light:     #B08898;   /* light rose-grey */
+  --text:          #5F4744;
+  --text-muted:    #8D726E;
+  --text-light:    #B39C98;
 
-  /* Surfaces */
-  --bg:             #FFFFFF;
-  --bg2:            #FAF5EF;
-  --bg3:            #F5ECE3;
-  --card:           #FFFFFF;
+  /* Backgrounds */
+  --bg:            #FFFFFF;
+  --bg2:           #FFF9F8;
+  --bg3:           #FDF3F2;
+  --card:          #FFFFFF;
 
   /* Borders */
-  --border:         #E8D0D0;
-  --border-light:   #F0E0E0;
+  --border:        #F0D8D5;
+  --border-light:  #F7EAE8;
 
-  /* Shadows — rose-tinted */
-  --shadow:         0 2px 16px rgba(155,48,80,0.06);
-  --shadow-md:      0 8px 32px rgba(155,48,80,0.09);
-  --shadow-lg:      0 20px 60px rgba(155,48,80,0.11);
-  --shadow-3d:      0 30px 80px rgba(155,48,80,0.14);
+  /* Shadows */
+  --shadow:        0 4px 20px rgba(234,168,162,.08);
+  --shadow-md:     0 10px 35px rgba(234,168,162,.12);
+  --shadow-lg:     0 20px 60px rgba(234,168,162,.16);
+  --shadow-3d:     0 30px 80px rgba(234,168,162,.20);
 
   --navbar-height: 76px;
 }
+ 
 
 /* ── HTML / BODY ── */
 html {
