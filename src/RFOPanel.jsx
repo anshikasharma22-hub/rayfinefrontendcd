@@ -249,7 +249,16 @@ function OrderTrackingPage({ showToast }) {
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
-  const [editingId, setEditingId] = useState(null);
+  const [trackingMode, setTrackingMode] = useState("search"); // "search" or "track"
+  
+  // Tracking form state
+  const [trackingForm, setTrackingForm] = useState({
+    orderId: "",
+    courierName: "",
+    trackingNumber: "",
+    estimatedDelivery: "",
+    notifyCustomer: true,
+  });
 
   useEffect(() => {
     supabaseQuery("orders?select=*&order=created_at.desc&limit=100")
@@ -299,6 +308,78 @@ function OrderTrackingPage({ showToast }) {
     }
   };
 
+  // ✅ NEW: Add tracking info aur notification bhejo
+  const addTrackingInfo = async () => {
+    if (!trackingForm.orderId.trim()) {
+      showToast("Order ID required", "error");
+      return;
+    }
+    if (!trackingForm.courierName.trim()) {
+      showToast("Courier name required", "error");
+      return;
+    }
+    if (!trackingForm.trackingNumber.trim()) {
+      showToast("Tracking number required", "error");
+      return;
+    }
+
+    try {
+      // Update Supabase
+      await supabaseQuery(
+        `orders?id=eq.${trackingForm.orderId}`,
+        "PATCH",
+        {
+          courier_name: trackingForm.courierName,
+          tracking_number: trackingForm.trackingNumber,
+          estimated_delivery: trackingForm.estimatedDelivery,
+        }
+      );
+
+      // Send email notification (if enabled)
+      if (trackingForm.notifyCustomer) {
+        const order = orders.find(o => o.id === trackingForm.orderId);
+        if (order && order.customer_email) {
+          await fetch("https://rayfinesite-3.onrender.com/api/send-tracking-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: order.customer_email,
+              orderId: trackingForm.orderId,
+              courierName: trackingForm.courierName,
+              trackingNumber: trackingForm.trackingNumber,
+              estimatedDelivery: trackingForm.estimatedDelivery,
+              customerName: order.customer_name || order.customer,
+            }),
+          });
+        }
+      }
+
+      // Also send to admin
+      await fetch("https://rayfinesite-3.onrender.com/api/send-admin-notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "bhaveshgemsonline@gmail.com",
+          orderId: trackingForm.orderId,
+          courierName: trackingForm.courierName,
+          trackingNumber: trackingForm.trackingNumber,
+          estimatedDelivery: trackingForm.estimatedDelivery,
+        }),
+      });
+
+      showToast("✓ Tracking info added & email sent!");
+      setTrackingForm({
+        orderId: "",
+        courierName: "",
+        trackingNumber: "",
+        estimatedDelivery: "",
+        notifyCustomer: true,
+      });
+    } catch (err) {
+      showToast("Update failed: " + err.message, "error");
+    }
+  };
+
   const STATUS_COLORS = {
     new: { bg: "#e8f0fd", color: "#5a7fc4" },
     processing: { bg: "#fdf3e3", color: "#c47a2a" },
@@ -320,148 +401,255 @@ function OrderTrackingPage({ showToast }) {
     <div style={{ animation: "fadeIn .3s ease" }}>
       <style>{`@keyframes fadeIn{from{opacity:0}to{opacity:1}}`}</style>
 
-      {/* Search Panel */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
-        <div style={{ background: "#fff", border: "1px solid #ede8e3", borderRadius: 14, padding: "24px" }}>
-          <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 400, color: "#2d2018", marginBottom: 4 }}>Track an Order</h3>
-          <p style={{ fontSize: 12, color: "#b8a898", marginBottom: 16 }}>Search by Order ID or phone number</p>
-          <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Order ID</label>
-            <input style={inp} placeholder="e.g. RFO-2024-1234" value={orderId}
-              onChange={e => { setOrderId(e.target.value); setPhone(""); }}
-              onKeyDown={e => e.key === "Enter" && searchOrder()} />
-          </div>
-          <div style={{ textAlign: "center", fontSize: 11, color: "#b8a898", letterSpacing: "1px", margin: "8px 0" }}>— OR —</div>
-          <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Phone Number</label>
-            <input style={inp} placeholder="Registered phone" value={phone}
-              onChange={e => { setPhone(e.target.value); setOrderId(""); }}
-              onKeyDown={e => e.key === "Enter" && searchOrder()} />
-          </div>
-          <button onClick={searchOrder} disabled={loading}
-            style={{ width: "100%", padding: "12px", background: loading ? "#c4a98a" : "linear-gradient(135deg,#d4a574,#b07a5a)", color: "#fff", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 600, letterSpacing: "1px", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
-            {loading ? "Searching…" : "Track Order →"}
-          </button>
+      {/* Tab buttons */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+        <button onClick={() => setTrackingMode("search")}
+          style={{ padding: "10px 18px", borderRadius: 8, border: "none", background: trackingMode === "search" ? "linear-gradient(135deg,#d4a574,#b07a5a)" : "#f0ebe5", color: trackingMode === "search" ? "#fff" : "#8a7a6e", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12 }}>
+          🔍 Search Orders
+        </button>
+        <button onClick={() => setTrackingMode("track")}
+          style={{ padding: "10px 18px", borderRadius: 8, border: "none", background: trackingMode === "track" ? "linear-gradient(135deg,#d4a574,#b07a5a)" : "#f0ebe5", color: trackingMode === "track" ? "#fff" : "#8a7a6e", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12 }}>
+          📦 Add Tracking Info
+        </button>
+      </div>
 
-          {/* Search Result */}
-          {result && !result.found && (
-            <div style={{ marginTop: 14, background: "#fff8f5", border: "1px solid #f0ddd0", borderRadius: 10, padding: "16px", textAlign: "center" }}>
-              <p style={{ fontWeight: 600, color: "#2d2018", marginBottom: 4 }}>Order not found</p>
-              <p style={{ fontSize: 12, color: "#b8a898" }}>Check the ID or contact support.</p>
+      {trackingMode === "search" && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+          {/* Search Panel */}
+          <div style={{ background: "#fff", border: "1px solid #ede8e3", borderRadius: 14, padding: "24px" }}>
+            <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 400, color: "#2d2018", marginBottom: 4 }}>Track an Order</h3>
+            <p style={{ fontSize: 12, color: "#b8a898", marginBottom: 16 }}>Search by Order ID or phone number</p>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Order ID</label>
+              <input style={inp} placeholder="e.g. RFO-2024-1234" value={orderId}
+                onChange={e => { setOrderId(e.target.value); setPhone(""); }}
+                onKeyDown={e => e.key === "Enter" && searchOrder()} />
             </div>
-          )}
+            <div style={{ textAlign: "center", fontSize: 11, color: "#b8a898", letterSpacing: "1px", margin: "8px 0" }}>— OR —</div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 5 }}>Phone Number</label>
+              <input style={inp} placeholder="Registered phone" value={phone}
+                onChange={e => { setPhone(e.target.value); setOrderId(""); }}
+                onKeyDown={e => e.key === "Enter" && searchOrder()} />
+            </div>
+            <button onClick={searchOrder} disabled={loading}
+              style={{ width: "100%", padding: "12px", background: loading ? "#c4a98a" : "linear-gradient(135deg,#d4a574,#b07a5a)", color: "#fff", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 600, letterSpacing: "1px", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
+              {loading ? "Searching…" : "Track Order →"}
+            </button>
 
-          {result?.found && result.orders.map(order => {
-            const step = STATUS_STEP[order.status] ?? 0;
-            const sc = STATUS_COLORS[order.status] || STATUS_COLORS.new;
-            return (
-              <div key={order.id} style={{ marginTop: 14, background: "#fdf8f4", border: "1px solid #ede8e3", borderRadius: 10, padding: "16px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-                  <div>
-                    <p style={{ fontWeight: 700, color: "#2d2018", fontSize: 14 }}>{order.id}</p>
-                    <p style={{ fontSize: 12, color: "#b8a898" }}>{order.customer_name || order.customer} · {order.city}</p>
+            {result && !result.found && (
+              <div style={{ marginTop: 14, background: "#fff8f5", border: "1px solid #f0ddd0", borderRadius: 10, padding: "16px", textAlign: "center" }}>
+                <p style={{ fontWeight: 600, color: "#2d2018", marginBottom: 4 }}>Order not found</p>
+                <p style={{ fontSize: 12, color: "#b8a898" }}>Check the ID or contact support.</p>
+              </div>
+            )}
+
+            {result?.found && result.orders.map(order => {
+              const step = STATUS_STEP[order.status] ?? 0;
+              const sc = STATUS_COLORS[order.status] || STATUS_COLORS.new;
+              return (
+                <div key={order.id} style={{ marginTop: 14, background: "#fdf8f4", border: "1px solid #ede8e3", borderRadius: 10, padding: "16px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                    <div>
+                      <p style={{ fontWeight: 700, color: "#2d2018", fontSize: 14 }}>{order.id}</p>
+                      <p style={{ fontSize: 12, color: "#b8a898" }}>{order.customer_name || order.customer} · {order.city}</p>
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 20, background: sc.bg, color: sc.color }}>
+                      {order.status}
+                    </span>
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 20, background: sc.bg, color: sc.color }}>
-                    {order.status}
-                  </span>
-                </div>
 
-                {/* Timeline */}
-                {order.status !== "cancelled" ? (
-                  <div style={{ position: "relative", paddingLeft: 28 }}>
-                    <div style={{ position: "absolute", left: 11, top: 8, bottom: 8, width: 2, background: "#e8e0d8", borderRadius: 2 }} />
-                    {STEPS.map((s, i) => {
-                      const done = i < step;
-                      const active = i === step;
+                  {/* Timeline */}
+                  {order.status !== "cancelled" ? (
+                    <div style={{ position: "relative", paddingLeft: 28 }}>
+                      <div style={{ position: "absolute", left: 11, top: 8, bottom: 8, width: 2, background: "#e8e0d8", borderRadius: 2 }} />
+                      {STEPS.map((s, i) => {
+                        const done = i < step;
+                        const active = i === step;
+                        return (
+                          <div key={i} style={{ position: "relative", paddingBottom: i < STEPS.length - 1 ? 12 : 0, display: "flex", alignItems: "flex-start", gap: 10 }}>
+                            <div style={{ position: "absolute", left: -28, top: 0, width: 22, height: 22, borderRadius: "50%", background: done ? "#7dba7d" : active ? "#d4a574" : "#e8e0d8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, zIndex: 1 }}>
+                              {done ? "✓" : s.icon}
+                            </div>
+                            <div>
+                              <p style={{ fontSize: 12, fontWeight: active ? 700 : 400, color: done || active ? "#2d2018" : "#c8b8a8" }}>{s.label}</p>
+                              {active && <p style={{ fontSize: 11, color: "#d4a574" }}>Current stage</p>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: 12, color: "#c44a4a", fontWeight: 600, textAlign: "center", padding: "8px 0" }}>✕ This order was cancelled</p>
+                  )}
+
+                  {/* Tracking Info Display */}
+                  {order.courier_name && (
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #e8e0d8", background: "#f9f6f2", borderRadius: 8, padding: "10px 12px" }}>
+                      <p style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", marginBottom: 6 }}>📦 TRACKING INFO</p>
+                      <p style={{ fontSize: 12, color: "#2d2018", marginBottom: 4 }}><strong>Courier:</strong> {order.courier_name}</p>
+                      <p style={{ fontSize: 12, color: "#2d2018", marginBottom: 4 }}><strong>Tracking #:</strong> {order.tracking_number}</p>
+                      {order.estimated_delivery && <p style={{ fontSize: 12, color: "#2d2018" }}><strong>Est. Delivery:</strong> {order.estimated_delivery}</p>}
+                    </div>
+                  )}
+
+                  {/* Admin: update status */}
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #e8e0d8", display: "flex", alignItems: "center", gap: 8 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", whiteSpace: "nowrap" }}>Update status:</label>
+                    <select value={order.status} onChange={e => updateStatus(order.id, e.target.value)}
+                      style={{ flex: 1, padding: "7px 10px", border: "1.5px solid #e8e0d8", borderRadius: 8, fontSize: 12, fontFamily: "inherit", color: "#2d2018", background: "#fff" }}>
+                      {["new", "processing", "shipped", "out_for_delivery", "delivered", "cancelled"].map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* All Shipments Overview */}
+          <div style={{ background: "#fff", border: "1px solid #ede8e3", borderRadius: 14, padding: "24px" }}>
+            <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 400, color: "#2d2018", marginBottom: 4 }}>All Shipments</h3>
+            <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+              {["all", "new", "processing", "shipped", "out_for_delivery", "delivered", "cancelled"].map(s => (
+                <button key={s} onClick={() => setStatusFilter(s)}
+                  style={{ padding: "4px 10px", borderRadius: 20, border: "1px solid", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.5px", background: statusFilter === s ? "#2d2018" : "transparent", color: statusFilter === s ? "#fff" : "#8a7a6e", borderColor: statusFilter === s ? "#2d2018" : "#e8e0d8" }}>
+                  {s === "all" ? `All (${orders.length})` : s}
+                </button>
+              ))}
+            </div>
+            {loadingOrders ? (
+              <p style={{ textAlign: "center", color: "#c8b8a8", fontSize: 13, padding: "40px 0", fontStyle: "italic" }}>Loading…</p>
+            ) : (
+              <div style={{ overflowY: "auto", maxHeight: 420 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: "#faf7f4" }}>
+                      {["Order", "Customer", "City", "Amount", "Status", "Tracking", "Update"].map(h => (
+                        <th key={h} style={{ fontSize: 10, color: "#c8b8a8", fontWeight: 700, textAlign: "left", padding: "8px 10px", borderBottom: "1px solid #ede8e3", textTransform: "uppercase", letterSpacing: "0.8px", whiteSpace: "nowrap" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredOrders.length === 0 ? (
+                      <tr><td colSpan={7} style={{ textAlign: "center", padding: "30px", color: "#c8b8a8" }}>No orders found</td></tr>
+                    ) : filteredOrders.map(o => {
+                      const sc = STATUS_COLORS[o.status] || STATUS_COLORS.new;
                       return (
-                        <div key={i} style={{ position: "relative", paddingBottom: i < STEPS.length - 1 ? 12 : 0, display: "flex", alignItems: "flex-start", gap: 10 }}>
-                          <div style={{ position: "absolute", left: -28, top: 0, width: 22, height: 22, borderRadius: "50%", background: done ? "#7dba7d" : active ? "#d4a574" : "#e8e0d8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, zIndex: 1 }}>
-                            {done ? "✓" : s.icon}
-                          </div>
-                          <div>
-                            <p style={{ fontSize: 12, fontWeight: active ? 700 : 400, color: done || active ? "#2d2018" : "#c8b8a8" }}>{s.label}</p>
-                            {active && <p style={{ fontSize: 11, color: "#d4a574" }}>Current stage</p>}
-                          </div>
-                        </div>
+                        <tr key={o.id} style={{ borderBottom: "1px solid #f5f0ea" }}>
+                          <td style={{ padding: "8px 10px", color: "#b07a5a", fontWeight: 600 }}>{o.id}</td>
+                          <td style={{ padding: "8px 10px" }}>{o.customer_name || o.customer || "—"}</td>
+                          <td style={{ padding: "8px 10px", color: "#b8a898" }}>{o.city || "—"}</td>
+                          <td style={{ padding: "8px 10px", fontWeight: 600 }}>{formatINR(o.amount)}</td>
+                          <td style={{ padding: "8px 10px" }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 20, background: sc.bg, color: sc.color }}>{o.status}</span>
+                          </td>
+                          <td style={{ padding: "8px 10px", fontSize: 11, color: "#b8a898" }}>
+                            {o.tracking_number ? `📦 ${o.tracking_number.slice(0, 8)}...` : "—"}
+                          </td>
+                          <td style={{ padding: "8px 10px" }}>
+                            <select value={o.status} onChange={e => updateStatus(o.id, e.target.value)}
+                              style={{ padding: "5px 8px", border: "1.5px solid #e8e0d8", borderRadius: 6, fontSize: 11, fontFamily: "inherit", color: "#2d2018", background: "#fff", cursor: "pointer" }}>
+                              {["new", "processing", "shipped", "out_for_delivery", "delivered", "cancelled"].map(s => (
+                                <option key={s} value={s}>{s}</option>
+                              ))}
+                            </select>
+                          </td>
+                        </tr>
                       );
                     })}
-                  </div>
-                ) : (
-                  <p style={{ fontSize: 12, color: "#c44a4a", fontWeight: 600, textAlign: "center", padding: "8px 0" }}>✕ This order was cancelled</p>
-                )}
-
-                {/* Admin: update status */}
-                <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #e8e0d8", display: "flex", alignItems: "center", gap: 8 }}>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", whiteSpace: "nowrap" }}>Update status:</label>
-                  <select value={order.status} onChange={e => updateStatus(order.id, e.target.value)}
-                    style={{ flex: 1, padding: "7px 10px", border: "1.5px solid #e8e0d8", borderRadius: 8, fontSize: 12, fontFamily: "inherit", color: "#2d2018", background: "#fff" }}>
-                    {["new", "processing", "shipped", "out_for_delivery", "delivered", "cancelled"].map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
+                  </tbody>
+                </table>
               </div>
-            );
-          })}
-        </div>
-
-        {/* All Shipments Overview */}
-        <div style={{ background: "#fff", border: "1px solid #ede8e3", borderRadius: 14, padding: "24px" }}>
-          <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 400, color: "#2d2018", marginBottom: 4 }}>All Shipments</h3>
-          <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
-            {["all", "new", "processing", "shipped", "out_for_delivery", "delivered", "cancelled"].map(s => (
-              <button key={s} onClick={() => setStatusFilter(s)}
-                style={{ padding: "4px 10px", borderRadius: 20, border: "1px solid", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.5px", background: statusFilter === s ? "#2d2018" : "transparent", color: statusFilter === s ? "#fff" : "#8a7a6e", borderColor: statusFilter === s ? "#2d2018" : "#e8e0d8" }}>
-                {s === "all" ? `All (${orders.length})` : s}
-              </button>
-            ))}
+            )}
           </div>
-          {loadingOrders ? (
-            <p style={{ textAlign: "center", color: "#c8b8a8", fontSize: 13, padding: "40px 0", fontStyle: "italic" }}>Loading…</p>
-          ) : (
-            <div style={{ overflowY: "auto", maxHeight: 420 }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                <thead>
-                  <tr style={{ background: "#faf7f4" }}>
-                    {["Order", "Customer", "City", "Amount", "Status", "Update"].map(h => (
-                      <th key={h} style={{ fontSize: 10, color: "#c8b8a8", fontWeight: 700, textAlign: "left", padding: "8px 10px", borderBottom: "1px solid #ede8e3", textTransform: "uppercase", letterSpacing: "0.8px", whiteSpace: "nowrap" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredOrders.length === 0 ? (
-                    <tr><td colSpan={6} style={{ textAlign: "center", padding: "30px", color: "#c8b8a8" }}>No orders found</td></tr>
-                  ) : filteredOrders.map(o => {
-                    const sc = STATUS_COLORS[o.status] || STATUS_COLORS.new;
-                    return (
-                      <tr key={o.id} style={{ borderBottom: "1px solid #f5f0ea" }}>
-                        <td style={{ padding: "8px 10px", color: "#b07a5a", fontWeight: 600 }}>{o.id}</td>
-                        <td style={{ padding: "8px 10px" }}>{o.customer_name || o.customer || "—"}</td>
-                        <td style={{ padding: "8px 10px", color: "#b8a898" }}>{o.city || "—"}</td>
-                        <td style={{ padding: "8px 10px", fontWeight: 600 }}>{formatINR(o.amount)}</td>
-                        <td style={{ padding: "8px 10px" }}>
-                          <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 20, background: sc.bg, color: sc.color }}>{o.status}</span>
-                        </td>
-                        <td style={{ padding: "8px 10px" }}>
-                          <select value={o.status} onChange={e => updateStatus(o.id, e.target.value)}
-                            style={{ padding: "5px 8px", border: "1.5px solid #e8e0d8", borderRadius: 6, fontSize: 11, fontFamily: "inherit", color: "#2d2018", background: "#fff", cursor: "pointer" }}>
-                            {["new", "processing", "shipped", "out_for_delivery", "delivered", "cancelled"].map(s => (
-                              <option key={s} value={s}>{s}</option>
-                            ))}
-                          </select>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
-      </div>
+      )}
+
+      {/* ✅ NEW: ADD TRACKING INFO SECTION */}
+      {trackingMode === "track" && (
+        <div style={{ maxWidth: 600, margin: "0 auto" }}>
+          <div style={{ background: "#fff", border: "1px solid #ede8e3", borderRadius: 14, padding: "28px" }}>
+            <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 400, color: "#2d2018", marginBottom: 20 }}>📦 Add Tracking Info</h3>
+            <p style={{ fontSize: 12, color: "#b8a898", marginBottom: 18 }}>Enter tracking details aur customer ko notification bhej do</p>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 6 }}>Order ID *</label>
+              <input
+                placeholder="e.g. RFO-2024-1234"
+                value={trackingForm.orderId}
+                onChange={e => setTrackingForm({ ...trackingForm, orderId: e.target.value })}
+                style={{ ...inp, marginBottom: 0 }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 6 }}>Courier Name *</label>
+              <select
+                value={trackingForm.courierName}
+                onChange={e => setTrackingForm({ ...trackingForm, courierName: e.target.value })}
+                style={{ ...inp, marginBottom: 0 }}>
+                <option value="">— Select Courier —</option>
+                <option value="DHL">DHL</option>
+                <option value="FedEx">FedEx</option>
+                <option value="BlueDart">Blue Dart</option>
+                <option value="DTDC">DTDC</option>
+                <option value="Delhivery">Delhivery</option>
+                <option value="India Post">India Post</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 6 }}>Tracking Number *</label>
+              <input
+                placeholder="e.g. 1234567890"
+                value={trackingForm.trackingNumber}
+                onChange={e => setTrackingForm({ ...trackingForm, trackingNumber: e.target.value })}
+                style={{ ...inp, marginBottom: 0 }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#b8a898", textTransform: "uppercase", letterSpacing: "0.8px", display: "block", marginBottom: 6 }}>Estimated Delivery Date</label>
+              <input
+                type="date"
+                value={trackingForm.estimatedDelivery}
+                onChange={e => setTrackingForm({ ...trackingForm, estimatedDelivery: e.target.value })}
+                style={{ ...inp, marginBottom: 0 }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: 10 }}>
+              <input
+                type="checkbox"
+                checked={trackingForm.notifyCustomer}
+                onChange={e => setTrackingForm({ ...trackingForm, notifyCustomer: e.target.checked })}
+                style={{ width: 18, height: 18, accentColor: "#d4a574", cursor: "pointer" }}
+              />
+              <label style={{ fontSize: 13, color: "#5a4a3e", cursor: "pointer" }}>
+                ✉️ Send email notification to customer
+              </label>
+            </div>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={addTrackingInfo}
+                style={{ flex: 1, padding: "13px", background: "linear-gradient(135deg,#d4a574,#b07a5a)", border: "none", borderRadius: 8, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.8px" }}>
+                ✓ Add Tracking & Send Email
+              </button>
+              <button onClick={() => setTrackingForm({ orderId: "", courierName: "", trackingNumber: "", estimatedDelivery: "", notifyCustomer: true })}
+                style={{ padding: "13px 20px", background: "none", border: "1.5px solid #e8e0d8", borderRadius: 8, color: "#b8a898", fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}>
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 
 // ── SHOP BY OCCASION PAGE (NEW) ───────────────
 function OccasionManagerPage({ showToast }) {
@@ -1503,121 +1691,7 @@ function BatchEditor({ batch, onUpdateBatch, onUpdateRow, section }) {
     </div>
   );
 }
-function BestsellersSection({ cart, setCart, wishlist, setWishlist }) {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch("https://rayfinesite-3.onrender.com/api/products")
-      .then(res => res.json())
-      .then(data => {
-        const list = Array.isArray(data?.data) ? data.data : [];
-        const fixed = list.map(normalizeProduct); // ← USE HELPER
-        setProducts(fixed.filter(p => p.inStock).slice(0, 10));
-        setLoading(false);
-      })
-      .catch(err => { console.error(err); setLoading(false); });
-  }, []);
-
-  if (products.length === 0 && !loading) return null;
-
-  return (
-    <section style={{
-      padding: "60px 0",
-      background: "var(--cream)",
-      minHeight: loading ? "400px" : "auto"
-    }}>
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-end",
-        padding: "0 40px 28px",
-        minHeight: "80px"
-      }}>
-        <div>
-          <p style={{ fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--primary)", fontWeight: 600, marginBottom: 6 }}>Most Loved</p>
-          <h2 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "clamp(24px,3vw,36px)", fontWeight: 400, color: "var(--text)", lineHeight: 1.2 }}>Our Best Sellers</h2>
-        </div>
-        {!loading && (
-          <Link to="/shop" style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--primary)", textDecoration: "none", borderBottom: "1px solid var(--primary)", paddingBottom: 2, whiteSpace: "nowrap" }}>View All</Link>
-        )}
-      </div>
-
-      <div style={{
-        display: "flex",
-        gap: 14,
-        overflowX: "auto",
-        padding: "0 40px 16px",
-        scrollSnapType: "x mandatory",
-        WebkitOverflowScrolling: "touch",
-        minHeight: loading ? "300px" : "auto"
-      }}>
-        {loading ? (
-          [...Array(5)].map((_, i) => (
-            <div key={i} style={{ minWidth: 200, maxWidth: 200, flexShrink: 0 }}>
-              <SkeletonCard />
-            </div>
-          ))
-        ) : (
-          products.map(p => (
-            <div key={p._id || p.id} style={{ minWidth: 200, maxWidth: 200, flexShrink: 0, scrollSnapAlign: "start", display: "flex", flexDirection: "column", height: "100%" }}>
-              <ProductCard product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
-            </div>
-          ))
-        )}
-      </div>
-    </section>
-  );
-}
-function TrendingSection({ cart, setCart, wishlist, setWishlist }) {
-  const [featured, setFeatured] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("https://rayfinesite-3.onrender.com/api/products")
-      .then(res => res.json())
-      .then(data => {
-        const list = Array.isArray(data?.data) ? data.data : [];
-        const fixed = list.map((p, i) => ({
-          ...normalizeProduct(p), // ← USE HELPER + isNew logic
-          isNew: i < 4,
-        }));
-        setFeatured(fixed.slice(0, 8));
-        setLoading(false);
-      })
-      .catch(err => { console.error(err); setLoading(false); });
-  }, []);
-
-  return (
-    <section className="featured-section" style={{ minHeight: loading ? "600px" : "auto" }}>
-      <SectionDivider subtitle="Curated For You" title="Trending Now" />
-      
-      {loading ? (
-        <div className="products-grid" style={{ padding: "0 40px 80px" }}>
-          {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
-        </div>
-      ) : (
-        <>
-          <div className="products-grid" style={{ padding: "0 40px 80px" }}>
-            {featured.map(p => (
-              <ProductCard key={p._id || p.id} product={p} cart={cart} setCart={setCart} wishlist={wishlist} setWishlist={setWishlist} />
-            ))}
-          </div>
-          <div style={{ textAlign: "center", marginBottom: "52px" }}>
-            <Link to="/shop" className="btn-primary">View All Products</Link>
-          </div>
-        </>
-      )}
-      
-      <style>{`
-        @keyframes loading {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      `}</style>
-    </section>
-  );
-}
 
 // ── ORDERS PAGE (unchanged from original) ─────
 function OrdersPage({ showToast }) {
@@ -1692,3 +1766,5 @@ function OrdersPage({ showToast }) {
     </div>
   );
 }
+
+
