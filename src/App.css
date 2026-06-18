@@ -8,46 +8,45 @@
 }
 
 :root {
-  /* Brand */
+  /* Main Brand */
   --primary:       #EAA8A2;
-  --primary-light: #F4C8C4;
-  --primary-dark:  #D98F88;
+  --primary-light: #F3BBB5;
+  --primary-dark:  #C97D77;
 
-  /* Soft pinks */
-  --blush:         #FFF4F3;
-  --blush2:        #F8E4E1;
-  --blush3:        #F2D2CE;
+  /* Pink Family */
+  --blush:         #F7DDD8;
+  --blush2:        #F2C4C0;
+  --blush3:        #EAA8A2;
 
-  /* Creams */
-  --cream:         #FFFDFC;
-  --cream2:        #FAF5F2;
-  --cream3:        #F5EEEA;
+  /* Cream */
+  --cream:         #FAF5EF;
+  --cream2:        #F4EAE2;
+  --cream3:        #E8D8CF;
 
   /* Text */
-  --text:          #5F4744;
-  --text-muted:    #8D726E;
-  --text-light:    #B39C98;
+  --text:          #4A2F38;
+  --text-muted:    #7A5060;
+  --text-light:    #A37B8A;
 
   /* Backgrounds */
   --bg:            #FFFFFF;
-  --bg2:           #FFF9F8;
-  --bg3:           #FDF3F2;
+  --bg2:           #FCF6F4;
+  --bg3:           #F7EAE7;
   --card:          #FFFFFF;
 
   /* Borders */
-  --border:        #F0D8D5;
-  --border-light:  #F7EAE8;
+  --border:        #E6C7C3;
+  --border-light:  #F0DDDA;
 
   /* Shadows */
-  --shadow:        0 4px 20px rgba(234,168,162,.08);
-  --shadow-md:     0 10px 35px rgba(234,168,162,.12);
-  --shadow-lg:     0 20px 60px rgba(234,168,162,.16);
-  --shadow-3d:     0 30px 80px rgba(234,168,162,.20);
-
-  --navbar-height: 76px;
+  --shadow:        0 4px 18px rgba(139,42,69,.08);
+  --shadow-md:     0 10px 35px rgba(139,42,69,.12);
+  --shadow-lg:     0 20px 60px rgba(139,42,69,.16);
+  --shadow-3d:     0 30px 80px rgba(139,42,69,.20);
 }
  
-
+ --navbar-height: 76px;
+}
 /* ── HTML / BODY ── */
 html {
   scroll-behavior: smooth;
