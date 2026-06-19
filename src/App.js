@@ -1030,10 +1030,11 @@ function PlatformsSection() {
   ];
   return (
     <div className="platforms-section">
-      <div style={{ textAlign: "center", marginBottom: "36px" }}>
-        <p className="section-subtitle">Find Us On</p>
-        <h2 className="section-title" style={{ fontSize: "clamp(20px,2.5vw,30px)" }}>Available on Our Platforms</h2>
-      </div>
+   <div style={{ textAlign: "center", marginBottom: "36px" }}>
+  <h2 className="section-title" style={{ fontSize: "clamp(20px,2.5vw,30px)", fontWeight: 700, fontStyle: "normal" }}>
+    Find Us On
+  </h2>
+</div>
       <div className="platforms-grid" style={{ gap: "28px", flexWrap: "wrap" }}>
         {platforms.map(p => (
           <a key={p.name} href={p.url} target="_blank" rel="noreferrer" className="platform-item" style={{ textDecoration: "none" }}>
