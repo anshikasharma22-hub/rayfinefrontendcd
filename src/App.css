@@ -201,23 +201,6 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   margin-bottom: 7px;
 }
 
-/* Remove these if you're no longer using image logos */
-/*
-.navbar-logo svg {
-  width: 160px;
-  height: 40px;
-  display: block;
-}
-
-.navbar-logo img {
-  height: 48px !important;
-  width: auto !important;
-  max-width: 150px !important;
-  object-fit: contain !important;
-  mix-blend-mode: multiply;
-}
-*/
-
 .nav-links {
   display: flex;
   gap: 40px;
@@ -304,17 +287,6 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   border: 1.5px solid #fff;
 }
 
-@media (max-width: 768px) {
-  .logo-script {
-    font-size: 32px;
-  }
-
-  .logo-text {
-    font-size: 9px;
-    letter-spacing: 2px;
-    margin-bottom: 5px;
-  }
-}
 .hamburger {
   display: none;
   background: none;
@@ -560,8 +532,6 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
 
 /* ══════════════════════════════════════════
    IMAGE WRAPPER — KEY FIX FOR FAST LOAD
-   aspect-ratio reserves space immediately so
-   no layout shift occurs while image loads.
 ══════════════════════════════════════════ */
 .product-img-wrap {
   position: relative;
@@ -642,7 +612,7 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   to { transform: translateX(200%); }
 }
 
-/* PRODUCT CARD */
+/* PRODUCT CARD — ENHANCED 3D */
 .product-card {
   background: var(--card);
   border: 1px solid rgba(255,255,255,0.08);
@@ -658,13 +628,13 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   backface-visibility: hidden;
 
   transition:
-    transform 0.25s ease,
-    box-shadow 0.35s ease,
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.4s ease,
     border-color 0.35s ease;
 
   box-shadow:
-    0 10px 25px rgba(0,0,0,0.12),
-    0 20px 50px rgba(0,0,0,0.08);
+    0 14px 32px rgba(0,0,0,0.14),
+    0 28px 60px rgba(0,0,0,0.10);
 
   animation: fadeIn 0.4s ease both;
 }
@@ -694,11 +664,12 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
 /* Hover Glow */
 .product-card:hover {
   border-color: rgba(255,192,203,0.35);
+  transform: translateY(-6px) scale(1.015);
 
   box-shadow:
-    0 20px 40px rgba(0,0,0,0.18),
-    0 30px 80px rgba(255,192,203,0.15),
-    0 0 20px rgba(212,175,55,0.10);
+    0 24px 48px rgba(0,0,0,0.20),
+    0 36px 90px rgba(255,192,203,0.18),
+    0 0 24px rgba(212,175,55,0.12);
 }
 
 /* Stagger Entrance */
@@ -940,12 +911,12 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   overflow: hidden;
   aspect-ratio: 3 / 4;
   background: var(--blush2);
-  transition: transform 0.35s ease, box-shadow 0.35s ease;
-  box-shadow: 0 4px 16px rgba(155,48,80,0.10);
+  transition: transform 0.35s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease;
+  box-shadow: 0 8px 24px rgba(155,48,80,0.16);
 }
 .cat-square-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 16px 40px rgba(155,48,80,0.18);
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 20px 48px rgba(155,48,80,0.22);
 }
 .cat-square-card img {
   position: absolute;
@@ -1429,6 +1400,7 @@ details p { margin-top: 10px; color: var(--text-muted); line-height: 1.7; font-s
     text-align: center;
     justify-content: center;
   }
+
   .categories-section {
     padding: 36px 12px;
   }
@@ -1588,3 +1560,4 @@ details p { margin-top: 10px; color: var(--text-muted); line-height: 1.7; font-s
     animation: none;
   }
 }
+ 
