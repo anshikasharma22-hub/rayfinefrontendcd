@@ -19,12 +19,14 @@
 ══════════════════════════════════════════ */
 :root {
   /* Brand pinks */
-  --primary:        #eaa8a2;   /* deep rose — logo color */
-  --primary-light:  #C4607A;   /* medium rose */
-  --primary-dark:   #eaa8a2;   /* darkest rose */
-  --blush:          #F7DDD8;   /* soft blush pink */
-  --blush2:         #F2C4C0;   /* logo background blush */
-  --blush3:         #EAA8A2;   /* deeper blush accent */
+ --primary:        #C4607A;
+  --primary-light:  #C4607A;
+  --primary-dark:   #C4607A;
+  --blush:          #F5ECE3;   
+  --blush2:         #EDE0D4;   
+  --blush3:         #E4D0C4;   
+  ...
+}
 
   /* Neutrals — beige/off-white */
   --cream:          #FAF5EF;   /* off-white beige */
@@ -169,37 +171,35 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   justify-content: space-between;
   padding: 0 56px;
   height: var(--navbar-height);
-  background: rgba(255,255,255,0.97);
+  background: #eaa8a2;
   border-bottom: 1px solid var(--border-light);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   transition: box-shadow 0.3s ease;
   contain: layout style;
 }
-
 .navbar:hover {
   box-shadow: var(--shadow-md);
 }
-
 .navbar-logo {
   display: flex;
   align-items: flex-end;
   gap: 6px;
   text-decoration: none;
   white-space: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
 }
-
 .navbar-logo:hover {
   opacity: 0.82;
 }
-
 .logo-script {
   font-family: "Allura", cursive;
   font-size: 42px;
   line-height: 1;
   color: #7A2743;
 }
-
 .logo-text {
   font-family: "Montserrat", sans-serif;
   font-size: 11px;
@@ -209,29 +209,11 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   margin-bottom: 7px;
 }
 
-/* Remove these if you're no longer using image logos */
-/*
-.navbar-logo svg {
-  width: 160px;
-  height: 40px;
-  display: block;
-}
-
-.navbar-logo img {
-  height: 48px !important;
-  width: auto !important;
-  max-width: 150px !important;
-  object-fit: contain !important;
-  mix-blend-mode: multiply;
-}
-*/
-
 .nav-links {
   display: flex;
   gap: 40px;
   align-items: center;
 }
-
 .nav-links a {
   font-size: 10px;
   font-weight: 500;
@@ -243,7 +225,6 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   line-height: 1;
   padding: 4px 0;
 }
-
 .nav-links a::after {
   content: '';
   position: absolute;
@@ -254,24 +235,20 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   background: var(--primary);
   transition: width 0.25s ease;
 }
-
 .nav-links a:hover::after,
 .nav-links a.active::after {
   width: 100%;
 }
-
 .nav-links a:hover,
 .nav-links a.active {
   color: var(--text);
 }
-
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   flex-shrink: 0;
 }
-
 .nav-icon {
   background: none;
   border: none;
@@ -289,12 +266,10 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   min-width: 44px;
   justify-content: center;
 }
-
 .nav-icon:hover {
   background: var(--blush);
   color: var(--primary);
 }
-
 .badge {
   position: absolute;
   top: 2px;
@@ -311,17 +286,29 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   justify-content: center;
   border: 1.5px solid #fff;
 }
-
 @media (max-width: 768px) {
+  .navbar {
+    padding: 0 10px;
+    gap: 6px;
+  }
   .logo-script {
-    font-size: 32px;
+    font-size: 26px;
   }
-
   .logo-text {
-    font-size: 9px;
-    letter-spacing: 2px;
-    margin-bottom: 5px;
+    font-size: 7px;
+    letter-spacing: 1px;
+    white-space: nowrap;
   }
+  .nav-actions select {
+    flex-shrink: 0;
+    font-size: 10px !important;
+    padding: 4px !important;
+    min-width: 50px;
+  }
+}
+@media (max-width: 480px) {
+  .logo-script { font-size: 22px; }
+  .logo-text { font-size: 6px; }
 }
 .hamburger {
   display: none;
@@ -338,7 +325,6 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   transition: background 0.2s;
 }
 .hamburger:hover { background: var(--blush); }
-
 /* ── BUTTONS ── */
 .btn-primary {
   display: inline-flex;
