@@ -7,16 +7,6 @@
   padding: 0;
 }
 
-/* ══════════════════════════════════════════
-   ROOT VARIABLES — Ray Fine Ornates
-   Palette extracted from logo:
-   Blush:   #F2C4C0  (background pink)
-   Rose:    #8B2A45  (logo text / primary accent)
-   Beige:   #FAF5EF  (off-white cream)
-   Sand:    #EEE0D4  (light beige)
-   Warm:    #E4D0C4  (border/divider)
-   Deep:    #3D1020  (dark text)
-══════════════════════════════════════════ */
 :root {
   /* Brand pinks */
  --primary:        #C4607A;
@@ -56,7 +46,6 @@
 
   --navbar-height: 76px;
 }
-
 
 html {
   scroll-behavior: smooth;
