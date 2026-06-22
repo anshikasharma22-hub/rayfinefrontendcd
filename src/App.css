@@ -176,27 +176,29 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
   gap: 6px;
   text-decoration: none;
   white-space: nowrap;
-  flex-shrink: 1;
-  min-width: 0;
-  overflow: hidden;
+  flex-shrink: 0;
+  min-width: auto;
+  overflow: visible;
 }
 .navbar-logo:hover {
   opacity: 0.82;
 }
 .logo-script {
   font-family: "Allura", cursive;
-  font-size: 42px;
+  font-size: 32px;
   line-height: 1;
   color: #7A2743;
 }
 .logo-text {
   font-family: "Montserrat", sans-serif;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 3px;
+  letter-spacing: 2px;
   color: #7A2743;
-  margin-bottom: 7px;
+  margin-bottom: 6px;
+  white-space: nowrap;
 }
+
 
 .nav-links {
   display: flex;
@@ -235,8 +237,11 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 6px;
   flex-shrink: 0;
+}
+.nav-actions select {
+  margin-right: 4px;
 }
 .nav-icon {
   background: none;
